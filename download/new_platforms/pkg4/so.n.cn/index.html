@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no" />
+  <meta name="renderer" content="webkit" />
+  <meta name="keywords" content="纳米AI,智脑,深度搜索,SGE,知识问答,智能搜索"/>
+  <meta name="description" content="纳米AI开创全新问答方式，没有套路，直接给答案，让搜索变得简单直观！拍照问、语音搜、听答案，让搜索随心所欲，智慧触手可得。"/>
+  <!-- app share -->
+  <meta property="og:image" content="/favicon.ico">
+  <meta property="og:description" content="智能搜索、答案引擎，AI分析视频、PDF、网页等、自动生成思维导图...">
+  <meta name="language" content="zh-CN" />
+  <title>纳米AI</title>
+  <link rel="shortcut icon" href="/favicon.ico" />
+  <script>window._monitor_pid = "QH_848_1805";</script>
+  <script src="https://s0.ssl.qhimg.com/pkg/radarsdk/radar-analytic-js-sdk-2.5.0.1739510429285.umd.js" info="monitor"></script>
+  <script src="https://s3.ssl.qhres2.com/static/65fd5e5c0e882e33.js" info="monitor_exception_sdk"></script>
+  <script src="https://s1.ssl.qhres2.com/static/7e01816826fde4ff.js" info="monitor_fix"></script>
+  <script src="https://s1.ssl.qhres2.com/static/33c7190708b11282.js" info="monitor_exception"></script>
+</head>
+<body>
+<div id="nworld-app-container" style="position: absolute; left: 0; top: 0; width: 100%; height: 100%;"></div>
+<!-- Google tag (gtag.js) -->
+<script>
+  function onGtagLoaded () {
+    monitor.log({
+      key : "gtag_loading",
+      action : "gtag_load_end",
+      seg_times : window._page_load_begin ? (+new Date - window._page_load_begin) : '',
+    }, "wpo");
+  }
+  function onGtagLoadError () {
+    monitor.log({
+      key : "gtag_loading",
+      action : "gtag_load_error",
+      seg_times : window._page_load_begin ? (+new Date - window._page_load_begin) : '',
+    }, "wpo");
+  }
+</script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-F1YB4HZHRB" onload="onGtagLoaded()" onerror="onGtagLoadError()"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-F1YB4HZHRB', {
+    'cookie_flags': 'samesite=none;secure'
+  });
+</script>
+</body>
+</html>

@@ -151,7 +151,8 @@ class NamiAIClient:
                             # 解析纳米AI的事件类型
                             if current_event == "102":
                                 # AI代理事件
-                                yield from self._parse_ai_agent_event(data)
+                                for item in self._parse_ai_agent_event(data):
+                                    yield item
 
                             elif current_event == "100":
                                 # 会话初始化
@@ -191,68 +192,71 @@ class NamiAIClient:
             logger.error(f"NamiAI API request failed: {e}")
             yield {"error": str(e), "content": "", "done": True}
 
-    def _parse_ai_agent_event(self, data: Dict[str, Any]) -> AsyncGenerator[Dict[str, Any], None]:
+    def _parse_ai_agent_event(self, data: Dict[str, Any]) -> List[Dict[str, Any]]:
         """解析 AI 代理事件
 
         Args:
             data: 事件数据
 
-        Yields:
-            解析后的事件字典
+        Returns:
+            解析后的事件列表
         """
+        results = []
         # 检查各种事件类型
         if "agentThink" in data:
             think = data["agentThink"]
             content = think.get("content", "")
             status = think.get("status", "")
             if content:
-                yield {
+                results.append({
                     "type": "reasoning",
                     "content": content,
                     "status": status,
                     "done": False,
-                }
+                })
 
         elif "toolStatus" in data:
             tool = data["toolStatus"]
             content = tool.get("content", "")
             action = tool.get("action", "")
             if content:
-                yield {
+                results.append({
                     "type": "tool",
                     "content": content,
                     "action": action,
                     "done": action == "final",
-                }
+                })
 
         elif "agentSimpleResult" in data:
             result = data["agentSimpleResult"]
             summary = result.get("summary", "")
             if summary:
-                yield {
+                results.append({
                     "type": "content",
                     "content": summary,
                     "done": True,
-                }
+                })
 
         elif "agentStatus" in data:
             status = data["agentStatus"]
             if status.get("success"):
-                yield {
+                results.append({
                     "type": "status",
                     "done": True,
-                }
+                })
 
         elif "new_chat" in data:
             # 模型选择
             pass
 
         elif "content" in data:
-            yield {
+            results.append({
                 "type": "content",
                 "content": data.get("content", ""),
                 "done": data.get("done", False),
-            }
+            })
+
+        return results
 
     async def close(self) -> None:
         """关闭会话"""
