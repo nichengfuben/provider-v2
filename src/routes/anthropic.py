@@ -135,27 +135,38 @@ async def _sgen(rd: AnthReq, req: Request) -> AsyncGenerator[str, None]:
     thinking = _is_thinking(rd)
     ex = getattr(rd, "model_extra", None) or {}
 
-    yield (
-        f"event: message_start\ndata: {json.dumps({'type': 'message_start', "
-        f"'message': {{'id': mid, 'type': 'message', 'role': 'assistant', "
-        f"'content': [], 'model': mdl, 'stop_reason': None, "
-        f"'usage': {{'input_tokens': pt, 'output_tokens': 0}}}}})}\n\n"
-    )
+    # 构建 message_start 数据
+    msg_start_data = {
+        'type': 'message_start',
+        'message': {
+            'id': mid,
+            'type': 'message',
+            'role': 'assistant',
+            'content': [],
+            'model': mdl,
+            'stop_reason': None,
+            'usage': {'input_tokens': pt, 'output_tokens': 0}
+        }
+    }
+    yield f"event: message_start\ndata: {json.dumps(msg_start_data)}\n\n"
 
     block_idx = 0
     if thinking:
-        yield (
-            f"event: content_block_start\ndata: {json.dumps({'type': "
-            f"'content_block_start', 'index': 0, 'content_block': "
-            f"{{'type': 'thinking', 'thinking': ''}}})}\n\n"
-        )
+        content_block_data = {
+            'type': 'content_block_start',
+            'index': 0,
+            'content_block': {'type': 'thinking', 'thinking': ''}
+        }
+        yield f"event: content_block_start\ndata: {json.dumps(content_block_data)}\n\n"
         block_idx = 1
+    
     text_idx = block_idx
-    yield (
-        f"event: content_block_start\ndata: {json.dumps({'type': "
-        f"'content_block_start', 'index': text_idx, 'content_block': "
-        f"{{'type': 'text', 'text': ''}}})}\n\n"
-    )
+    text_block_data = {
+        'type': 'content_block_start',
+        'index': text_idx,
+        'content_block': {'type': 'text', 'text': ''}
+    }
+    yield f"event: content_block_start\ndata: {json.dumps(text_block_data)}\n\n"
 
     ot = 0
     tcs: List[Dict] = []
@@ -181,68 +192,77 @@ async def _sgen(rd: AnthReq, req: Request) -> AsyncGenerator[str, None]:
                     continue
                 if "<function=" in acc and _FE_TAG in acc:
                     continue
-                yield (
-                    f"event: content_block_delta\ndata: {json.dumps({'type': "
-                    f"'content_block_delta', 'index': text_idx, 'delta': "
-                    f"{{'type': 'text_delta', 'text': ch}}})}\n\n"
-                )
+                delta_data = {
+                    'type': 'content_block_delta',
+                    'index': text_idx,
+                    'delta': {'type': 'text_delta', 'text': ch}
+                }
+                yield f"event: content_block_delta\ndata: {json.dumps(delta_data)}\n\n"
             elif isinstance(ch, dict):
                 if "thinking" in ch and thinking:
-                    yield (
-                        f"event: content_block_delta\ndata: "
-                        f"{json.dumps({'type': 'content_block_delta', "
-                        f"'index': 0, 'delta': {{'type': 'thinking_delta', "
-                        f"'thinking': ch['thinking']}}})}\n\n"
-                    )
+                    thinking_data = {
+                        'type': 'content_block_delta',
+                        'index': 0,
+                        'delta': {'type': 'thinking_delta', 'thinking': ch['thinking']}
+                    }
+                    yield f"event: content_block_delta\ndata: {json.dumps(thinking_data)}\n\n"
                 elif "tool_calls" in ch:
                     tcs = ch["tool_calls"]
                 elif "usage" in ch:
                     usage_d = ch["usage"]
     except Exception as e:
-        yield (
-            f"event: error\ndata: {json.dumps({'type': 'error', 'error': "
-            f"{{'type': 'server_error', 'message': str(e)}}})}\n\n"
-        )
+        error_data = {
+            'type': 'error',
+            'error': {'type': 'server_error', 'message': str(e)}
+        }
+        yield f"event: error\ndata: {json.dumps(error_data)}\n\n"
         return
 
     if thinking:
-        yield (
-            f"event: content_block_stop\ndata: "
-            f"{json.dumps({'type': 'content_block_stop', 'index': 0})}\n\n"
-        )
-    yield (
-        f"event: content_block_stop\ndata: "
-        f"{json.dumps({'type': 'content_block_stop', 'index': text_idx})}\n\n"
-    )
+        stop_data = {'type': 'content_block_stop', 'index': 0}
+        yield f"event: content_block_stop\ndata: {json.dumps(stop_data)}\n\n"
+    
+    stop_data_text = {'type': 'content_block_stop', 'index': text_idx}
+    yield f"event: content_block_stop\ndata: {json.dumps(stop_data_text)}\n\n"
 
     for i, tc in enumerate(tcs):
         ti = text_idx + 1 + i
-        yield (
-            f"event: content_block_start\ndata: {json.dumps({'type': "
-            f"'content_block_start', 'index': ti, 'content_block': "
-            f"{{'type': 'tool_use', 'id': tc['id'], "
-            f"'name': tc['function']['name'], 'input': {{}}}}})}\n\n"
-        )
-        yield (
-            f"event: content_block_delta\ndata: {json.dumps({'type': "
-            f"'content_block_delta', 'index': ti, 'delta': "
-            f"{{'type': 'input_json_delta', "
-            f"'partial_json': tc['function']['arguments']}}})}\n\n"
-        )
-        yield (
-            f"event: content_block_stop\ndata: "
-            f"{json.dumps({'type': 'content_block_stop', 'index': ti})}\n\n"
-        )
+        block_start_data = {
+            'type': 'content_block_start',
+            'index': ti,
+            'content_block': {
+                'type': 'tool_use',
+                'id': tc['id'],
+                'name': tc['function']['name'],
+                'input': {}
+            }
+        }
+        yield f"event: content_block_start\ndata: {json.dumps(block_start_data)}\n\n"
+        
+        delta_data = {
+            'type': 'content_block_delta',
+            'index': ti,
+            'delta': {
+                'type': 'input_json_delta',
+                'partial_json': tc['function']['arguments']
+            }
+        }
+        yield f"event: content_block_delta\ndata: {json.dumps(delta_data)}\n\n"
+        
+        stop_data_tool = {'type': 'content_block_stop', 'index': ti}
+        yield f"event: content_block_stop\ndata: {json.dumps(stop_data_tool)}\n\n"
 
     sr = "tool_use" if tcs else "end_turn"
     ou = (usage_d or {}).get(
         "completion_tokens", (usage_d or {}).get("output_tokens", ot)
     )
-    yield (
-        f"event: message_delta\ndata: {json.dumps({'type': 'message_delta', "
-        f"'delta': {{'stop_reason': sr}}, "
-        f"'usage': {{'output_tokens': ou}}})}\n\n"
-    )
+    
+    delta_data = {
+        'type': 'message_delta',
+        'delta': {'stop_reason': sr},
+        'usage': {'output_tokens': ou}
+    }
+    yield f"event: message_delta\ndata: {json.dumps(delta_data)}\n\n"
     yield f"event: message_stop\ndata: {json.dumps({'type': 'message_stop'})}\n\n"
 
 
@@ -348,7 +368,7 @@ def _parse_system(body: Dict[str, Any]) -> None:
         body["system"] = "\n".join(texts) if texts else None
 
 
-@router.post("/v1/messages")
+@router.post("/v1/messages", response_model=None)
 async def anth_messages(req: Request) -> Union[JSONResponse, StreamingResponse]:
     try:
         body = await req.json()
@@ -362,7 +382,7 @@ async def anth_messages(req: Request) -> Union[JSONResponse, StreamingResponse]:
     return await _handle(request, req)
 
 
-@router.post("/messages")
+@router.post("/messages", response_model=None)
 async def anth_messages_native(req: Request) -> Union[JSONResponse, StreamingResponse]:
     try:
         body = await req.json()
