@@ -212,7 +212,7 @@ class QwenClient:
                     "expires": data.get("expires_at", 0),
                     "busy": False,
                 }
-            logger.info("Qwen 登录成功: %s", ident)
+            logger.debug("Qwen 登录成功: %s", ident)
 
     async def _bg_cookie(self) -> None:
         while not self._closing:
