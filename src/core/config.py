@@ -15,6 +15,7 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class ServerCfg:
+    """服务器配置"""
     host: str = "0.0.0.0"
     port: int = 1337
     debug: bool = False
@@ -22,18 +23,21 @@ class ServerCfg:
 
 @dataclass
 class AnthCfg:
+    """Anthropic API 配置"""
     api_version: str = "2023-06-01"
     model_mapping: Dict[str, str] = field(default_factory=dict)
 
 
 @dataclass
 class AuthCfg:
+    """认证配置"""
     enabled: bool = False
     keys: List[str] = field(default_factory=list)
 
 
 @dataclass
 class GatewayCfg:
+    """网关并发配置"""
     concurrent_enabled: bool = True
     concurrent_count: int = 3
     min_tokens: int = 10
@@ -41,17 +45,20 @@ class GatewayCfg:
 
 @dataclass
 class ProxyCfg:
+    """代理配置"""
     proxy_server: str = ""
     proxy_enabled: bool = False
 
 
 @dataclass
 class OllamaCfg:
+    """Ollama 本地服务器配置"""
     additional_servers: List[str] = field(default_factory=list)
 
 
 @dataclass
 class FncallCfg:
+    """函数调用标签配置"""
     call_start_tag: str = "<function="
     call_end_tag: str = "</" + "function>"
     tools_start_tag: str = "<tools>"
@@ -61,6 +68,7 @@ class FncallCfg:
 
 @dataclass
 class AppConfig:
+    """应用全局配置"""
     server: ServerCfg = field(default_factory=ServerCfg)
     anthropic: AnthCfg = field(default_factory=AnthCfg)
     auth: AuthCfg = field(default_factory=AuthCfg)
@@ -76,6 +84,7 @@ _mtime: float = 0.0
 
 
 def _find() -> Optional[Path]:
+    """查找配置文件，优先级：环境变量 > 当前目录 > 项目根目录"""
     env = os.environ.get("CONFIG_PATH")
     if env and Path(env).is_file():
         return Path(env)
@@ -95,7 +104,11 @@ def _find() -> Optional[Path]:
 
 
 def _parse(path: Path) -> AppConfig:
-    import tomllib
+    """解析 TOML 配置文件为 AppConfig 对象"""
+    try:
+        import tomllib
+    except ModuleNotFoundError:
+        import tomli as tomllib  # type: ignore
 
     with open(path, "rb") as f:
         raw = tomllib.load(f)
@@ -142,6 +155,7 @@ def _parse(path: Path) -> AppConfig:
 
 
 def _load() -> AppConfig:
+    """加载配置文件，失败时使用默认配置"""
     global _cfg, _path, _mtime
     p = _find()
     if p is None:
@@ -153,14 +167,14 @@ def _load() -> AppConfig:
         _path, _mtime = p, p.stat().st_mtime
         logger.info("配置已加载: %s", p)
     except Exception as e:
-        logger.error("config.toml 加载失败: %s", e)
+        logger.error("config.toml 加载失败: %s", e, exc_info=True)
         if _cfg is None:
             _cfg = AppConfig()
     return _cfg
 
 
 def get_config() -> AppConfig:
-    """获取当前配置"""
+    """获取当前配置实例"""
     global _cfg
     if _cfg is None:
         _load()
@@ -168,12 +182,12 @@ def get_config() -> AppConfig:
 
 
 def reload_config() -> AppConfig:
-    """强制重载"""
+    """强制重新加载配置"""
     return _load()
 
 
 async def start_config_watcher(interval: float = 2.0) -> None:
-    """后台监视配置变更"""
+    """启动后台配置文件监视任务，检测文件变更并自动重载"""
     global _mtime
     while True:
         await asyncio.sleep(interval)
@@ -183,5 +197,5 @@ async def start_config_watcher(interval: float = 2.0) -> None:
                 if mt > _mtime:
                     logger.info("config.toml 变更，重载")
                     _load()
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug("config.toml 监视出错: %s", e)

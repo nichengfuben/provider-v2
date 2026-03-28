@@ -54,6 +54,13 @@ class CandidateStats:
     samples: Deque[_S] = field(default_factory=lambda: deque(maxlen=W))
 
     def record_ok(self, lat: float, tok: int, dur: float) -> None:
+        """记录成功响应
+
+        Args:
+            lat: 响应延迟(ms)
+            tok: 生成的 token 数量
+            dur: 生成时长(s)
+        """
         self.reqs += 1
         self.succ += 1
         self.fs = 0
@@ -65,6 +72,7 @@ class CandidateStats:
         self.samples.append(_S(time.time(), lat, True, tok, dur))
 
     def record_fail(self) -> None:
+        """记录失败响应"""
         self.reqs += 1
         self.fail += 1
         self.fs += 1
@@ -74,23 +82,28 @@ class CandidateStats:
 
     @property
     def sr(self) -> float:
+        """成功率"""
         return self.alpha / (self.alpha + self.beta_p)
 
     @property
     def var(self) -> float:
+        """方差"""
         t = self.alpha + self.beta_p
         return (self.alpha * self.beta_p) / (t * t * (t + 1))
 
     @property
     def cooling(self) -> bool:
+        """是否正在冷却期"""
         return self.fs > 0 and time.time() - self.ft < CD * min(self.fs, 10)
 
     def score(self) -> float:
+        """计算综合评分"""
         nl = 1 / (1 + math.exp(self.ema_lat - 2))
         nt = 1 / (1 + math.exp(-(self.ema_thr - 5) / 5))
         return SW * self.sr + LW * nl + TW * nt
 
     def thompson(self) -> float:
+        """Thompson 采样"""
         try:
             x = random.gammavariate(self.alpha, 1)
             y = random.gammavariate(self.beta_p, 1)
@@ -99,6 +112,7 @@ class CandidateStats:
             return 0.5
 
     def to_dict(self) -> Dict[str, Any]:
+        """转为字典"""
         return {
             "alpha": self.alpha,
             "beta_p": self.beta_p,
@@ -114,21 +128,31 @@ class CandidateStats:
 
 
 class Selector:
-    """TAS 选择器"""
+    """TAS（Track-and-Stop）选择器"""
 
     def __init__(self) -> None:
+        """初始化选择器"""
         self._st: Dict[str, CandidateStats] = {}
         self._eps = ER
         self._n = 0
         self._lk = asyncio.Lock()
 
     def _e(self, cid: str) -> CandidateStats:
+        """获取或初始化候选项统计"""
         if cid not in self._st:
             self._st[cid] = CandidateStats()
         return self._st[cid]
 
     async def select(self, cands: List[Candidate], count: int = 1) -> List[Candidate]:
-        """选择候选项"""
+        """选择候选项
+
+        Args:
+            cands: 候选项列表
+            count: 选择数量
+
+        Returns:
+            选中的候选项列表
+        """
         async with self._lk:
             if not cands:
                 return []
@@ -154,6 +178,7 @@ class Selector:
             return sel
 
     def _stop(self, cs: List[Candidate]) -> bool:
+        """判断是否应停止采样"""
         for c in cs:
             if self._e(c.id).reqs < MS:
                 return False
@@ -167,6 +192,7 @@ class Selector:
         )
 
     def _ts(self, cs: List[Candidate]) -> Candidate:
+        """Thompson 采样选择"""
         best_s, best = -1.0, cs[0]
         for c in cs:
             s = self._e(c.id)
@@ -188,7 +214,15 @@ class Selector:
         tokens: int = 0,
         duration: float = 0,
     ) -> None:
-        """记录指标"""
+        """记录候选项性能指标
+
+        Args:
+            cid: 候选项 ID
+            success: 是否成功
+            latency: 响应延迟(ms)
+            tokens: 生成 token 数
+            duration: 生成时长(s)
+        """
         async with self._lk:
             s = self._e(cid)
             if success:
@@ -197,5 +231,6 @@ class Selector:
                 s.record_fail()
 
     async def get_stats(self) -> Dict[str, Any]:
+        """获取所有候选项统计"""
         async with self._lk:
             return {k: v.to_dict() for k, v in self._st.items()}

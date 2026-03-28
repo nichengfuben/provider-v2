@@ -37,11 +37,18 @@ _EXT: Dict[str, str] = {
 
 
 class FileUtil:
-    """文件工具集"""
+    """文件操作工具集，提供 MIME 类型判断、Data URI 处理等功能"""
 
     @staticmethod
     def mime(name: str) -> str:
-        """根据文件名推断 MIME 类型"""
+        """根据文件名推断 MIME 类型
+
+        Args:
+            name: 文件名或路径
+
+        Returns:
+            MIME 类型字符串，默认为 application/octet-stream
+        """
         ext = os.path.splitext(name)[1].lower()
         return (
             _EXT.get(ext)
@@ -51,17 +58,38 @@ class FileUtil:
 
     @staticmethod
     def is_url(p: str) -> bool:
-        """判断是否为 HTTP(S) URL"""
+        """判断字符串是否为 HTTP(S) URL
+
+        Args:
+            p: 待检查字符串
+
+        Returns:
+            True 表示为 HTTP(S) URL
+        """
         return p.startswith(("http://", "https://"))
 
     @staticmethod
     def is_data_uri(d: str) -> bool:
-        """判断是否为 data URI"""
+        """判断字符串是否为 base64 编码的 data URI
+
+        Args:
+            d: 待检查字符串
+
+        Returns:
+            True 表示为 data URI 格式
+        """
         return isinstance(d, str) and d.startswith("data:") and ";base64" in d
 
     @staticmethod
     def parse_data_uri(uri: str) -> Optional[Tuple[str, bytes]]:
-        """解析 data URI 为 (mime_type, bytes)"""
+        """解析 data URI 为 (mime_type, bytes)
+
+        Args:
+            uri: data URI 字符串
+
+        Returns:
+            解析成功返回 (MIME 类型, 字节数据) 元组，否则返回 None
+        """
         if not FileUtil.is_data_uri(uri):
             return None
         try:
@@ -75,7 +103,6 @@ class FileUtil:
                 .replace("\r", "")
                 .replace(" ", "")
             )
-            # 去掉开头逗号
             if b64.startswith(","):
                 b64 = b64[1:]
             pad = 4 - len(b64) % 4
@@ -87,18 +114,35 @@ class FileUtil:
 
     @staticmethod
     def to_data_uri(data: bytes, mime_type: str) -> str:
-        """将 bytes 编码为 data URI"""
+        """将字节数据编码为 data URI
+
+        Args:
+            data: 原始字节数据
+            mime_type: MIME 类型
+
+        Returns:
+            data URI 字符串
+        """
         b64 = base64.b64encode(data).decode("ascii")
         return f"data:{mime_type};base64,{b64}"
 
     @staticmethod
     def save_data_uri(uri: str, directory: str = "data/uploads") -> Optional[str]:
-        """将 data URI 保存为文件，返回文件路径"""
+        """将 data URI 解码并保存为文件
+
+        Args:
+            uri: data URI 字符串
+            directory: 保存目录，使用跨平台路径
+
+        Returns:
+            保存成功返回文件路径，否则返回 None
+        """
         r = FileUtil.parse_data_uri(uri)
         if not r:
             return None
         mime_type, data = r
-        Path(directory).mkdir(parents=True, exist_ok=True)
+        save_dir = Path(directory)
+        save_dir.mkdir(parents=True, exist_ok=True)
         ext = {
             "image/jpeg": ".jpg",
             "image/png": ".png",
@@ -110,13 +154,17 @@ class FileUtil:
             "audio/ogg": ".ogg",
             "video/mp4": ".mp4",
         }.get(mime_type, ".bin")
-        fp = Path(directory) / f"{int(time.time() * 1000)}_{uuid.uuid4().hex[:8]}{ext}"
+        fp = save_dir / f"{int(time.time() * 1000)}_{uuid.uuid4().hex[:8]}{ext}"
         fp.write_bytes(data)
         return str(fp)
 
     @staticmethod
     def cleanup(path: str) -> None:
-        """安全删除文件"""
+        """安全删除文件，不存在或出错时忽略
+
+        Args:
+            path: 文件路径
+        """
         try:
             if path and os.path.exists(path):
                 os.remove(path)
@@ -125,7 +173,18 @@ class FileUtil:
 
     @staticmethod
     def md5(path: str) -> str:
-        """计算文件 MD5"""
+        """计算文件 MD5 哈希值
+
+        Args:
+            path: 文件路径
+
+        Returns:
+            MD5 哈希十六进制字符串
+
+        Raises:
+            FileNotFoundError: 文件不存在
+            IOError: 读取文件失败
+        """
         h = hashlib.md5()
         with open(path, "rb") as f:
             for chunk in iter(lambda: f.read(8192), b""):

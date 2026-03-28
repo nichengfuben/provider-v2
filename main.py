@@ -29,7 +29,7 @@ logger = logging.getLogger("provider")
 _NO_AUTH = frozenset({"/", "/health", "/docs", "/redoc", "/openapi.json"})
 
 
-async def _auth_mw(request: Request, call_next):
+async def _auth_mw(request: Request, call_next) -> JSONResponse:
     """鉴权中间件"""
     cfg = get_config()
     if not cfg.auth.enabled:
@@ -115,7 +115,8 @@ app.include_router(anthropic_router)
 
 
 @app.exception_handler(Exception)
-async def _exc(request: Request, exc: Exception):
+async def _exc(request: Request, exc: Exception) -> JSONResponse:
+    """全局异常处理器"""
     logger.error("未处理异常: %s", exc, exc_info=True)
     return JSONResponse(
         status_code=500,
