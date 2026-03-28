@@ -12,12 +12,12 @@ API 端点: https://image-generation.perchance.org/api/
 
 from __future__ import annotations
 
-import asyncio
 import logging
-import urllib.parse
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 import aiohttp
+
+from src.core.candidate import Candidate, make_id
 
 logger = logging.getLogger(__name__)
 
@@ -33,6 +33,17 @@ DEFAULT_HEIGHT = 768
 DEFAULT_GUIDANCE_SCALE = 7
 DEFAULT_SEED = None  # None 表示随机
 
+# 支持的模型
+MODELS = ["perchance-sdxl"]
+
+# 平台能力
+CAPS = {
+    "chat": False,
+    "image": True,
+    "stream": False,
+    "tools": False,
+}
+
 
 class PerchanceClient:
     """Perchance API 客户端
@@ -47,6 +58,7 @@ class PerchanceClient:
     def __init__(self) -> None:
         """初始化客户端"""
         self._session: Optional[aiohttp.ClientSession] = None
+        self._candidate: Optional[Candidate] = None
 
     async def init(self, session: aiohttp.ClientSession) -> None:
         """初始化客户端
@@ -55,7 +67,26 @@ class PerchanceClient:
             session: aiohttp 客户端会话
         """
         self._session = session
+        
+        # 创建单个候选项
+        self._candidate = Candidate(
+            id=make_id("perchance"),
+            platform="perchance",
+            resource_id="default",
+            models=MODELS,
+            meta={},
+            **CAPS,
+        )
+        
         logger.info("Perchance 客户端初始化完成")
+
+    async def candidates(self) -> List[Candidate]:
+        """返回候选项列表（单个候选项）"""
+        return [self._candidate] if self._candidate else []
+
+    async def ensure_candidates(self, count: int) -> int:
+        """确保候选项数量（Perchance 只有单个候选项）"""
+        return 1 if self._candidate else 0
 
     async def generate_image(
         self,

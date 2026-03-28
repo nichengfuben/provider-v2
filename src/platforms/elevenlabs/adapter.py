@@ -95,12 +95,12 @@ class ElevenLabsAdapter(PlatformAdapter):
         logger.info("ElevenLabs 适配器初始化完成")
 
     async def candidates(self) -> List[Candidate]:
-        """返回可用候选项（TTS 服务不需要候选项）"""
-        return []
+        """返回可用候选项（单个候选项）"""
+        return await self._client.candidates() if self._client else []
 
     async def ensure_candidates(self, count: int) -> int:
-        """确保候选项数量（TTS 服务不需要）"""
-        return 0
+        """确保候选项数量"""
+        return await self._client.ensure_candidates(count) if self._client else 0
 
     async def complete(
         self,

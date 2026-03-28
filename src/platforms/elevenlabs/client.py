@@ -17,6 +17,8 @@ from typing import Any, AsyncGenerator, Dict, List, Optional
 
 import aiohttp
 
+from src.core.candidate import Candidate, make_id
+
 logger = logging.getLogger(__name__)
 
 # API 端点
@@ -36,6 +38,25 @@ DEFAULT_USE_SPEAKER_BOOST = True
 
 # 支持的输出格式
 SUPPORTED_FORMATS = ["mp3", "pcm", "ulaw", "alaw", "ogg", "flac", "wav"]
+
+# 支持的模型
+MODELS = [
+    "eleven_monolingual_v1",
+    "eleven_multilingual_v1",
+    "eleven_multilingual_v2",
+    "eleven_turbo_v2",
+    "eleven_turbo_v2_5",
+]
+
+# 平台能力
+CAPS = {
+    "chat": False,
+    "tts": True,
+    "sound": True,
+    "stream": False,
+    "tools": False,
+    "multi_voice": True,
+}
 
 
 class ElevenLabsClient:
@@ -59,6 +80,7 @@ class ElevenLabsClient:
         self._api_key = api_key
         self._voices: List[Dict[str, Any]] = []
         self._models: List[Dict[str, Any]] = []
+        self._candidate: Optional[Candidate] = None
 
     async def init(self, session: aiohttp.ClientSession) -> None:
         """初始化客户端
@@ -90,6 +112,20 @@ class ElevenLabsClient:
             logger.info("ElevenLabs API Key 未配置，使用默认语音/模型列表")
             self._load_default_voices()
             self._load_default_models()
+
+        # 创建单个候选项
+        self._create_candidate()
+
+    def _create_candidate(self) -> None:
+        """创建单个候选项"""
+        self._candidate = Candidate(
+            id=make_id("elevenlabs"),
+            platform="elevenlabs",
+            resource_id="default",
+            models=MODELS,
+            meta={"api_key": self._api_key or ""},
+            **CAPS,
+        )
 
     def _load_default_voices(self) -> None:
         """加载默认语音列表"""
@@ -156,6 +192,18 @@ class ElevenLabsClient:
         except Exception as e:
             logger.error("获取模型列表失败: %s", e)
             raise
+
+    async def candidates(self) -> List[Candidate]:
+        """返回候选项列表（单个候选项）"""
+        if self._candidate:
+            return [self._candidate]
+        # 如果没有候选项，创建一个
+        self._create_candidate()
+        return [self._candidate] if self._candidate else []
+
+    async def ensure_candidates(self, count: int) -> int:
+        """确保候选项数量（ElevenLabs 只有单个候选项）"""
+        return 1 if self._candidate else 0
 
     @property
     def voices(self) -> List[Dict[str, Any]]:
