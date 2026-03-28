@@ -1,0 +1,94 @@
+"""GLM 平台适配器"""
+
+from __future__ import annotations
+
+import logging
+from typing import Any, AsyncGenerator, Dict, List, Union
+
+import aiohttp
+
+from src.core.candidate import Candidate
+from src.platforms.base import PlatformAdapter
+
+logger = logging.getLogger(__name__)
+
+MODELS = [
+    "glm-5",
+    "glm-4.7",
+    "glm-4.6v",
+    "GLM-4-6-API-V1",
+    "glm-4.5v",
+    "0727-106B-API",
+    "0727-360B-API",
+    "GLM-4.1V-Thinking-FlashX",
+    "deep-research",
+    "zero",
+    "glm-4-flash",
+    "0808-360B-DR",
+    "glm-4-air-250414",
+]
+
+CAPS = {
+    "chat": True,
+    "vision": True,
+    "image_gen": True,
+    "thinking": True,
+    "search": True,
+    "research": True,
+    "tools": True,
+}
+
+
+class GlmAdapter(PlatformAdapter):
+    def __init__(self) -> None:
+        self._client: Any = None
+
+    @property
+    def name(self) -> str:
+        return "glm"
+
+    @property
+    def supported_models(self) -> List[str]:
+        return MODELS
+
+    @property
+    def default_capabilities(self) -> Dict[str, bool]:
+        return CAPS
+
+    async def init(self, session: aiohttp.ClientSession) -> None:
+        from src.platforms.glm.client import GlmClient
+
+        self._client = GlmClient()
+        await self._client.init(session)
+
+    async def candidates(self) -> List[Candidate]:
+        return await self._client.candidates() if self._client else []
+
+    async def ensure_candidates(self, count: int) -> int:
+        return await self._client.ensure_candidates(count) if self._client else 0
+
+    async def complete(
+        self,
+        candidate: Candidate,
+        messages: List[Dict[str, Any]],
+        model: str,
+        stream: bool,
+        *,
+        thinking: bool = False,
+        search: bool = False,
+        **kw: Any,
+    ) -> AsyncGenerator[Union[str, Dict[str, Any]], None]:
+        async for chunk in self._client.complete(
+            candidate,
+            messages,
+            model,
+            stream,
+            thinking=thinking,
+            search=search,
+            **kw,
+        ):
+            yield chunk
+
+    async def close(self) -> None:
+        if self._client:
+            await self._client.close()

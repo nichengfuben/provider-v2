@@ -1,0 +1,83 @@
+# 项目特定文件
+AGENTS.md
+CLAUDE.md
+accounts.py
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# 虚拟环境
+venv/
+ENV/
+env/
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 数据目录
+data/
+persist/
+*.db
+*.sqlite
+.agents/
+
+# 日志文件
+*.log
+logs/
+
+# 操作系统文件
+.DS_Store
+Thumbs.db
+nul
+
+# 环境变量
+.env
+.env.local
+.env.production
+.env.staging
+.env.development
+.env.test
+.env.testing
+
+# 敏感信息
+.json
+config.toml
+*.key
+*.pem
+*.crt
+*.cert
+secret/
+secrets/
+token.json
+tokens.json
+.credentials
+
+# 临时文件
+*.tmp
+*.temp
+tmp/
+temp/

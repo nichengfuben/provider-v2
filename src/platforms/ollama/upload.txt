@@ -1,0 +1,521 @@
+文件内容合并文档
+源目录: E:\我的\python\provider\provider-v2\probider-v2\src\platforms\ollama
+============================================================
+
+# accounts.py
+"""Ollama 配置（服务器来自 config.toml 和在线发现）"""
+
+
+--------------------------------------------------
+
+# adapter.py
+"""Ollama 平台适配器"""
+
+from __future__ import annotations
+
+import logging
+from typing import Any, AsyncGenerator, Dict, List, Union
+
+import aiohttp
+
+from src.core.candidate import Candidate
+from src.platforms.base import PlatformAdapter
+
+logger = logging.getLogger(__name__)
+CAPS = {"chat": True}
+
+
+class OllamaAdapter(PlatformAdapter):
+    def __init__(self) -> None:
+        self._client: Any = None
+
+    @property
+    def name(self) -> str:
+        return "ollama"
+
+    @property
+    def supported_models(self) -> List[str]:
+        return self._client.get_available_models() if self._client else []
+
+    @property
+    def default_capabilities(self) -> Dict[str, bool]:
+        return CAPS
+
+    async def init(self, session: aiohttp.ClientSession) -> None:
+        from src.platforms.ollama.client import OllamaClient
+
+        self._client = OllamaClient()
+        await self._client.init(session)
+
+    async def candidates(self) -> List[Candidate]:
+        return await self._client.candidates() if self._client else []
+
+    async def ensure_candidates(self, count: int) -> int:
+        return await self._client.ensure_candidates(count) if self._client else 0
+
+    async def complete(
+        self,
+        candidate: Candidate,
+        messages: List[Dict[str, Any]],
+        model: str,
+        stream: bool,
+        *,
+        thinking: bool = False,
+        search: bool = False,
+        **kw: Any,
+    ) -> AsyncGenerator[Union[str, Dict[str, Any]], None]:
+        async for chunk in self._client.complete(
+            candidate,
+            messages,
+            model,
+            stream,
+            thinking=thinking,
+            search=search,
+            **kw,
+        ):
+            yield chunk
+
+    async def close(self) -> None:
+        if self._client:
+            await self._client.close()
+
+
+--------------------------------------------------
+
+# client.py
+"""Ollama 客户端"""
+
+from __future__ import annotations
+
+import asyncio
+import json
+import logging
+import time
+from typing import Any, AsyncGenerator, Dict, List, Optional, Union
+
+import aiohttp
+
+from src.core.candidate import Candidate, make_id
+from src.core.config import get_config
+from src.platforms.ollama import util
+
+logger = logging.getLogger(__name__)
+
+
+class OllamaClient:
+    def __init__(self) -> None:
+        self._session: Optional[aiohttp.ClientSession] = None
+        self._servers: Dict[str, Any] = {}
+        self._registry: Dict[str, Any] = {}
+        self._lock = asyncio.Lock()
+
+    async def init(self, session: aiohttp.ClientSession) -> None:
+        self._session = session
+        loop = asyncio.get_running_loop()
+        cfg = get_config()
+        add = cfg.ollama.additional_servers
+        try:
+            self._servers, self._registry = await loop.run_in_executor(
+                None, lambda: util.refresh(force=util.needs_refresh(), additional=add)
+            )
+        except Exception as e:
+            logger.error("Ollama 发现失败: %s", e)
+            try:
+                self._servers, self._registry = await loop.run_in_executor(
+                    None, util.load
+                )
+            except Exception:
+                pass
+        logger.info(
+            "Ollama: %d 服务器, %d 模型", len(self._servers), len(self._registry)
+        )
+        asyncio.create_task(self._bg_refresh())
+
+    async def _bg_refresh(self) -> None:
+        while True:
+            await asyncio.sleep(86400)
+            try:
+                loop = asyncio.get_running_loop()
+                cfg = get_config()
+                s, r = await loop.run_in_executor(
+                    None,
+                    lambda: util.refresh(
+                        force=True, additional=cfg.ollama.additional_servers
+                    ),
+                )
+                async with self._lock:
+                    self._servers, self._registry = s, r
+                logger.info("Ollama 刷新: %d 服务器", len(s))
+            except Exception as e:
+                logger.warning("Ollama 刷新失败: %s", e)
+
+    def get_available_models(self) -> List[str]:
+        return list(self._registry.keys())
+
+    async def candidates(self) -> List[Candidate]:
+        out: List[Candidate] = []
+        async with self._lock:
+            for ip, srv in self._servers.items():
+                models = srv.get("model_names", [])
+                if not models:
+                    continue
+                caps: Dict[str, bool] = {"chat": True}
+                for m in srv.get("models", []):
+                    for k, v in m.get("capabilities", {}).items():
+                        if v:
+                            caps[k] = True
+                out.append(
+                    Candidate(
+                        id=make_id("ollama"),
+                        platform="ollama",
+                        resource_id=ip,
+                        models=models,
+                        meta={"ip": ip, "base_url": srv["base_url"]},
+                        **caps,
+                    )
+                )
+        return out
+
+    async def ensure_candidates(self, count: int) -> int:
+        return len(self._servers)
+
+    async def complete(
+        self,
+        candidate: Candidate,
+        messages: List[Dict],
+        model: str,
+        stream: bool,
+        *,
+        thinking: bool = False,
+        search: bool = False,
+        **kw: Any,
+    ) -> AsyncGenerator[Union[str, Dict[str, Any]], None]:
+        base = candidate.meta["base_url"]
+        prompt = messages[-1].get("content", "") if messages else ""
+        if isinstance(prompt, list):
+            prompt = "\n".join(p.get("text", "") for p in prompt if isinstance(p, dict))
+        msg: Dict[str, Any] = {"role": "user", "content": prompt}
+        if messages:
+            last = messages[-1]
+            if isinstance(last.get("content"), list):
+                for part in last["content"]:
+                    if isinstance(part, dict) and part.get("type") == "image_url":
+                        url = part.get("image_url", {}).get("url", "")
+                        if url.startswith("data:") and ";base64," in url:
+                            msg.setdefault("images", []).append(
+                                url.split(";base64,", 1)[1]
+                            )
+        payload: Dict[str, Any] = {"model": model, "messages": [msg], "stream": stream}
+        opts: Dict[str, Any] = {}
+        if kw.get("temperature") is not None:
+            opts["temperature"] = kw["temperature"]
+        if kw.get("top_p") is not None:
+            opts["top_p"] = kw["top_p"]
+        if kw.get("max_tokens") is not None:
+            opts["num_predict"] = kw["max_tokens"]
+        if kw.get("stop"):
+            opts["stop"] = kw["stop"]
+        if opts:
+            payload["options"] = opts
+        async with self._session.post(
+            f"{base}/api/chat",
+            json=payload,
+            timeout=aiohttp.ClientTimeout(total=600),
+        ) as resp:
+            if resp.status != 200:
+                raise Exception(f"Ollama HTTP {resp.status}: {await resp.text()}")
+            if not stream:
+                data = await resp.json()
+                if "error" in data:
+                    raise Exception(data["error"])
+                content = data.get("message", {}).get("content", "")
+                if content:
+                    yield content
+                u: Dict[str, int] = {}
+                if "prompt_eval_count" in data:
+                    u["prompt_tokens"] = data["prompt_eval_count"]
+                if "eval_count" in data:
+                    u["completion_tokens"] = data["eval_count"]
+                if u:
+                    yield {"usage": u}
+            else:
+                buf = b""
+                async for chunk in resp.content.iter_any():
+                    if not chunk:
+                        continue
+                    buf += chunk
+                    lines = buf.split(b"\n")
+                    buf = lines[-1]
+                    for line in lines[:-1]:
+                        if not line.strip():
+                            continue
+                        try:
+                            data = json.loads(line)
+                        except json.JSONDecodeError:
+                            continue
+                        if "error" in data:
+                            raise Exception(data["error"])
+                        c = data.get("message", {}).get("content", "")
+                        if c:
+                            yield c
+                        if data.get("done"):
+                            u = {}
+                            if "prompt_eval_count" in data:
+                                u["prompt_tokens"] = data["prompt_eval_count"]
+                            if "eval_count" in data:
+                                u["completion_tokens"] = data["eval_count"]
+                            if u:
+                                yield {"usage": u}
+                            return
+                if buf.strip():
+                    try:
+                        data = json.loads(buf)
+                        c = data.get("message", {}).get("content", "")
+                        if c:
+                            yield c
+                    except json.JSONDecodeError:
+                        pass
+
+    async def close(self) -> None:
+        pass
+
+
+--------------------------------------------------
+
+# util.py
+"""Ollama 服务器发现（同步，需 run_in_executor）"""
+
+from __future__ import annotations
+
+import concurrent.futures
+import json
+import logging
+import os
+import re
+import time
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple
+
+import requests
+from bs4 import BeautifulSoup
+
+logger = logging.getLogger(__name__)
+BASE_URL = "https://freeollama.oneplus1.top/"
+PAGE_SIZE = 100
+TIMEOUT = 10
+MAX_WORKERS = 512
+REFRESH_INTERVAL = 86400
+SRV_FILE = Path("persist/ollama/servers.json")
+REG_FILE = Path("persist/ollama/registry.json")
+
+
+def _fetch_page(page: int) -> Optional[str]:
+    try:
+        r = requests.get(
+            f"{BASE_URL}?page={page}&page_size={PAGE_SIZE}", timeout=TIMEOUT
+        )
+        return r.text if r.ok else None
+    except Exception:
+        return None
+
+
+def _parse_pages(html: str) -> int:
+    soup = BeautifulSoup(html, "html.parser")
+    pag = soup.find("ul", class_="pagination")
+    if not pag:
+        return 1
+    mx = 1
+    for a in pag.find_all("a", class_="page-link"):
+        m = re.search(r"page=(\d+)", a.get("href", ""))
+        if m:
+            mx = max(mx, int(m.group(1)))
+    return mx
+
+
+def _parse_ips(html: str) -> List[str]:
+    soup = BeautifulSoup(html, "html.parser")
+    ips = []
+    for btn in soup.find_all("button", onclick=True):
+        m = re.search(r"copyToClipboard\('([^']+)'\)", btn.get("onclick", ""))
+        if m:
+            ips.append(m.group(1))
+    return ips
+
+
+def _show(base: str, name: str) -> Optional[Dict]:
+    try:
+        r = requests.post(f"{base}/api/show", json={"name": name}, timeout=TIMEOUT)
+        return r.json() if r.ok else None
+    except Exception:
+        return None
+
+
+def _detect_caps(detail: Optional[Dict]) -> Dict[str, bool]:
+    caps = {"chat": True, "vision": False, "embedding": False, "tools": False}
+    if not detail:
+        return caps
+    mi = detail.get("model_info", {})
+    for k in mi:
+        kl = k.lower()
+        if any(x in kl for x in ("vision", "projector", "mmproj", "clip")):
+            caps["vision"] = True
+            break
+    tpl = detail.get("template", "")
+    if "tools" in tpl.lower() or ".Tools" in tpl:
+        caps["tools"] = True
+    det = detail.get("details", {})
+    for fam in det.get("families", []):
+        if any(x in fam.lower() for x in ("clip", "vision")):
+            caps["vision"] = True
+    if "embedding" in detail.get("parameters", "").lower():
+        caps["embedding"] = True
+    return caps
+
+
+def _verify(ip: str) -> Optional[Dict]:
+    base = f"http://{ip}"
+    try:
+        r = requests.get(base, timeout=TIMEOUT)
+        if "ollama" not in r.text.lower():
+            return None
+    except Exception:
+        return None
+    try:
+        r = requests.get(f"{base}/api/tags", timeout=TIMEOUT)
+        models = r.json().get("models", [])
+        if not models:
+            return None
+    except Exception:
+        return None
+    infos = []
+    for m in models:
+        name = m.get("name", "")
+        if not name:
+            continue
+        d = _show(base, name)
+        infos.append(
+            {
+                "name": name,
+                "size": m.get("size", 0),
+                "capabilities": _detect_caps(d),
+                "family": m.get("details", {}).get("family", ""),
+                "parameter_size": m.get("details", {}).get("parameter_size", ""),
+            }
+        )
+    return {
+        "ip": ip,
+        "base_url": base,
+        "models": infos,
+        "model_names": [m["name"] for m in infos],
+        "verified_at": time.time(),
+    }
+
+
+def collect_servers(additional: Optional[List[str]] = None) -> Dict[str, Any]:
+    html = _fetch_page(1)
+    if not html:
+        return {}
+    pages = _parse_pages(html)
+    all_ips = _parse_ips(html)
+    with concurrent.futures.ThreadPoolExecutor(max_workers=20) as ex:
+        futs = {ex.submit(_fetch_page, p): p for p in range(2, pages + 1)}
+        for f in concurrent.futures.as_completed(futs):
+            r = f.result()
+            if r:
+                all_ips.extend(_parse_ips(r))
+    all_ips = list(set(all_ips))
+    if additional:
+        all_ips.extend([s for s in additional if s not in all_ips])
+    result: Dict[str, Any] = {}
+    with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as ex:
+        futs = {ex.submit(_verify, ip): ip for ip in all_ips}
+        for f in concurrent.futures.as_completed(futs):
+            try:
+                info = f.result()
+                if info:
+                    result[info["ip"]] = info
+            except Exception:
+                pass
+    return result
+
+
+def build_registry(servers: Dict[str, Any]) -> Dict[str, Any]:
+    reg: Dict[str, Any] = {}
+    for ip, srv in servers.items():
+        for m in srv.get("models", []):
+            name = m.get("name", "")
+            if not name:
+                continue
+            if name not in reg:
+                reg[name] = {
+                    "servers": [],
+                    "capabilities": m.get("capabilities", {"chat": True}),
+                    "family": m.get("family", ""),
+                }
+            reg[name]["servers"].append({"ip": ip, "base_url": srv["base_url"]})
+            for k, v in m.get("capabilities", {}).items():
+                if v:
+                    reg[name]["capabilities"][k] = True
+    return reg
+
+
+def save(servers: Dict, registry: Dict) -> None:
+    for f in (SRV_FILE, REG_FILE):
+        f.parent.mkdir(parents=True, exist_ok=True)
+    tmp = str(SRV_FILE) + ".tmp"
+    with open(tmp, "w") as f:
+        json.dump({"servers": servers, "last_refresh": time.time()}, f, indent=2)
+    os.replace(tmp, str(SRV_FILE))
+    tmp = str(REG_FILE) + ".tmp"
+    with open(tmp, "w") as f:
+        json.dump({"models": registry, "last_refresh": time.time()}, f, indent=2)
+    os.replace(tmp, str(REG_FILE))
+
+
+def load() -> Tuple[Dict, Dict]:
+    srv: Dict = {}
+    reg: Dict = {}
+    if SRV_FILE.exists():
+        try:
+            srv = json.loads(SRV_FILE.read_text()).get("servers", {})
+        except Exception:
+            pass
+    if REG_FILE.exists():
+        try:
+            reg = json.loads(REG_FILE.read_text()).get("models", {})
+        except Exception:
+            pass
+    return srv, reg
+
+
+def needs_refresh() -> bool:
+    if not SRV_FILE.exists():
+        return True
+    try:
+        d = json.loads(SRV_FILE.read_text())
+        return time.time() - d.get("last_refresh", 0) >= REFRESH_INTERVAL
+    except Exception:
+        return True
+
+
+def refresh(
+    force: bool = False, additional: Optional[List[str]] = None
+) -> Tuple[Dict, Dict]:
+    if not force and not needs_refresh():
+        return load()
+    servers = collect_servers(additional or [])
+    registry = build_registry(servers)
+    save(servers, registry)
+    return servers, registry
+
+
+--------------------------------------------------
+
+# __init__.py
+from src.platforms.ollama.adapter import OllamaAdapter
+
+__all__ = ["OllamaAdapter"]
+
+
+--------------------------------------------------
+
