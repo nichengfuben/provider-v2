@@ -53,10 +53,7 @@ SUPPORTED_LANGUAGES = [
 # 平台能力
 CAPS = {
     "chat": True,
-    "stream": True,
-    "tools": False,
-    "web_search": True,
-    "translation": True,
+    "search": True,
 }
 
 

@@ -32,8 +32,6 @@ DEFAULT_MODEL = "xai/grok-4.1-fast-reasoning"
 # 平台能力
 CAPS = {
     "chat": True,
-    "stream": True,
-    "tools": False,
 }
 
 

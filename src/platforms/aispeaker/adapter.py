@@ -42,9 +42,6 @@ SPEAKERS = [
 CAPS = {
     "chat": False,
     "tts": True,
-    "stream": False,
-    "tools": False,
-    "multi_voice": True,
 }
 
 

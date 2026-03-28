@@ -35,9 +35,7 @@ MODELS = [
 # 平台能力
 CAPS = {
     "chat": False,
-    "image": True,
-    "stream": False,
-    "tools": False,
+    "image_gen": True,
 }
 
 

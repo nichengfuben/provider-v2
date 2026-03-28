@@ -48,10 +48,7 @@ FORMATS = ["mp3", "pcm", "ulaw", "alaw", "ogg", "flac", "wav"]
 CAPS = {
     "chat": False,
     "tts": True,
-    "sound": True,
-    "stream": False,
-    "tools": False,
-    "multi_voice": True,
+    "audio_gen": True,
 }
 
 

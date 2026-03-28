@@ -23,9 +23,7 @@ MODELS = ["z-image-turbo", "z-image-turbo-anime"]
 
 CAPS = {
     "chat": False,
-    "image": True,
-    "stream": False,
-    "tools": False,
+    "image_gen": True,
 }
 
 

@@ -23,10 +23,7 @@ MODELS = ["pixpark-ai"]
 
 CAPS = {
     "chat": False,
-    "image": True,
-    "image_to_image": True,
-    "stream": False,
-    "tools": False,
+    "image_gen": True,
 }
 
 

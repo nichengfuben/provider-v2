@@ -21,9 +21,7 @@ MODELS = ["skyfortress-sdxl"]
 
 CAPS = {
     "chat": False,
-    "image": True,
-    "stream": False,
-    "tools": False,
+    "image_gen": True,
 }
 
 

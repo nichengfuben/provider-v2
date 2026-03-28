@@ -23,10 +23,7 @@ MODELS = ["aiimagetoimage-default"]
 
 CAPS = {
     "chat": False,
-    "image": True,
-    "image_to_image": True,
-    "stream": False,
-    "tools": False,
+    "image_gen": True,
 }
 
 

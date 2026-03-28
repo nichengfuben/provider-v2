@@ -1,0 +1,1 @@
+!function(){try{window.RADAR_MONITOR_EXCEPTION=RADAR_MONITOR.use("exception",{isOpenHttpServer:!0,whiteUrls:[]})}catch(e){console.error(`use exception error`,e)}}();

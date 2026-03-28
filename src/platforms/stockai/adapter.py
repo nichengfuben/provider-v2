@@ -39,10 +39,7 @@ DEFAULT_MODEL = "xiaomi/mimo-v2-pro"
 # 平台能力
 CAPS = {
     "chat": True,
-    "stream": True,
-    "tools": False,
-    "web_search": True,
-    "translation": True,
+    "search": True,
 }
 
 

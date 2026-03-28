@@ -1,0 +1,59 @@
+{
+  "id": "/chat",
+  "theme_color": "#011019",
+  "background_color": "#011019",
+  "display": "standalone",
+  "scope": "/",
+  "start_url": "/chat",
+  "name": "Venice.ai",
+  "short_name": "Venice",
+  "icons": [
+    {
+      "src": "/images/icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "/images/icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    },
+    {
+      "src": "/images/icon-192-maskable.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/images/icon-512-maskable.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "maskable"
+    }
+  ],
+  "description": "Click install to get Venice as an app on your phone.",
+  "screenshots": [
+    {
+      "src": "/images/screenshots/android_llm.png",
+      "sizes": "1235x2646",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Text Chat"
+    },
+    {
+      "src": "/images/screenshots/android_img.png",
+      "sizes": "1235x2646",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Image Generation"
+    }
+  ],
+  "prefer_related_applications": true,
+  "related_applications": [
+    {
+      "platform": "play",
+      "id": "com.ai.venice",
+      "url": "https://play.google.com/store/apps/details?id=com.ai.venice"
+    }
+  ]
+}

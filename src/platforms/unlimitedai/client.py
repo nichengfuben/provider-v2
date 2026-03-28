@@ -36,9 +36,6 @@ DEFAULT_MODEL = "chat-model-reasoning"
 # 平台能力
 CAPS = {
     "chat": True,
-    "stream": True,
-    "tools": False,
-    "unrestricted": True,
 }
 
 

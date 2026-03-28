@@ -1,0 +1,42 @@
+{
+  "name": "VisualGPT",
+  "short_name": "VisualGPT",
+  "description": "Free AI Image Generator, Editor & Design Online – VisualGPT",
+  "theme_color": "#74b425",
+  "background_color": "#ffffff",
+  "display": "standalone",
+  "orientation": "portrait",
+  "scope": "/",
+  "start_url": "/",
+  "icons": [
+    {
+      "src": "/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["productivity", "design", "ai"],
+  "lang": "en",
+  "dir": "ltr",
+  "shortcuts": [
+    {
+      "name": "Nano Banana",
+      "short_name": "Nano Banana",
+      "description": "Experience Fast and Smart AI Image Editing and Generation, All in One Compact Nano Banana.",
+      "url": "/ai-models/nano-banana",
+      "icons": [
+        {
+          "src": "/icon-192x192.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ]
+}

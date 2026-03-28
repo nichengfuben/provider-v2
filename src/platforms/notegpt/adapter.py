@@ -22,9 +22,7 @@ MODELS = ["notegpt-image"]
 
 CAPS = {
     "chat": False,
-    "image": True,
-    "stream": False,
-    "tools": False,
+    "image_gen": True,
 }
 
 
