@@ -202,12 +202,17 @@ def _clean(content: str) -> str:
 async def _sgen(request: ChatReq, req: Request) -> AsyncGenerator[str, None]:
     cid, ct, mdl = _cid(), int(time.time()), request.model
     ex = _get_extra(request)
-    yield (
-        f"data: {json.dumps({'id': cid, 'object': 'chat.completion.chunk', "
-        f"'created': ct, 'model': mdl, 'choices': [{{'index': 0, "
-        f"'delta': {{'role': 'assistant'}}, 'finish_reason': None}}]}, "
-        f"ensure_ascii=False)}\n\n"
-    )
+    
+    # 构建初始 chunk 数据
+    start_data = {
+        'id': cid,
+        'object': 'chat.completion.chunk',
+        'created': ct,
+        'model': mdl,
+        'choices': [{'index': 0, 'delta': {'role': 'assistant'}, 'finish_reason': None}]
+    }
+    yield f"data: {json.dumps(start_data, ensure_ascii=False)}\n\n"
+    
     ctok = 0
     has_tc = False
     usage_d: Optional[Dict] = None
@@ -234,48 +239,53 @@ async def _sgen(request: ChatReq, req: Request) -> AsyncGenerator[str, None]:
                 if "<function=" in acc and _FE_TAG in acc:
                     has_tc = True
                     continue
-                yield (
-                    f"data: {json.dumps({'id': cid, "
-                    f"'object': 'chat.completion.chunk', 'created': ct, "
-                    f"'model': mdl, 'choices': [{{'index': 0, "
-                    f"'delta': {{'content': ch}}, "
-                    f"'finish_reason': None}}]}, ensure_ascii=False)}\n\n"
-                )
+                chunk_data = {
+                    'id': cid,
+                    'object': 'chat.completion.chunk',
+                    'created': ct,
+                    'model': mdl,
+                    'choices': [{'index': 0, 'delta': {'content': ch}, 'finish_reason': None}]
+                }
+                yield f"data: {json.dumps(chunk_data, ensure_ascii=False)}\n\n"
             elif isinstance(ch, dict):
                 if "thinking" in ch:
-                    yield (
-                        f"data: {json.dumps({'id': cid, "
-                        f"'object': 'chat.completion.chunk', 'created': ct, "
-                        f"'model': mdl, 'choices': [{{'index': 0, "
-                        f"'delta': {{'reasoning_content': ch['thinking']}}, "
-                        f"'finish_reason': None}}]}, ensure_ascii=False)}\n\n"
-                    )
+                    thinking_data = {
+                        'id': cid,
+                        'object': 'chat.completion.chunk',
+                        'created': ct,
+                        'model': mdl,
+                        'choices': [{'index': 0, 'delta': {'reasoning_content': ch['thinking']}, 'finish_reason': None}]
+                    }
+                    yield f"data: {json.dumps(thinking_data, ensure_ascii=False)}\n\n"
                 elif "tool_calls" in ch:
                     has_tc = True
                 elif "usage" in ch:
                     usage_d = ch["usage"]
     except Exception as e:
         logger.error("流式错误: %s", e, exc_info=True)
-        yield (
-            f"data: {json.dumps({'error': {'message': str(e), "
-            f"'type': 'server_error'}}, ensure_ascii=False)}\n\n"
-        )
+        error_data = {'error': {'message': str(e), 'type': 'server_error'}}
+        yield f"data: {json.dumps(error_data, ensure_ascii=False)}\n\n"
+    
     fr = "tool_calls" if has_tc else "stop"
     u = usage_d or {
         "prompt_tokens": 0,
         "completion_tokens": ctok,
         "total_tokens": ctok,
     }
-    yield (
-        f"data: {json.dumps({'id': cid, 'object': 'chat.completion.chunk', "
-        f"'created': ct, 'model': mdl, 'choices': [{{'index': 0, "
-        f"'delta': {{}}, 'finish_reason': fr}}], 'usage': u}, "
-        f"ensure_ascii=False)}\n\n"
-    )
+    
+    finish_data = {
+        'id': cid,
+        'object': 'chat.completion.chunk',
+        'created': ct,
+        'model': mdl,
+        'choices': [{'index': 0, 'delta': {}, 'finish_reason': fr}],
+        'usage': u
+    }
+    yield f"data: {json.dumps(finish_data, ensure_ascii=False)}\n\n"
     yield "data: [DONE]\n\n"
 
 
-@router.post("/v1/chat/completions")
+@router.post("/v1/chat/completions", response_model=None)
 async def chat_completions(req: Request) -> Union[JSONResponse, StreamingResponse]:
     """OpenAI Chat Completions 端点"""
     try:
@@ -377,7 +387,7 @@ async def chat_completions(req: Request) -> Union[JSONResponse, StreamingRespons
 # ===================================================================
 
 
-@router.post("/v1/embeddings")
+@router.post("/v1/embeddings", response_model=None)
 async def embeddings(req: Request) -> JSONResponse:
     """OpenAI Embeddings 端点"""
     try:
@@ -412,7 +422,7 @@ async def embeddings(req: Request) -> JSONResponse:
 # ===================================================================
 
 
-@router.post("/v1/images/generations")
+@router.post("/v1/images/generations", response_model=None)
 async def images_generations(req: Request) -> JSONResponse:
     """OpenAI Images Generation 端点"""
     try:
@@ -452,7 +462,7 @@ async def images_generations(req: Request) -> JSONResponse:
 # ===================================================================
 
 
-@router.post("/v1/audio/speech")
+@router.post("/v1/audio/speech", response_model=None)
 async def audio_speech(req: Request) -> Union[Response, JSONResponse]:
     """OpenAI TTS 端点"""
     try:
@@ -512,7 +522,7 @@ async def audio_speech(req: Request) -> Union[Response, JSONResponse]:
 # ===================================================================
 
 
-@router.post("/v1/audio/transcriptions")
+@router.post("/v1/audio/transcriptions", response_model=None)
 async def audio_transcriptions(
     req: Request,
     file: UploadFile = File(...),
@@ -551,7 +561,7 @@ async def audio_transcriptions(
 # ===================================================================
 
 
-@router.post("/v1/moderations")
+@router.post("/v1/moderations", response_model=None)
 async def moderations(req: Request) -> JSONResponse:
     """OpenAI Moderations 端点"""
     try:
