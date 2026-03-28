@@ -1,1 +1,0 @@
-import{t as require_lottie}from"./lottie-web-kTnjMVSG.js";export default require_lottie();

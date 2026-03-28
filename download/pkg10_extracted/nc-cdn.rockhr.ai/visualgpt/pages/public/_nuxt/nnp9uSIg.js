@@ -1,1 +1,0 @@
-var R=(e=>(e.AI_EDITOR="ai-editor",e.AI_ENHANCER="ai-enhancer",e.BG_REMOVER="bg-remover",e.TEXT_REMOVER="text-remover",e.WATERMARK_REMOVER="watermark-remover",e.CROP="crop",e.MAGIC_ERASER="magic-eraser",e.AI_EXTENDER="ai-extender",e.IMAGE_TO_IMAGE="image-to-image",e))(R||{});export{R as E};

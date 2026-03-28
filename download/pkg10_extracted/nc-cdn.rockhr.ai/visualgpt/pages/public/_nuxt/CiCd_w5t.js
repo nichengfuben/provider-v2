@@ -1,1 +1,0 @@
-import{P as r,C as c,D as s}from"./CkFu2YeS.js";function a(e){return r("/api/v1/credits/subscribe/make",e,{headers:{"content-type":c.JSON}})}function n(e={}){return s("/api/v1/credits/subscribe/cancel",e,{headers:{"content-type":c.JSON}})}export{n as c,a as m};

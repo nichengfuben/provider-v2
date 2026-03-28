@@ -1,1 +1,0 @@
-import{j as t}from"./D-pBgz0-.js";import{bQ as a,x as n,y as r,z as o,C as _}from"./BsKUNWyi.js";const c={};function i(e,m){const s=t;return r(),n(s,{weight:"medium",size:"md",class:"h-14 w-full flex items-center shrink-0 px-4"},{default:o(()=>[_(e.$slots,"default")]),_:3})}const l=Object.assign(a(c,[["render",i]]),{__name:"TairoSidebarSubsidebarHeader"});export{l as _};

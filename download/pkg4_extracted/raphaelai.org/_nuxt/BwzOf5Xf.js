@@ -1,1 +1,0 @@
-import{g as s}from"./CPRu4AjZ.js";import"./DJan5l7g.js";import{u as t}from"./CUEwal-0.js";function u(e){const r=e.useSession();return s(()=>r.value.data?.user??null)}function i(){return u(t())}export{i as u};
