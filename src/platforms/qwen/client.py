@@ -1641,15 +1641,19 @@ class QwenClient:
         if not token:
             raise Exception("Qwen: 候选项缺少 token")
 
-        # 思考模式配置
+        # 思考模式配置（抓包对照）
         if thinking:
+            # Thinking 模式
             thinking_enabled = True
             auto_thinking = False
             thinking_mode = "Thinking"
+            thinking_format = "summary"
         else:
-            thinking_enabled = True
-            auto_thinking = True
-            thinking_mode = "Auto"
+            # Fast 模式（默认不思考）
+            thinking_enabled = False
+            auto_thinking = False
+            thinking_mode = "Fast"
+            thinking_format = "summary"
 
         # 预处理文件上传
         file_objects: List[Dict[str, Any]] = []
@@ -1677,6 +1681,7 @@ class QwenClient:
                 thinking_enabled=thinking_enabled,
                 auto_thinking=auto_thinking,
                 thinking_mode=thinking_mode,
+                thinking_format=thinking_format,
                 auto_search=search,
                 stream=True,
             )
