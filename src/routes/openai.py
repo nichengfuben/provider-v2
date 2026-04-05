@@ -14,6 +14,7 @@ from typing import Any, AsyncIterator, Dict, List, Optional, Tuple, Union
 import aiohttp.web
 
 from src.core.errors import NoCandidateError, NotSupportedError, ProviderError
+from src.core.server import REGISTRY_KEY
 from src.core.tools import normalize_content
 
 __all__ = ["setup_routes"]
@@ -247,6 +248,18 @@ async def _get_json(
         return None
 
 
+def _get_registry(request: aiohttp.web.Request) -> Any:
+    """从 app 取 registry，兼容 AppKey 与字符串 key。"""
+    return request.app.get(REGISTRY_KEY) or request.app.get("registry")
+
+
+def _require_registry(request: aiohttp.web.Request) -> Any:
+    reg = _get_registry(request)
+    if reg is None:
+        raise RuntimeError("registry is not initialized")
+    return reg
+
+
 def _build_dispatch_kwargs(
     body: Dict[str, Any],
     messages: List[Dict[str, Any]],
@@ -447,7 +460,7 @@ async def _stream_chat(
 
     try:
         async for ch in gateway.dispatch(
-            **_build_dispatch_kwargs(body, messages, True, request.app["registry"])
+            **_build_dispatch_kwargs(body, messages, True, _require_registry(request))
         ):
             if isinstance(ch, str):
                 completion_tokens += 1
@@ -697,7 +710,7 @@ async def chat_completions(
 
     try:
         content, thinking_parts, tool_calls, usage_d = await _collect_chat(
-            body, messages, request.app["registry"]
+            body, messages, _require_registry(request)
         )
     except NoCandidateError as exc:
         return _err(503, str(exc), "no_candidate", "service_unavailable")
@@ -825,7 +838,7 @@ async def list_models(
     Returns:
         响应对象。
     """
-    registry = request.app["registry"]
+    registry = _require_registry(request)
     ct = int(time.time())
     models: List[Dict[str, Any]] = []
 
@@ -969,7 +982,7 @@ async def _stream_response(
     try:
         async for ch in gateway.dispatch(
             **_build_dispatch_kwargs(
-                chat_body, messages, True, request.app["registry"]
+                chat_body, messages, True, _require_registry(request)
             )
         ):
             if isinstance(ch, str):
@@ -1204,7 +1217,7 @@ async def create_response(
 
     try:
         content, thinking_parts, tool_calls, usage_d = await _collect_chat(
-            chat_body, messages, request.app["registry"]
+            chat_body, messages, _require_registry(request)
         )
     except NoCandidateError as exc:
         return _err(503, str(exc), "no_candidate")
@@ -1284,7 +1297,7 @@ async def create_embeddings(
     if body is None:
         return _err(400, "Invalid JSON", "invalid_json")
 
-    registry = request.app["registry"]
+    registry = _require_registry(request)
     cand = await registry.get_capable_candidate("embedding")
     if cand is None:
         return _err(
@@ -1327,7 +1340,7 @@ async def create_image(
     if body is None:
         return _err(400, "Invalid JSON", "invalid_json")
 
-    registry = request.app["registry"]
+    registry = _require_registry(request)
     cand = await registry.get_capable_candidate("image_gen")
     if cand is None:
         return _err(
@@ -1361,7 +1374,7 @@ async def edit_image(
     Returns:
         响应对象。
     """
-    registry = request.app["registry"]
+    registry = _require_registry(request)
     cand = await registry.get_capable_candidate("image_edit")
     if cand is None:
         return _err(
@@ -1401,7 +1414,7 @@ async def create_image_variation(
     Returns:
         响应对象。
     """
-    registry = request.app["registry"]
+    registry = _require_registry(request)
     cand = await registry.get_capable_candidate("image_variation")
     if cand is None:
         return _err(
@@ -1447,7 +1460,7 @@ async def create_speech(
     if body is None:
         return _err(400, "Invalid JSON", "invalid_json")
 
-    registry = request.app["registry"]
+    registry = _require_registry(request)
     cand = await registry.get_capable_candidate("audio_gen")
     if cand is None:
         return _err(
@@ -1493,7 +1506,7 @@ async def create_transcription(
     Returns:
         响应对象。
     """
-    registry = request.app["registry"]
+    registry = _require_registry(request)
     cand = await registry.get_capable_candidate("audio_transcription")
     if cand is None:
         return _err(
@@ -1530,7 +1543,7 @@ async def create_audio_translation(
     Returns:
         响应对象。
     """
-    registry = request.app["registry"]
+    registry = _require_registry(request)
     cand = await registry.get_capable_candidate("audio_translation")
     if cand is None:
         return _err(
@@ -1576,7 +1589,7 @@ async def create_video(
     if body is None:
         return _err(400, "Invalid JSON", "invalid_json")
 
-    registry = request.app["registry"]
+    registry = _require_registry(request)
     cand = await registry.get_capable_candidate("video_gen")
     if cand is None:
         return _err(
@@ -1619,7 +1632,7 @@ async def create_moderation(
     if body is None:
         return _err(400, "Invalid JSON", "invalid_json")
 
-    registry = request.app["registry"]
+    registry = _require_registry(request)
     cand = await registry.get_capable_candidate("moderation")
     if cand is None:
         # 无专用审核平台时使用基类默认实现（返回通过结果）
@@ -1690,7 +1703,7 @@ async def create_rerank(
     if body is None:
         return _err(400, "Invalid JSON", "invalid_json")
 
-    registry = request.app["registry"]
+    registry = _require_registry(request)
     cand = await registry.get_capable_candidate("rerank")
     if cand is None:
         # 无专用重排序平台时使用基类默认实现（按原顺序返回）
