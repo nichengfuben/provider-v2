@@ -476,6 +476,8 @@ async def _stream_chat(
     tool_calls_data: List[Dict[str, Any]] = []
     usage_d: Optional[Dict[str, Any]] = None
     completion_tokens = 0
+    thinking_started = False
+    thinking_closed = False
 
     try:
         async for ch in gateway.dispatch(
@@ -536,16 +538,27 @@ async def _stream_chat(
             elif isinstance(ch, dict):
                 if "thinking" in ch:
                     rc = ch["thinking"]
-                    wrapped = "<think>\n{}\n</think>\n".format(rc)
-                    await _write_chunk(
-                        resp,
-                        _make_chunk(
-                            cid,
-                            ct,
-                            mdl,
-                            {"reasoning_content": wrapped},
-                        ),
-                    )
+                    if not thinking_started:
+                        thinking_started = True
+                        await _write_chunk(
+                            resp,
+                            _make_chunk(
+                                cid,
+                                ct,
+                                mdl,
+                                {"reasoning_content": "<think>\n{}".format(rc)},
+                            ),
+                        )
+                    else:
+                        await _write_chunk(
+                            resp,
+                            _make_chunk(
+                                cid,
+                                ct,
+                                mdl,
+                                {"reasoning_content": rc},
+                            ),
+                        )
                 elif "tool_calls" in ch:
                     tool_calls_data = ch["tool_calls"]
                     has_tc = True
@@ -585,6 +598,18 @@ async def _stream_chat(
 
     if in_fncall and fncall_buffer and not tool_calls_data:
         tool_calls_data = _parse_fncall_xml(fncall_buffer)
+
+    if thinking_started and not thinking_closed:
+        thinking_closed = True
+        await _write_chunk(
+            resp,
+            _make_chunk(
+                cid,
+                ct,
+                mdl,
+                {"reasoning_content": "</think>\n"},
+            ),
+        )
 
     if tool_calls_data:
         has_tc = True
