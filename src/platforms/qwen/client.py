@@ -1765,6 +1765,9 @@ class QwenClient:
                                     "summary_thought", {}
                                 ).get("content", [])
                                 count = max(len(titles), len(thoughts))
+                                if count > 0 and not think_opened:
+                                    think_opened = True
+                                    yield "<think>\n"
                                 for i in range(emitted_count, count):
                                     t = (
                                         titles[i]
@@ -1776,13 +1779,13 @@ class QwenClient:
                                         if i < len(thoughts)
                                         else ""
                                     )
-                                    if t or th:
-                                        yield {
-                                            "thinking": "[{}] {}".format(
-                                                t, th
-                                            )
-                                        }
+                                    yield (
+                                        f'<reasoning title="{t}">\n{th}\n</reasoning>\n'
+                                    )
                                 emitted_count = count
+                            elif status == "finished" and think_opened and not think_closed:
+                                think_closed = True
+                                yield "</think>\n"
 
                         elif evt_type == "image_gen_tool":
                             # 图片生成工具结果：下载并 yield 本地路径
@@ -1829,6 +1832,9 @@ class QwenClient:
                         # 附带 usage
                         if "usage" in event and evt_type != "usage":
                             yield {"usage": event["usage"]}
+
+                if think_opened and not think_closed:
+                    yield "</think>\n"
 
                 # TTS 合成（可选）
                 if tts and response_id:
