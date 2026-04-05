@@ -14,6 +14,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 import aiohttp.web
 
 from src.core.errors import NoCandidateError, ProviderError
+from src.core.server import REGISTRY_KEY
 from src.core.tools import normalize_content
 
 __all__ = ["setup_routes"]
@@ -240,6 +241,17 @@ def _tool_result_content_to_str(tool_content: Any) -> str:
 # ═══════════════════════════════════════════════════════════════════════════
 # 消息格式转换
 # ═══════════════════════════════════════════════════════════════════════════
+
+
+def _get_registry(request: aiohttp.web.Request) -> Any:
+    return request.app.get(REGISTRY_KEY) or request.app.get("registry")
+
+
+def _require_registry(request: aiohttp.web.Request) -> Any:
+    reg = _get_registry(request)
+    if reg is None:
+        raise RuntimeError("registry is not initialized")
+    return reg
 
 
 def _anth_messages_to_openai(
@@ -871,7 +883,7 @@ async def _stream_messages(
     try:
         async for ch in gateway.dispatch(
             **_build_dispatch_kwargs(
-                body, msgs, True, request.app["registry"], tools
+                body, msgs, True, _require_registry(request), tools
             )
         ):
             if isinstance(ch, str):
@@ -1147,7 +1159,7 @@ async def messages_handler(
 
     try:
         content, thinking_parts, tool_calls, usage_d = (
-            await _collect_messages(body, msgs, tools, request.app["registry"])
+            await _collect_messages(body, msgs, tools, _require_registry(request))
         )
     except NoCandidateError as exc:
         return _err(503, str(exc), "overloaded_error")
@@ -1203,7 +1215,7 @@ async def list_models(
     Returns:
         响应对象。
     """
-    registry = request.app["registry"]
+    registry = _require_registry(request)
     ct = int(time.time())
     models: List[Dict[str, Any]] = []
 
