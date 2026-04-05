@@ -260,6 +260,25 @@ def _require_registry(request: aiohttp.web.Request) -> Any:
     return reg
 
 
+_THINK_PATTERNS = [
+    re.compile(r"<think>([\s\S]*?)</think>", re.IGNORECASE),
+    re.compile(r"<thinking>([\s\S]*?)</thinking>", re.IGNORECASE),
+]
+
+
+def _split_thinking(text: str) -> Tuple[str, List[str]]:
+    thoughts: List[str] = []
+    cleaned = text
+    for pat in _THINK_PATTERNS:
+        while True:
+            m = pat.search(cleaned)
+            if not m:
+                break
+            thoughts.append(m.group(1))
+            cleaned = cleaned[: m.start()] + cleaned[m.end() :]
+    return cleaned, thoughts
+
+
 def _build_dispatch_kwargs(
     body: Dict[str, Any],
     messages: List[Dict[str, Any]],
@@ -475,10 +494,21 @@ async def _stream_chat(
                 if tag_idx != -1:
                     safe_part = text_buffer[:tag_idx]
                     if safe_part:
-                        await _write_chunk(
-                            resp,
-                            _make_chunk(cid, ct, mdl, {"content": safe_part}),
-                        )
+                        clean_text, thoughts = _split_thinking(safe_part)
+                        for t in thoughts:
+                            await _write_chunk(
+                                resp,
+                                _make_chunk(
+                                    cid, ct, mdl, {"reasoning_content": t}
+                                ),
+                            )
+                        if clean_text:
+                            await _write_chunk(
+                                resp,
+                                _make_chunk(
+                                    cid, ct, mdl, {"content": clean_text}
+                                ),
+                            )
                     fncall_buffer = text_buffer[tag_idx:]
                     text_buffer = ""
                     in_fncall = True
@@ -487,10 +517,21 @@ async def _stream_chat(
 
                 safe_part, text_buffer = _safe_flush(text_buffer)
                 if safe_part:
-                    await _write_chunk(
-                        resp,
-                        _make_chunk(cid, ct, mdl, {"content": safe_part}),
-                    )
+                    clean_text, thoughts = _split_thinking(safe_part)
+                    for t in thoughts:
+                        await _write_chunk(
+                            resp,
+                            _make_chunk(
+                                cid, ct, mdl, {"reasoning_content": t}
+                            ),
+                        )
+                    if clean_text:
+                        await _write_chunk(
+                            resp,
+                            _make_chunk(
+                                cid, ct, mdl, {"content": clean_text}
+                            ),
+                        )
 
             elif isinstance(ch, dict):
                 if "thinking" in ch:
@@ -528,10 +569,17 @@ async def _stream_chat(
         return resp
 
     if text_buffer and not in_fncall:
-        await _write_chunk(
-            resp,
-            _make_chunk(cid, ct, mdl, {"content": text_buffer}),
-        )
+        clean_text, thoughts = _split_thinking(text_buffer)
+        for t in thoughts:
+            await _write_chunk(
+                resp,
+                _make_chunk(cid, ct, mdl, {"reasoning_content": t}),
+            )
+        if clean_text:
+            await _write_chunk(
+                resp,
+                _make_chunk(cid, ct, mdl, {"content": clean_text}),
+            )
 
     if in_fncall and fncall_buffer and not tool_calls_data:
         tool_calls_data = _parse_fncall_xml(fncall_buffer)
@@ -657,6 +705,11 @@ async def _collect_chat(
 
     raw_content = "".join(content_parts)
     cleaned = _clean_fncall(raw_content)
+
+    # 提取 <think>/<thinking> 块到 reasoning_content
+    cleaned, more_thoughts = _split_thinking(cleaned)
+    if more_thoughts:
+        thinking_parts.extend(more_thoughts)
 
     if tool_calls:
         cleaned = ""
