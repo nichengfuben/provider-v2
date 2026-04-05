@@ -254,6 +254,25 @@ def _require_registry(request: aiohttp.web.Request) -> Any:
     return reg
 
 
+_THINK_PATTERNS = [
+    re.compile(r"<think>([\s\S]*?)</think>", re.IGNORECASE),
+    re.compile(r"<thinking>([\s\S]*?)</thinking>", re.IGNORECASE),
+]
+
+
+def _split_thinking(text: str) -> Tuple[str, List[str]]:
+    thoughts: List[str] = []
+    cleaned = text
+    for pat in _THINK_PATTERNS:
+        while True:
+            m = pat.search(cleaned)
+            if not m:
+                break
+            thoughts.append(m.group(1))
+            cleaned = cleaned[: m.start()] + cleaned[m.end() :]
+    return cleaned, thoughts
+
+
 def _anth_messages_to_openai(
     messages: List[Dict[str, Any]],
     system: Optional[str] = None,
@@ -848,21 +867,22 @@ async def _stream_messages(
 
     await _write_event(resp, "ping", {"type": "ping"})
 
-    block_idx = 0
+    thinking_started = thinking
+    thinking_block_idx = 0 if thinking else -1
+    text_block_idx = 1 if thinking else 0
+    next_idx = text_block_idx + 1
 
-    if thinking:
+    if thinking_started:
         await _write_event(
             resp,
             "content_block_start",
             {
                 "type": "content_block_start",
-                "index": 0,
+                "index": thinking_block_idx,
                 "content_block": {"type": "thinking", "thinking": ""},
             },
         )
-        block_idx = 1
 
-    text_block_idx = block_idx
     await _write_event(
         resp,
         "content_block_start",
@@ -899,6 +919,87 @@ async def _stream_messages(
                 if tag_idx != -1:
                     safe_part = text_buffer[:tag_idx]
                     if safe_part:
+                        clean_text, thoughts = _split_thinking(safe_part)
+                        for t in thoughts:
+                            if not thinking_started:
+                                thinking_block_idx = next_idx
+                                next_idx += 1
+                                thinking_started = True
+                                await _write_event(
+                                    resp,
+                                    "content_block_start",
+                                    {
+                                        "type": "content_block_start",
+                                        "index": thinking_block_idx,
+                                        "content_block": {
+                                            "type": "thinking",
+                                            "thinking": "",
+                                        },
+                                    },
+                                )
+                            await _write_event(
+                                resp,
+                                "content_block_delta",
+                                {
+                                    "type": "content_block_delta",
+                                    "index": thinking_block_idx,
+                                    "delta": {
+                                        "type": "thinking_delta",
+                                        "thinking": t,
+                                    },
+                                },
+                            )
+                        if clean_text:
+                            await _write_event(
+                                resp,
+                                "content_block_delta",
+                                {
+                                    "type": "content_block_delta",
+                                    "index": text_block_idx,
+                                    "delta": {
+                                        "type": "text_delta",
+                                        "text": clean_text,
+                                    },
+                                },
+                            )
+                    fncall_buffer = text_buffer[tag_idx:]
+                    text_buffer = ""
+                    in_fncall = True
+                    continue
+
+                safe_part, text_buffer = _safe_flush(text_buffer)
+                if safe_part:
+                    clean_text, thoughts = _split_thinking(safe_part)
+                    for t in thoughts:
+                        if not thinking_started:
+                            thinking_block_idx = next_idx
+                            next_idx += 1
+                            thinking_started = True
+                            await _write_event(
+                                resp,
+                                "content_block_start",
+                                {
+                                    "type": "content_block_start",
+                                    "index": thinking_block_idx,
+                                    "content_block": {
+                                        "type": "thinking",
+                                        "thinking": "",
+                                    },
+                                },
+                            )
+                        await _write_event(
+                            resp,
+                            "content_block_delta",
+                            {
+                                "type": "content_block_delta",
+                                "index": thinking_block_idx,
+                                "delta": {
+                                    "type": "thinking_delta",
+                                    "thinking": t,
+                                },
+                            },
+                        )
+                    if clean_text:
                         await _write_event(
                             resp,
                             "content_block_delta",
@@ -907,38 +1008,35 @@ async def _stream_messages(
                                 "index": text_block_idx,
                                 "delta": {
                                     "type": "text_delta",
-                                    "text": safe_part,
+                                    "text": clean_text,
                                 },
                             },
                         )
-                    fncall_buffer = text_buffer[tag_idx:]
-                    text_buffer = ""
-                    in_fncall = True
-                    continue
-
-                safe_part, text_buffer = _safe_flush(text_buffer)
-                if safe_part:
-                    await _write_event(
-                        resp,
-                        "content_block_delta",
-                        {
-                            "type": "content_block_delta",
-                            "index": text_block_idx,
-                            "delta": {
-                                "type": "text_delta",
-                                "text": safe_part,
-                            },
-                        },
-                    )
 
             elif isinstance(ch, dict):
-                if "thinking" in ch and thinking:
+                if "thinking" in ch:
+                    if not thinking_started:
+                        thinking_block_idx = next_idx
+                        next_idx += 1
+                        thinking_started = True
+                        await _write_event(
+                            resp,
+                            "content_block_start",
+                            {
+                                "type": "content_block_start",
+                                "index": thinking_block_idx,
+                                "content_block": {
+                                    "type": "thinking",
+                                    "thinking": "",
+                                },
+                            },
+                        )
                     await _write_event(
                         resp,
                         "content_block_delta",
                         {
                             "type": "content_block_delta",
-                            "index": 0,
+                            "index": thinking_block_idx,
                             "delta": {
                                 "type": "thinking_delta",
                                 "thinking": ch["thinking"],
@@ -967,24 +1065,52 @@ async def _stream_messages(
         return resp
 
     if text_buffer and not in_fncall:
-        await _write_event(
-            resp,
-            "content_block_delta",
-            {
-                "type": "content_block_delta",
-                "index": text_block_idx,
-                "delta": {"type": "text_delta", "text": text_buffer},
-            },
-        )
+        clean_text, thoughts = _split_thinking(text_buffer)
+        for t in thoughts:
+            if not thinking_started:
+                thinking_block_idx = next_idx
+                next_idx += 1
+                thinking_started = True
+                await _write_event(
+                    resp,
+                    "content_block_start",
+                    {
+                        "type": "content_block_start",
+                        "index": thinking_block_idx,
+                        "content_block": {
+                            "type": "thinking",
+                            "thinking": "",
+                        },
+                    },
+                )
+            await _write_event(
+                resp,
+                "content_block_delta",
+                {
+                    "type": "content_block_delta",
+                    "index": thinking_block_idx,
+                    "delta": {"type": "thinking_delta", "thinking": t},
+                },
+            )
+        if clean_text:
+            await _write_event(
+                resp,
+                "content_block_delta",
+                {
+                    "type": "content_block_delta",
+                    "index": text_block_idx,
+                    "delta": {"type": "text_delta", "text": clean_text},
+                },
+            )
 
     if in_fncall and fncall_buffer and not tool_calls_data:
         tool_calls_data = _parse_fncall_xml(fncall_buffer)
 
-    if thinking:
+    if thinking_started and thinking_block_idx >= 0:
         await _write_event(
             resp,
             "content_block_stop",
-            {"type": "content_block_stop", "index": 0},
+            {"type": "content_block_stop", "index": thinking_block_idx},
         )
 
     await _write_event(
@@ -993,7 +1119,7 @@ async def _stream_messages(
         {"type": "content_block_stop", "index": text_block_idx},
     )
 
-    next_block_idx = text_block_idx + 1
+    next_block_idx = next_idx
     for i, tc in enumerate(tool_calls_data):
         ti = next_block_idx + i
         anth_tc = _openai_tc_to_anth(tc)
@@ -1102,6 +1228,10 @@ async def _collect_messages(
 
     raw_content = "".join(content_parts)
     cleaned = _clean_fncall(raw_content)
+
+    cleaned, more_thoughts = _split_thinking(cleaned)
+    if more_thoughts:
+        thinking_parts.extend(more_thoughts)
 
     if tool_calls:
         cleaned = ""
