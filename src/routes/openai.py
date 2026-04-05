@@ -535,13 +535,15 @@ async def _stream_chat(
 
             elif isinstance(ch, dict):
                 if "thinking" in ch:
+                    rc = ch["thinking"]
+                    wrapped = "<think>\n{}\n</think>\n".format(rc)
                     await _write_chunk(
                         resp,
                         _make_chunk(
                             cid,
                             ct,
                             mdl,
-                            {"reasoning_content": ch["thinking"]},
+                            {"reasoning_content": wrapped},
                         ),
                     )
                 elif "tool_calls" in ch:
@@ -783,7 +785,9 @@ async def chat_completions(
     msg: Dict[str, Any] = {"role": "assistant"}
     msg["content"] = content if content else None
     if thinking_parts:
-        msg["reasoning_content"] = "".join(thinking_parts)
+        msg["reasoning_content"] = "<think>\n{}\n</think>\n".format(
+            "\n".join(thinking_parts)
+        )
     if tool_calls:
         msg["tool_calls"] = tool_calls
 
