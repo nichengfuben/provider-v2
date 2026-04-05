@@ -36,6 +36,7 @@ async def test_edge_tts_create_speech() -> None:
                 ),
                 timeout=60,
             )
+            Path("edge_tts_output.mp3").write_bytes(audio)
         finally:
             await adapter.close()
     assert isinstance(audio, (bytes, bytearray)), "返回类型非字节"

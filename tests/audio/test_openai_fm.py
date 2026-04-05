@@ -1,25 +1,33 @@
 from __future__ import annotations
 
 import asyncio
-import os
 import sys
 from pathlib import Path
 
 import aiohttp
 import pytest
 
-ROOT = str(Path(__file__).resolve().parents[2])
-if ROOT not in sys.path:
-    sys.path.insert(0, ROOT)
+ROOT = Path(__file__).resolve().parents[2]
+SRC_ROOT = ROOT / "src"
+for p in (ROOT, SRC_ROOT):
+    p_str = str(p)
+    if p_str not in sys.path:
+        sys.path.insert(0, p_str)
 
-from src.platforms.openai_fm import accounts
+import types
+from importlib.machinery import SourceFileLoader
+
+_accounts_path = ROOT / "src/platforms/openai_fm/accounts.py"
+_accounts_mod = types.ModuleType("openai_fm_accounts")
+SourceFileLoader("openai_fm_accounts", str(_accounts_path)).exec_module(_accounts_mod)
+accounts = _accounts_mod
+
 from src.platforms.openai_fm.adapter import OpenaiFmAdapter
 
 
 def _prepare_accounts() -> None:
-    """按环境变量覆盖 openai_fm 账号，默认允许无 Cookie。"""
-    cookie = os.getenv("OPENAI_FM_COOKIE", "")
-    accounts.API_KEYS[:] = [cookie]
+    """允许无 Cookie，使用空凭证占位。"""
+    accounts.API_KEYS[:] = [""]
 
 
 async def _run_once() -> bytes:
