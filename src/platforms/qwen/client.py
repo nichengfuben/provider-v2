@@ -1715,6 +1715,8 @@ class QwenClient:
                 emitted_count = 0
                 response_id: Optional[str] = None
                 full_text_parts: List[str] = []
+                think_opened = False
+                think_closed = False
 
                 async for raw in resp.content.iter_any():
                     if not raw:
