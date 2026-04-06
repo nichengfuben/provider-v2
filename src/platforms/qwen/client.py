@@ -127,6 +127,7 @@ class QwenClient:
                 password=acc.password,
             )
 
+        self._load_models_persist()
         self._load_persist()
         self._rebuild_candidates()
 
@@ -138,6 +139,16 @@ class QwenClient:
     async def background_setup(self) -> None:
         """后台完善——在后台 Task 中执行。"""
         await self._bg_login()
+        # 同步远端模型，若成功则持久化并重建候选项
+        try:
+            remote_models = await self.fetch_remote_models()
+            if remote_models:
+                self.update_models(remote_models)
+                self._save_models_persist(remote_models)
+                self._rebuild_candidates()
+        except Exception as e:
+            logger.debug("Qwen 模型同步失败（忽略继续）: %s", e)
+
         self._bg_tasks.append(
             asyncio.ensure_future(self._bg_cookie_refresh())
         )
@@ -147,14 +158,13 @@ class QwenClient:
         logger.info("Qwen 后台任务已启动")
 
     def update_models(self, models: List[str]) -> None:
-        """更新模型列表。
-
-        Args:
-            models: 新的模型列表。
-        """
+        """更新模型列表并刷新候选项。"""
         self._models = list(models)
         for cand in self._candidates:
             cand.models = list(models)
+        # 若已有账号 token，刷新候选项以携带最新模型列表
+        if self._account_states:
+            self._rebuild_candidates()
 
     async def close(self) -> None:
         """关闭客户端：停止后台任务，保存持久化。"""
@@ -252,6 +262,32 @@ class QwenClient:
             logger.info("Qwen: 从持久化恢复 %d 个账号 token", loaded)
         except Exception as e:
             logger.warning("Qwen 持久化加载失败: %s", e)
+
+    # =========================================================================
+    # 模型持久化
+    # =========================================================================
+
+    def _load_models_persist(self) -> None:
+        """加载持久化模型列表，不存在则忽略。"""
+        try:
+            path = Path(MODELS_PERSIST_PATH)
+            if not path.exists():
+                return
+            data = json.loads(path.read_text(encoding="utf-8"))
+            if isinstance(data, list) and data:
+                self._models = [str(m) for m in data]
+                logger.info("Qwen: 从 models.json 恢复 %d 个模型", len(self._models))
+        except Exception as e:
+            logger.debug("Qwen 模型持久化加载失败: %s", e)
+
+    def _save_models_persist(self, models: List[str]) -> None:
+        """保存模型列表到持久化文件。"""
+        try:
+            path = Path(MODELS_PERSIST_PATH)
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(json.dumps(models, ensure_ascii=False, indent=2), encoding="utf-8")
+        except Exception as e:
+            logger.debug("Qwen 模型持久化保存失败: %s", e)
 
     def _save_persist(self) -> None:
         """保存账号状态和 Cookie 到磁盘（同步写文件）。"""
