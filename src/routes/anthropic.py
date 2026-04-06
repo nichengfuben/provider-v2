@@ -15,7 +15,7 @@ import aiohttp.web
 
 from src.core.errors import NoCandidateError, ProviderError
 from src.core.server import REGISTRY_KEY
-from src.core.tools import normalize_content
+from src.core.tools import normalize_content, parse_fncall_xml
 
 __all__ = ["setup_routes"]
 logger = logging.getLogger(__name__)
@@ -638,49 +638,8 @@ def _safe_flush(buffer: str) -> Tuple[str, str]:
 
 
 def _parse_fncall_xml(xml: str) -> List[Dict[str, Any]]:
-    """将 fncall XML 解析为 OpenAI tool_calls 格式列表。
-
-    Args:
-        xml: fncall XML 字符串。
-
-    Returns:
-        OpenAI tool_calls 列表，解析失败返回空列表。
-    """
-    tool_calls: List[Dict[str, Any]] = []
-    try:
-        invoke_pattern = re.compile(
-            r"<invoke\s+name=[\"']([^\"']+)[\"'][^>]*>(.*?)</invoke>",
-            re.DOTALL,
-        )
-        param_pattern = re.compile(
-            r"<parameter\s+name=[\"']([^\"']+)[\"'][^>]*>(.*?)</parameter>",
-            re.DOTALL,
-        )
-        for match in invoke_pattern.finditer(xml):
-            func_name = match.group(1).strip()
-            params_xml = match.group(2)
-            arguments: Dict[str, Any] = {}
-            for pm in param_pattern.finditer(params_xml):
-                key = pm.group(1).strip()
-                val = pm.group(2).strip()
-                try:
-                    arguments[key] = json.loads(val)
-                except (json.JSONDecodeError, ValueError):
-                    arguments[key] = val
-
-            tool_calls.append(
-                {
-                    "id": _call_id(),
-                    "type": "function",
-                    "function": {
-                        "name": func_name,
-                        "arguments": json.dumps(arguments, ensure_ascii=False),
-                    },
-                }
-            )
-    except Exception as exc:
-        logger.warning("fncall XML 解析失败: %s", exc)
-    return tool_calls
+    """包装 core.tools.parse_fncall_xml，保留现有调用点。"""
+    return parse_fncall_xml(xml)
 
 
 def _openai_tc_to_anth(tc: Dict[str, Any]) -> Dict[str, Any]:
@@ -1052,6 +1011,25 @@ async def _stream_messages(
         return resp
     except ConnectionResetError:
         return resp
+    except ProviderError as exc:
+        status = getattr(exc, "status_code", 502) or 502
+        if status == 429:
+            error_type = "rate_limit_error"
+        elif status == 503:
+            error_type = "overloaded_error"
+        elif status == 401:
+            error_type = "authentication_error"
+        else:
+            error_type = "api_error"
+        await _write_event(
+            resp,
+            "error",
+            {
+                "type": "error",
+                "error": {"type": error_type, "message": str(exc)},
+            },
+        )
+        return resp
     except Exception as exc:
         logger.error("Anthropic 流式错误: %s", exc, exc_info=True)
         await _write_event(
@@ -1294,7 +1272,16 @@ async def messages_handler(
     except NoCandidateError as exc:
         return _err(503, str(exc), "overloaded_error")
     except ProviderError as exc:
-        return _err(502, str(exc), "api_error")
+        status = getattr(exc, "status_code", 502) or 502
+        if status == 429:
+            error_type = "rate_limit_error"
+        elif status == 503:
+            error_type = "overloaded_error"
+        elif status == 401:
+            error_type = "authentication_error"
+        else:
+            error_type = "api_error"
+        return _err(status, str(exc), error_type)
     except Exception as exc:
         logger.error("Anthropic messages 异常: %s", exc, exc_info=True)
         return _err(500, str(exc), "server_error")

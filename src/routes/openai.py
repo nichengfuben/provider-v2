@@ -15,7 +15,7 @@ import aiohttp.web
 
 from src.core.errors import NoCandidateError, NotSupportedError, ProviderError
 from src.core.server import REGISTRY_KEY
-from src.core.tools import normalize_content
+from src.core.tools import normalize_content, parse_fncall_xml
 
 __all__ = ["setup_routes"]
 logger = logging.getLogger(__name__)
@@ -381,51 +381,8 @@ def _make_chunk(
 
 
 def _parse_fncall_xml(xml: str) -> List[Dict[str, Any]]:
-    """将 fncall XML 解析为 OpenAI tool_calls 格式。
-
-    Args:
-        xml: fncall XML 字符串。
-
-    Returns:
-        OpenAI tool_calls 列表，解析失败返回空列表。
-    """
-    tool_calls: List[Dict[str, Any]] = []
-    try:
-        invoke_pattern = re.compile(
-            r"<invoke\s+name=[\"']([^\"']+)[\"'][^>]*>(.*?)</invoke>",
-            re.DOTALL,
-        )
-        param_pattern = re.compile(
-            r"<parameter\s+name=[\"']([^\"']+)[\"'][^>]*>(.*?)</parameter>",
-            re.DOTALL,
-        )
-        for match in invoke_pattern.finditer(xml):
-            func_name = match.group(1).strip()
-            params_xml = match.group(2)
-            arguments: Dict[str, Any] = {}
-            for pm in param_pattern.finditer(params_xml):
-                key = pm.group(1).strip()
-                val = pm.group(2).strip()
-                try:
-                    arguments[key] = json.loads(val)
-                except (json.JSONDecodeError, ValueError):
-                    arguments[key] = val
-
-            tool_calls.append(
-                {
-                    "id": "call_{}".format(uuid.uuid4().hex[:24]),
-                    "type": "function",
-                    "function": {
-                        "name": func_name,
-                        "arguments": json.dumps(
-                            arguments, ensure_ascii=False
-                        ),
-                    },
-                }
-            )
-    except Exception as exc:
-        logger.warning("fncall XML 解析失败: %s", exc)
-    return tool_calls
+    """包装 core.tools.parse_fncall_xml，保留现有调用点。"""
+    return parse_fncall_xml(xml)
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -614,6 +571,19 @@ async def _stream_chat(
     if tool_calls_data:
         has_tc = True
         for idx, tc in enumerate(tool_calls_data):
+            # 获取工具调用数据
+            tc_id = tc.get("id", "call_{}".format(uuid.uuid4().hex[:24]))
+            tc_func = tc.get("function", {})
+            tc_name = tc_func.get("name", "")
+            args_raw = tc_func.get("arguments", "")
+            
+            # 确保 arguments 是 JSON 字符串
+            if isinstance(args_raw, dict):
+                args_str = json.dumps(args_raw, ensure_ascii=False)
+            else:
+                args_str = str(args_raw) if args_raw else ""
+            
+            # 发送工具调用启动 chunk（包含完整参数）
             await _write_chunk(
                 resp,
                 _make_chunk(
@@ -624,40 +594,17 @@ async def _stream_chat(
                         "tool_calls": [
                             {
                                 "index": idx,
-                                "id": tc.get(
-                                    "id",
-                                    "call_{}".format(uuid.uuid4().hex[:24]),
-                                ),
+                                "id": tc_id,
                                 "type": "function",
                                 "function": {
-                                    "name": tc.get("function", {}).get("name", ""),
-                                    "arguments": "",
+                                    "name": tc_name,
+                                    "arguments": args_str,
                                 },
                             }
                         ]
                     },
                 ),
             )
-            args_str = tc.get("function", {}).get("arguments", "")
-            if isinstance(args_str, dict):
-                args_str = json.dumps(args_str, ensure_ascii=False)
-            if args_str:
-                await _write_chunk(
-                    resp,
-                    _make_chunk(
-                        cid,
-                        ct,
-                        mdl,
-                        {
-                            "tool_calls": [
-                                {
-                                    "index": idx,
-                                    "function": {"arguments": args_str},
-                                }
-                            ]
-                        },
-                    ),
-                )
 
     finish_reason = "tool_calls" if has_tc else "stop"
     final_usage = usage_d or {

@@ -14,6 +14,7 @@ __all__ = [
     "FncallStreamParser",
     "format_tool_descs",
     "normalize_content",
+    "parse_fncall_xml",
 ]
 logger = logging.getLogger(__name__)
 
@@ -505,3 +506,76 @@ class FncallStreamParser:
             (clean_text, tool_calls) 元组。
         """
         return parse_fncall(self._buf, self._tools)
+
+
+def parse_fncall_xml(xml: str) -> List[Dict[str, Any]]:
+    """将 function_calls XML 解析为 OpenAI tool_calls 格式。
+
+    支持格式：
+    ```xml
+    <function_calls>
+    <invoke name="func_name">
+    <parameter name="param1">value1</parameter>
+    <parameter name="param2">value2</parameter>
+    </invoke>
+    </function_calls>
+    ```
+
+    Args:
+        xml: fncall XML 字符串。
+
+    Returns:
+        OpenAI tool_calls 列表，格式为：
+        [
+            {
+                "id": "call_xxx",
+                "type": "function",
+                "function": {
+                    "name": "func_name",
+                    "arguments": "{\"param1\": \"value1\", \"param2\": \"value2\"}"
+                }
+            },
+            ...
+        ]
+    """
+    tool_calls: List[Dict[str, Any]] = []
+    try:
+        invoke_pattern = re.compile(
+            r"<invoke\s+name=[\"']([^\"']+)[\"'][^>]*>(.*?)</invoke>",
+            re.DOTALL,
+        )
+        param_pattern = re.compile(
+            r"<parameter\s+name=[\"']([^\"']+)[\"'][^>]*>(.*?)</parameter>",
+            re.DOTALL,
+        )
+
+        for match in invoke_pattern.finditer(xml):
+            func_name = match.group(1).strip()
+            params_xml = match.group(2)
+            arguments: Dict[str, Any] = {}
+
+            for pm in param_pattern.finditer(params_xml):
+                key = pm.group(1).strip()
+                val = pm.group(2).strip()
+                try:
+                    # 尝试 JSON 解析参数值
+                    arguments[key] = json.loads(val)
+                except (json.JSONDecodeError, ValueError):
+                    # 失败则保存为字符串
+                    arguments[key] = val
+
+            tool_calls.append(
+                {
+                    "id": "call_{}".format(uuid.uuid4().hex[:24]),
+                    "type": "function",
+                    "function": {
+                        "name": func_name,
+                        "arguments": json.dumps(arguments, ensure_ascii=False),
+                    },
+                }
+            )
+    except Exception as exc:
+        logger.warning("fncall XML 解析失败: %s", exc)
+
+    return tool_calls
+

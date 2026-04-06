@@ -10,6 +10,7 @@ from typing import Any, AsyncGenerator, Dict, List, Optional, Union
 import aiohttp
 
 from src.core.candidate import Candidate, make_id
+from src.core.errors import PlatformError, RateLimitError
 from src.platforms.cursor.accounts import API_KEYS
 from src.platforms.cursor.util import (
     BASE_URL,
@@ -864,8 +865,21 @@ class CursorClient:
         ) as resp:
             if resp.status != 200:
                 body = await resp.text()
-                raise Exception(
-                    "cursor HTTP {}: {}".format(resp.status, body[:200])
+                if resp.status == 429:
+                    retry_after_raw = resp.headers.get("Retry-After")
+                    retry_after: Optional[float] = None
+                    if retry_after_raw:
+                        try:
+                            retry_after = float(retry_after_raw)
+                        except ValueError:
+                            retry_after = None
+                    raise RateLimitError(
+                        "cursor HTTP 429: {}".format(body[:200]),
+                        retry_after=retry_after,
+                    )
+                raise PlatformError(
+                    "cursor HTTP {}: {}".format(resp.status, body[:200]),
+                    status_code=resp.status,
                 )
 
             buffer = ""
