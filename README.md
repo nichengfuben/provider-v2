@@ -142,7 +142,7 @@ curl -X POST http://localhost:1337/v1/chat/completions \
 
 ```toml
 [server]
-version = "2.1.1"
+version = "2.1.3"
 host = "0.0.0.0"
 port = 1337
 debug = false
