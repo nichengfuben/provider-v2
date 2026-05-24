@@ -15,7 +15,7 @@ import aiohttp
 from src.core.candidate import Candidate, make_id
 from src.core.models_cache import ModelsCache
 from src.logger import get_logger
-from src.platforms.qwen.core.accounts import ACCOUNTS, Account
+from src.platforms.qwen.accounts import ACCOUNTS, Account
 from src.platforms.qwen.core.constants import CAPS, MODELS
 from src.platforms.qwen.core.shared import (
     AUTH_CHECK_PATH,

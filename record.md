@@ -1,5 +1,28 @@
+2026-05-24 | v2.2.2
+
+### 变更文件
+
+- src/platforms/deepseek/core/client.py
+- src/platforms/deepseek/util.py
+- src/platforms/ollama/core/client.py
+- src/platforms/qwen/core/client.py
+
+### 变更说明
+
+**Bug 修复：平台 accounts 模块导入路径错误**
+
+- 修复 4 个平台文件中 `accounts` 模块的错误导入路径
+- 从 `core.accounts` 改为顶层 `accounts`（遵循平台开发规范 §三 依赖流动）
+- 影响平台：qwen、ollama、deepseek
+- 修复后平台注册不再报 `No module named 'src.platforms.xxx.core.accounts'` 错误
+
+### 验证结果
+
+- 代码修复已应用，待运行时验证
+
+---
+
 .gitignore
-README.md
 main.py
 requirements.txt
 src/__init__.py

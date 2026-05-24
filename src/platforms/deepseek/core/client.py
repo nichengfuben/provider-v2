@@ -12,7 +12,7 @@ from src.logger import get_logger
 
 import aiohttp
 
-from src.platforms.deepseek.core.accounts import ACCOUNTS, Account
+from src.platforms.deepseek.accounts import ACCOUNTS, Account
 from src.platforms.deepseek.core.constants import (
     CAPS,
     DEFAULT_HOST,
