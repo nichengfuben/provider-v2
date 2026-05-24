@@ -208,6 +208,7 @@ async def create_app(registry: Any, session: Any) -> aiohttp.web.Application:
     from src.routes.anthropic import setup_routes as setup_anth
     from src.routes.openai import setup_routes as setup_oai
     from src.routes.static import setup_routes as setup_static
+    from src.webui.routes import setup_routes as setup_webui
 
     app = aiohttp.web.Application(
         middlewares=[_cors_middleware, _auth_middleware, _custom_middleware, _error_middleware],
@@ -220,6 +221,7 @@ async def create_app(registry: Any, session: Any) -> aiohttp.web.Application:
     setup_static(app)
     setup_oai(app)
     setup_anth(app)
+    setup_webui(app)
 
     async def _on_startup(application: aiohttp.web.Application) -> None:
         logger.info("aiohttp.web 应用已启动")
