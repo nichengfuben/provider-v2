@@ -25,6 +25,7 @@ __all__ = [
 
 @dataclass
 class ServerCfg(ConfigBase):
+    version: str = "2.1.2"
     host: str = "0.0.0.0"
     port: int = 1337
     debug: bool = False
