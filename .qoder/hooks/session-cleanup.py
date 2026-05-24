@@ -48,12 +48,6 @@ def main() -> None:
         print("session-cleanup: not a Provider-V2 project, skipping", file=sys.stderr)
         sys.exit(0)
 
-    # Guard against infinite loop: if a review was already injected this session,
-    # skip all change detection and exit silently.
-    marker = Path(".qoder/.session-review-active")
-    if marker.is_file():
-        sys.exit(0)
-
     # Check if there are uncommitted changes
     diff_summary = _detect_changes()
     if not diff_summary:
@@ -64,10 +58,6 @@ def main() -> None:
 
     # For Stop hook: exit 2 + stderr injects message into conversation
     print(prompt, file=sys.stderr)
-
-    # Create marker to prevent infinite loop on subsequent stops
-    marker.parent.mkdir(parents=True, exist_ok=True)
-    marker.write_text(session_id)
 
     sys.exit(2)
 
@@ -196,20 +186,23 @@ Session ID: {session_id}
 
 {diff_summary}
 
-分析上述变更的真实语义(新功能、bug 修复、重构、新平台、配置变更等)，**不要关注版本号变化**。
+分析上述变更的真实语义(新功能、bug 修复、重构、新平台、配置变更等)。
 
 ---
 
-### 步骤 2: 更新项目文档(仅在有变更时)
+### 步骤 2: 更新项目文档(仅在有实质性代码变更时)
+
+> **实质性变更** = 新增/修改/删除了 Python 源码、配置文件、路由、核心模块等。
+> 如果仅是空格、注释、文档微调、自动生成的备份文件，**跳过所有以下步骤，不要创建提交**。
 
 #### 2.1 docs-src (文档镜像)
 - 如果修改了 `src/`、`src/platforms/`、`src/core/`、`src/webui/`、`src/routes/` 下的源文件，确保 `docs-src/` 下对应的镜像文档已更新。
-- **跳过被 .gitignore 过滤的平台** — 如果 `src/platforms/xxx/` 被过滤,不要更新 `docs-src/src/platforms/xxx/`。
+- **跳过被 .gitignore 过滤的平台**。
 - 为新目录添加或更新 `INDEX.md`。
 
 #### 2.2 tests (测试镜像)
 - 如果新增或修改了平台适配器、核心模块或 WebUI 组件，确保 `tests/` 下有对应测试。
-- **跳过被 .gitignore 过滤的平台** — 如果 `src/platforms/xxx/` 被过滤,不要创建/更新 `tests/src/platforms/xxx/`。
+- **跳过被 .gitignore 过滤的平台**。
 - 每个平台至少有一个 MVP 测试。
 - 运行 `pytest tests -q` 并记录结果。
 
@@ -217,20 +210,23 @@ Session ID: {session_id}
 - **追加**新章节到 `record.md`:
   - 日期(使用当前日期)
   - 变更的简明要点
-  - **跳过被 .gitignore 过滤的平台** — 只记录实际在版本控制中的变更
+  - **跳过被 .gitignore 过滤的平台**。
   - 外部阻塞或跳过的测试及原因
-  - 测试结果摘要(通过/跳过数量)
+  - 测试结果摘要(通过/失败/跳过数量)
 
 #### 2.4 README.md
 - 如果新增平台、API 或功能，更新相关章节。
 - 如果项目结构有实质性变化，更新目录树图。
-- **同步更新版本号徽章**(如 `v2.2.0` → `v2.2.1`)，确保与 `config.toml` 中的 `server.version` 一致。
 
 #### 2.5 template/template_config.toml
-- 如果 `config.toml` 新增了配置项，同步到模板。
+- 如果 `config.toml` 新增了配置项或修改了配置结构，**必须同步到模板**。
+- 模板是用户分发的基准文件，遗漏模板更新视为 bug。
 
-#### 2.6 config.toml — 自动版本号
-- **将 `server.version` 增加 0.0.1**(如 `2.2.0` → `2.2.1`)。
+#### 2.6 config.toml — 版本号规则(重要)
+- **版本号每次只能 +0.0.1**（如 `2.1.1` → `2.1.2`）。
+- **当前版本以 `config.toml` 中 `server.version` 的实际值为准**，禁止猜测或凭空设定。
+- **禁止私自大幅修改版本号**（如 2.1.x → 2.2.x），除非用户明确说明。
+- README.md 中的版本徽章必须与 `config.toml` 中的 `server.version` 保持一致。
 
 #### 2.7 requirements.txt
 - 如果引入了新的第三方 Python 包，添加版本约束。
@@ -255,14 +251,15 @@ Session ID: {session_id}
    - 包含变更要点的 body
 4. 创建提交: `git commit -m "..." `
 5. **自动推送到远程 dev 分支**: `git push origin dev`
-6. 清理: `rm -f .qoder/.session-review-active` (删除 marker 以便下次 session 能正常触发)
+
+> **注意**: `.qoder/.session-review-active` marker 文件由**用户管理**，hook 脚本和 agent **不要读取、创建或删除它**。
 
 ---
 
 ### 本次变更文件:
 {changed_files}
 
-**重要:** 如果审查后发现没有实质性代码变更(如只有空格、注释或文档微调)，跳过以上所有步骤，不要创建提交。
+**重要:** 如果审查后发现没有实质性代码变更(如只有空格、注释或文档微调、自动生成的备份文件)，**跳过以上所有步骤，不要创建提交**。
 """
 
 
