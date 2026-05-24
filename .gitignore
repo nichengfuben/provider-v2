@@ -53,5 +53,8 @@ record.md
 src/platforms/aitianhu2/
 !template/
 
+# Config manager backups
+template/old/
+
 logs/
 .htaccess
