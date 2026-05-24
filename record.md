@@ -1,3 +1,24 @@
+2026-05-24 | 修复 WebUI 日志同步 — 注册 loguru sink 到 WebSocket broker
+
+### 变更文件
+
+- src/webui/logs_ws.py
+- src/core/server.py
+
+### 变更说明
+
+**Bug 修复：**
+- `src/webui/logs_ws.py` — 新增 `WebUILogBroker._loguru_sink()` 方法，作为 loguru 的同步 sink，将每条日志推入 asyncio 事件循环并通过 WebSocket 广播
+- `src/webui/logs_ws.py` — 新增 `setup_loguru_sink()` 函数，用于注册 loguru sink
+- `src/core/server.py` — 在 `create_app()` 中调用 `setup_loguru_sink()`，使所有 loguru 日志（控制台+文件）同步推送到 WebUI 日志面板
+- 修复前日志面板为空（`log_broker.broadcast` 从未被调用），修复后实时显示服务器日志
+
+### 验证结果
+
+- `py_compile` 通过
+
+---
+
 2026-05-24 | 修复 WebUI 日志面板 — 移除前端动作日志淹没服务器日志
 
 ### 变更文件

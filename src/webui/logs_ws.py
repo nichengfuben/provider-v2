@@ -10,10 +10,21 @@ from typing import Any, Deque, Dict, Set
 
 import aiohttp.web
 
-__all__ = ["WebUILogBroker", "log_broker"]
+__all__ = ["WebUILogBroker", "log_broker", "setup_loguru_sink"]
 
 # 保留最近 200 条日志
 LOG_BUFFER_SIZE = 200
+
+# 等级缩写映射
+_LEVEL_ABBR = {
+    "TRACE": "T",
+    "DEBUG": "D",
+    "INFO": "I",
+    "SUCCESS": "S",
+    "WARNING": "W",
+    "ERROR": "E",
+    "CRITICAL": "C",
+}
 
 
 class WebUILogBroker:
@@ -59,5 +70,34 @@ class WebUILogBroker:
             for socket in stale:
                 self._sockets.discard(socket)
 
+    def _loguru_sink(self, message: Any) -> None:
+        """loguru sink：同步函数，将日志推入 asyncio 队列。"""
+        if message is None:
+            return
+        record = message.record
+        payload = {
+            "type": "log",
+            "timestamp": record["time"].strftime("%H:%M:%S"),
+            "level": _LEVEL_ABBR.get(record["level"].name, record["level"].name[0]),
+            "module": record["extra"].get("module_name", ""),
+            "message": str(record["message"]),
+        }
+        # 使用线程安全方式推入事件循环
+        try:
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                asyncio.run_coroutine_threadsafe(self.broadcast(payload), loop)
+        except Exception:
+            pass
+
 
 log_broker = WebUILogBroker()
+
+
+def setup_loguru_sink() -> None:
+    """将 log_broker._loguru_sink 注册为 loguru 的 sink。"""
+    try:
+        from loguru import logger
+        logger.add(log_broker._loguru_sink, level="DEBUG", format="{time:HH:mm:ss} | {level} | {extra[module_name]} | {message}")
+    except Exception:
+        pass
