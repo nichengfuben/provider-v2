@@ -24,7 +24,6 @@ venv
 *.dll
 *.dylib
 *.json
-!*.local.json
 *.pyc
 *.pyd
 *.pyo
