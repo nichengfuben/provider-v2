@@ -169,7 +169,8 @@ class ConfigManager:
         try:
             with open(str(tpl_path), "r", encoding="utf-8") as f:
                 tpl_raw = tomlkit.load(f)
-        except Exception:
+        except Exception as exc:
+            logger.debug("加载配置模板失败: %s", exc)
             return
 
         old_version = raw.get("server", {}).get("version") if isinstance(raw.get("server"), dict) else None
@@ -218,7 +219,8 @@ class ConfigManager:
         try:
             with open(str(self._config_path), "r", encoding="utf-8") as f:
                 doc = tomlkit.load(f)
-        except Exception:
+        except Exception as exc:
+            logger.debug("读取现有配置文件失败，使用空文档: %s", exc)
             doc = tomlkit.document()
 
         self._merge_toml_doc(doc, raw)

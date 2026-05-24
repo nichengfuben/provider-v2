@@ -442,8 +442,8 @@ async def _write_event(
     )
     try:
         await resp.write(line.encode("utf-8"))
-    except Exception:
-        pass
+    except (ConnectionError, OSError) as exc:
+        logger.warning("SSE 事件写入失败: %s", exc)
 
 
 # ═══════════════════════════════════════════════════════════════════════════

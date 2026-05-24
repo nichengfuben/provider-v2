@@ -115,15 +115,15 @@ class FileWatcher:
                 loop = asyncio.get_event_loop()
                 if loop.is_running():
                     loop.create_task(self._session.close())
-            except Exception:
-                pass
+            except (RuntimeError, Exception) as exc:
+                logger.warning("关闭 session 失败: %s", exc)
         if self._registry:
             try:
                 loop = asyncio.get_event_loop()
                 if loop.is_running():
                     loop.create_task(self._registry.close())
-            except Exception:
-                pass
+            except (RuntimeError, Exception) as exc:
+                logger.warning("关闭 registry 失败: %s", exc)
         # 退出码 42 通知 Runner 进程自动重启
         os._exit(42)
 

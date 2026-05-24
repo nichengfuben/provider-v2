@@ -4,6 +4,7 @@ from __future__ import annotations
 """OpenAI 兼容路由——aiohttp.web 实现"""
 
 import asyncio
+import binascii
 import json
 import time
 import uuid
@@ -178,8 +179,8 @@ def _extract_upload_files(
                         mime = header.split(":")[1].split(";")[0]
                         ext = _mime_to_ext(mime)
                         upload_files.append((file_bytes, "image.{}".format(ext)))
-                    except Exception:
-                        pass
+                    except (binascii.Error, ValueError, IndexError) as exc:
+                        logger.warning("提取 image_url 失败: %s", exc)
 
             elif part_type == "video_url":
                 url = part.get("video_url", {}).get("url", "")
@@ -190,8 +191,8 @@ def _extract_upload_files(
                         mime = header.split(":")[1].split(";")[0]
                         ext = _mime_to_ext(mime)
                         upload_files.append((file_bytes, "video.{}".format(ext)))
-                    except Exception:
-                        pass
+                    except (binascii.Error, ValueError, IndexError) as exc:
+                        logger.warning("提取 video_url 失败: %s", exc)
 
             elif part_type == "input_audio":
                 audio = part.get("input_audio", {})
@@ -203,8 +204,8 @@ def _extract_upload_files(
                         mime = header.split(":")[1].split(";")[0]
                         ext = _mime_to_ext(mime)
                         upload_files.append((file_bytes, "audio.{}".format(ext)))
-                    except Exception:
-                        pass
+                    except (binascii.Error, ValueError, IndexError) as exc:
+                        logger.warning("提取 input_audio 失败: %s", exc)
 
             elif part_type == "file":
                 file_obj = part.get("file", {})

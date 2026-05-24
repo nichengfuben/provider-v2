@@ -4,11 +4,14 @@ from __future__ import annotations
 
 import base64
 import hashlib
+import logging
 import secrets
 import socket
 import ssl
 import struct
 from typing import Dict, Tuple
+
+_logger = logging.getLogger(__name__)
 
 
 class _RawWebSocket:
@@ -222,10 +225,10 @@ class _RawWebSocket:
         if not self._closed:
             try:
                 self._send_frame(0x8, b"")
-            except Exception:
-                pass
+            except Exception as exc:
+                _logger.debug("发送 WebSocket 关闭帧失败: %s", exc)
             self._closed = True
         try:
             self._sock.close()
-        except Exception:
-            pass
+        except Exception as exc:
+            _logger.debug("关闭 WebSocket 连接失败: %s", exc)

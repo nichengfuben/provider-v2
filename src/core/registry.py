@@ -91,7 +91,8 @@ class Registry:
         for attr_name in dir(module):
             try:
                 attr = getattr(module, attr_name)
-            except Exception:
+            except Exception as exc:
+                logger.debug("获取模块属性 %s 失败: %s", attr_name, exc)
                 continue
 
             if not self._is_adapter_class(attr):

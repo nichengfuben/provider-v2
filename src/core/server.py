@@ -29,6 +29,16 @@ def json_response(
     status: int = 200,
     headers: Optional[dict] = None,
 ) -> aiohttp.web.Response:
+    """构造一个 JSON HTTP 响应。
+
+    Args:
+        data: 将被序列化为 JSON 的响应数据。
+        status: HTTP 状态码，默认为 200。
+        headers: 可选的额外响应头字典。
+
+    Returns:
+        aiohttp.web.Response: 编码为 UTF-8 的 JSON 响应。
+    """
     body = json.dumps(data, ensure_ascii=False)
     resp_headers = {"Content-Type": "application/json"}
     if headers:
@@ -205,6 +215,15 @@ async def _error_middleware(
 
 
 async def create_app(registry: Any, session: Any) -> aiohttp.web.Application:
+    """创建并配置 aiohttp Web 应用，挂载所有路由和中间件。
+
+    Args:
+        registry: 服务注册表实例，存入应用上下文。
+        session: 会话管理实例，存入应用上下文。
+
+    Returns:
+        aiohttp.web.Application: 配置完成的 Web 应用。
+    """
     from src.routes.anthropic import setup_routes as setup_anth
     from src.routes.openai import setup_routes as setup_oai
     from src.routes.static import setup_routes as setup_static

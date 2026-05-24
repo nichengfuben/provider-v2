@@ -56,8 +56,8 @@ def _resolve_log_level() -> str:
             level = str(raw.get("debug", {}).get("level", "INFO")).upper()
             if level in _VALID_LOG_LEVELS:
                 return level
-    except Exception:
-        pass
+    except Exception as exc:
+        _loguru_logger.debug("读取 config.toml 日志级别失败: %s", exc)
     return "INFO"
 
 
@@ -86,10 +86,10 @@ def clean_old_logs(days: int = 30) -> None:
                 file_time = datetime.fromtimestamp(log_file.stat().st_mtime)
                 if file_time < cutoff_date:
                     log_file.unlink()
-            except Exception:
-                pass  # 单文件清理失败不中断整体流程
-    except Exception:
-        pass
+            except OSError as exc:
+                _loguru_logger.debug("清理过期日志文件 %s 失败: %s", log_file, exc)
+    except Exception as exc:
+        _loguru_logger.debug("清理过期日志失败: %s", exc)
 
 
 def _format_log(record: dict) -> bool:

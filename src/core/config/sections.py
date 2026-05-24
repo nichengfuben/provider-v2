@@ -25,7 +25,8 @@ __all__ = [
 
 @dataclass
 class ServerCfg(ConfigBase):
-    version: str = "2.1.2"
+    """服务器基础配置：版本、主机地址、端口和调试开关。"""
+    version: str = "2.2.2"
     host: str = "0.0.0.0"
     port: int = 1337
     debug: bool = False
@@ -33,12 +34,14 @@ class ServerCfg(ConfigBase):
 
 @dataclass
 class AnthCfg(ConfigBase):
+    """Anthropic 协议相关配置：API 版本和模型映射。"""
     api_version: str = "2023-06-01"
     model_mapping: Dict[str, str] = field(default_factory=dict)
 
 
 @dataclass
 class AuthCfg(ConfigBase):
+    """认证配置：API Key 列表和群组黑白名单。"""
     enabled: bool = False
     keys: List[str] = field(default_factory=list)
     group_list_type: str = "blacklist"
@@ -51,6 +54,7 @@ class AuthCfg(ConfigBase):
 
 @dataclass
 class GatewayCfg(ConfigBase):
+    """网关并发配置：并发开关、并发数和最小 Token 数。"""
     concurrent_enabled: bool = True
     concurrent_count: int = 3
     min_tokens: int = 10
@@ -58,6 +62,7 @@ class GatewayCfg(ConfigBase):
 
 @dataclass
 class ProxyCfg(ConfigBase):
+    """HTTP 代理配置：代理地址、开关和 URL 匹配规则。"""
     proxy_server: str = ""
     proxy_enabled: bool = False
     proxy_urls: List[str] = field(default_factory=list)
@@ -69,6 +74,7 @@ class ProxyCfg(ConfigBase):
 
 @dataclass
 class FncallCfg(ConfigBase):
+    """函数调用标签与模板配置。"""
     call_start_tag: str = "<function_calls>"
     call_end_tag: str = "</function_calls>"
     tools_start_tag: str = "<tools>"
@@ -79,11 +85,13 @@ class FncallCfg(ConfigBase):
 
 @dataclass
 class DebugCfg(ConfigBase):
+    """调试日志级别配置。"""
     level: str = "INFO"
 
 
 @dataclass
 class PlatformsCfg(ConfigBase):
+    """平台黑白名单配置。"""
     platform_list_type: str = "blacklist"
     platform_list: List[str] = field(default_factory=list)
     platform_list_set: set = field(default_factory=set, repr=False, init=False)
@@ -111,6 +119,7 @@ class ModelMappingCfg(ConfigBase):
 
 @dataclass
 class AppConfig(ConfigBase):
+    """应用顶层配置：聚合所有子配置段。"""
     server: ServerCfg = field(default_factory=ServerCfg)
     anthropic: AnthCfg = field(default_factory=AnthCfg)
     auth: AuthCfg = field(default_factory=AuthCfg)
