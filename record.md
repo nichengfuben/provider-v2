@@ -1,3 +1,22 @@
+2026-05-24 | 修复 WebUI 重载按钮 — reload_service 回退到配置重载
+
+### 变更文件
+
+- src/webui/routers/admin.py
+
+### 变更说明
+
+**Bug 修复：**
+- `src/webui/routers/admin.py` — `reload_service` 原逻辑在 `webui_server` 不存在时直接返回 503 错误，修复为：当 WebUI 挂载在主服务器中（无独立 WebUIServer 实例）时，回退到 `reload_config()` 重载配置
+- 修复前报错：`{"error": "server not available"}`，修复后返回：`{"status": "ok", "message": "Config reloaded (WebUI routes are static)"}`
+
+### 验证结果
+
+- `py_compile` 通过
+- POST `/v1/admin/reload` 正常返回 200
+
+---
+
 2026-05-24 | 修复 /docs 路由冲突 — 移除静态占位符，释放 WebUI 文档页面
 
 ### 变更文件
