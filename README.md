@@ -1,87 +1,225 @@
 # Provider-V2
 
-> 高性能 AI 模型代理网关，提供 OpenAI 兼容 API，支持多平台接入与智能请求分发。
+> 统一 AI 模型网关，聚合多个 AI 平台，提供 OpenAI 和 Anthropic 兼容 API
 
 ## 分支说明
+- **main**：平台白名单 — cerebras, chatmoe, codebuddy, cursor, deepseek, nvidia, qwen, openrouter, chutes
+- **dev**：包含当前 `src/platforms/` 下的全部平台（含实验/新增）
 
-| 分支 | 定位 | 说明 |
-|------|------|------|
-| **main** | 稳定版本 | 平台白名单 — cerebras, chatmoe, codebuddy, cursor, deepseek, nvidia, qwen, openrouter, chutes |
-| **dev** | 活跃开发 | 包含当前 `src/platforms/` 下的全部平台（含实验/新增平台） |
-| **classical** | 经典架构 | 保留重构前的经典版本，用于对比和回退参考 |
+<div align="center">
 
-> **⚠️ 贡献者重要提示**：
-> - **禁止直接提交到 `main` 和 `classical` 分支**
-> - 所有新功能开发和 Bug 修复请基于 `dev` 分支创建功能分支
-> - PR 目标必须为 `dev`，由作者审核后合并
-> - `main` 和 `classical` 仅用于稳定版本发布和存档
-
+![Status](https://img.shields.io/badge/status-v2.2.1-blue)
 ![Version](https://img.shields.io/badge/version-2.2.1-blue)
-![Python](https://img.shields.io/badge/python-3.9+-green)
-![Platforms](https://img.shields.io/badge/platforms-20+-orange)
-![License](https://img.shields.io/badge/license-MIT-gray)
+![Python](https://img.shields.io/badge/python-3.8+-blue)
+![License](https://img.shields.io/badge/license-MIT-green)
+![Platforms](https://img.shields.io/badge/platforms-11+-orange)
+
+[![GitHub stars](https://img.shields.io/github/stars/nichengfuben/provider-v2)](https://github.com/nichengfuben/provider-v2/stargazers)
+[![GitHub issues](https://img.shields.io/github/issues/nichengfuben/provider-v2)](https://github.com/nichengfuben/provider-v2/issues)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen)](https://github.com/nichengfuben/provider-v2/pulls)
+
+</div>
+
+---
 
 ## 📋 目录
 
 - [项目简介](#-项目简介)
+- [功能特性](#-功能特性)
+- [效果展示](#-效果展示)
 - [快速开始](#-快速开始)
-- [配置说明](#️-配置说明)
-- [API 使用](#-api-使用)
-- [项目结构](#️-项目结构)
-- [架构概览](#-架构概览)
-- [平台开发](#-平台开发)
-- [开发路线图](#️-开发路线图)
+- [安装指南](#-安装指南)
+- [使用说明](#-使用说明)
+- [项目结构](#-项目结构)
+- [配置说明](#-配置说明)
+- [API 文档](#-api-文档)
+- [测试指南](#-测试指南)
+- [开发指南](#-开发指南)
+- [路线图](#-路线图)
 - [常见问题](#-常见问题)
+- [贡献指南](#-贡献指南)
+- [许可证](#-许可证)
+- [联系方式](#-联系方式)
+
+---
 
 ## 🎯 项目简介
 
-Provider-V2 是一个 AI 模型代理网关服务器，位于客户端（浏览器/SDK）与多个 AI 平台后端之间，提供统一的 OpenAI 兼容 API 接口。
+### 项目背景
 
-### 核心能力
+随着 AI 大模型技术的飞速发展，市场上涌现出众多优秀的 AI 平台（如 Qwen、DeepSeek、GLM、Cerebras 等）。每个平台都提供各自独立的 API 接口，格式各异，调用方式不同。开发者在集成多个平台时，面临以下痛点：
 
-- **统一接口** — 通过单一端点访问多个 AI 平台（Qwen、DeepSeek、Ollama 等 20+ 平台）
-- **智能分发** — 根据模型名称自动路由请求到对应平台
-- **并发控制** — 支持请求并发限制与候选项选择
-- **代理支持** — 灵活的 HTTP/HTTPS/SOCKS 代理配置，支持平台级自动切换
-- **配置热重载** — 修改 `config.toml` 后自动生效，无需重启
-- **流式输出** — 完整支持 Server-Sent Events 流式响应
-- **WebUI** — 内置 Web 管理界面，支持配置编辑、日志查看、平台状态监控
+- **接口不统一**：每个平台的 API 格式各异，需要编写大量适配代码
+- **切换成本高**：更换平台需要修改核心业务逻辑
+- **缺乏容错机制**：单平台故障导致服务不可用
+- **工具调用差异**：Function Calling 格式各平台实现不一致
+- **推理增强不兼容**：thinking、search 等高级功能调用方式各异
+
+**Provider-V2 应运而生**——一个高性能的 AI 模型网关，通过统一的 API 接口，让开发者可以轻松访问多个主流 AI 平台，无需关心各平台的差异性实现细节。
+
+### 核心功能
+
+- 🔌 **多平台聚合**：统一接入 Qwen、DeepSeek、GLM、Cerebras、Ollama、ChatMoe、Cursor、CodeBuddy、NVIDIA 等 11+ 平台
+- 🔄 **API 兼容性**：同时兼容 OpenAI 和 Anthropic API 规范，无缝迁移现有项目
+- ⚡ **并发竞速**：智能选择最快响应的候选项，显著降低延迟
+- 🛠️ **工具调用支持**：完整的 function calling 功能，通过 XML 标签注入工具描述，支持中英文模板自定义
+- 🧠 **推理增强**：支持 thinking 和 search 参数增强推理能力
+- 📡 **流式响应**：完整支持 SSE 流式输出，实时展示生成内容
+- 🔐 **鉴权中间件**：可配置的 API Key 鉴权机制，保障服务安全
+- 🔄 **配置热加载**：修改配置文件后自动重载，无需重启服务
+- 🌐 **代理支持**：全局代理配置，自动禁用 SSL 验证
+- 🔁 **平台热重载**：平台代码变更时自动重载，无需重启进程
 
 ### 技术栈
 
-| 类别 | 技术 |
-|------|------|
-| 运行时 | Python 3.9+ |
-| HTTP 框架 | aiohttp.web (异步，非 ASGI) |
-| 事件循环 | uvloop (Unix), asyncio (Windows) |
-| 配置格式 | TOML (tomllib/tomli + tomlkit) |
-| 数据校验 | Pydantic |
-| 日志 | loguru |
-| 架构 | Runner-Worker 双进程 |
+| 类别 | 技术 | 版本要求 |
+|------|------|----------|
+| Web 框架 | aiohttp | >= 3.9.0 |
+| 异步运行时 | uvicorn[standard] | >= 0.20.0 |
+| HTTP 客户端 | aiohttp | >= 3.9.0 |
+| 数据验证 | pydantic | >= 2.0.0 |
+| 平台 SDK | cerebras-cloud-sdk | >= 1.0.0 |
+| WASM 运行时 | wasmtime | >= 0.40.0 |
+| HTML 解析 | beautifulsoup4 | >= 4.12.0 |
+| 加密库 | pycryptodome | >= 3.20.0 |
+
+### 为什么选择 Provider-V2
+
+| 特性 | Provider-V2 | 直接接入各平台 |
+|------|:-----------:|:-------------:|
+| 统一 API | ✅ OpenAI/Anthropic 兼容 | ❌ 各平台 API 不同 |
+| 并发竞速 | ✅ 自动选择最快响应 | ❌ 需自行实现 |
+| 多平台切换 | ✅ 配置文件切换 | ❌ 需修改代码 |
+| 工具调用 | ✅ 统一 fncall 接口，XML 模板可定制 | ❌ 格式各异 |
+| 推理增强 | ✅ thinking/search 支持 | ❌ 仅部分支持 |
+| 代理支持 | ✅ 全局代理配置 | ❌ 需逐个配置 |
+| 热加载 | ✅ 配置和平台代码均可热重载 | ❌ 不支持 |
+| 账号池 | ✅ 多账号轮询 | ❌ 需自行管理 |
+
+---
 
 ## ✨ 功能特性
 
-- ✅ **OpenAI 兼容 API** — `POST /v1/chat/completions`，无缝对接现有 SDK
-- ✅ **Anthropic 兼容 API** — `POST /v1/messages`，支持 Claude 格式请求
-- ✅ **多平台支持** — Qwen (DashScope)、DeepSeek、Ollama 及 20+ 扩展平台
-- ✅ **流式与非流式** — 完整支持 `stream: true/false`
-- ✅ **模型列表** — `GET /v1/models` 返回可用模型
-- ✅ **函数调用** — XML 标签格式的工具调用支持
-- ✅ **健康检查** — `GET /health` 端点
-- ✅ **认证中间件** — API Key 鉴权，支持黑白名单策略
-- ✅ **CORS 支持** — 跨域请求友好
-- ✅ **代理系统** — 全局/平台级代理，支持 SOCKS 代理
-- ✅ **配置热重载** — 修改配置自动生效 (Watchdog 文件监控)
-- ✅ **WebUI** — Web 管理界面 (配置编辑、日志查看、平台监控)
+### 核心功能
+
+| 功能 | 状态 | 说明 |
+|------|:----:|------|
+| **多平台聚合** | ✅ | 支持 11+ AI 平台 |
+| **OpenAI 兼容 API** | ✅ | 完整支持 `/v1/chat/completions`、`/v1/models` 等接口 |
+| **Anthropic 兼容 API** | ✅ | 完整支持 `/v1/messages`、`/v1/models` 等接口 |
+| **并发竞速模式** | ✅ | 同时请求多个候选项，选择最快响应 |
+| **工具调用（fncall）** | ✅ | XML 标签注入，中英文模板，支持多行参数 |
+| **推理增强** | ✅ | 支持 thinking 和 search 参数增强 |
+| **流式响应** | ✅ | 完整支持 SSE 流式输出 |
+| **鉴权中间件** | ✅ | 可配置的 API Key 鉴权 |
+| **配置热加载** | ✅ | 修改 config.toml 自动重载，无需重启 |
+| **平台热重载** | ✅ | 修改平台代码自动重载适配器 |
+| **代理支持** | ✅ | 全局代理配置，自动禁用 SSL 验证 |
+
+### 高级功能
+
+| 功能 | 状态 | 说明 |
+|------|:----:|------|
+| **智能 Token 回退** | ✅ | 平台返回 usage 为 0 时自动估算 |
+| **模型映射** | ✅ | 支持自定义模型名称映射 |
+| **健康检查** | ✅ | 内置 `/health` 健康检查端点 |
+| **自动文档** | ✅ | 集成 Swagger UI 和 ReDoc |
+| **WASM PoW** | ✅ | DeepSeek 平台自动管理 PoW 求解 |
+| **账号池管理** | ✅ | 支持多账号轮询和自动登录 |
+| **TAS 选择器** | ✅ | Thompson Sampling + 冷却机制，智能选择候选项 |
+| **文件管理** | ✅ | 支持文件上传和管理 API（内存存储） |
+| **Assistants API** | ✅ | 基础实现（内存存储） |
+
+### 已支持平台
+
+| 平台 | 状态 | 能力 |
+|------|:----:|------|
+| Qwen | ✅ | chat, tools, vision, search |
+| DeepSeek | ✅ | chat, thinking, search |
+| GLM | ✅ | chat, tools, vision |
+| Cerebras | ✅ | chat |
+| Ollama | ✅ | chat, embedding |
+| ChatMoe | ✅ | chat |
+| Cursor | ✅ | chat |
+| CodeBuddy | ✅ | chat |
+| NVIDIA | ✅ | chat |
+| 更多平台 | 🚧 | 持续开发中 |
+
+---
+
+## 🖼️ 效果展示
+
+### 服务启动
+
+```bash
+$ python main.py
+
+2026-04-05 10:30:15 | INFO     | main | Provider-V2 已启动: http://0.0.0.0:1337
+2026-04-05 10:30:15 | INFO     | registry | 发现 11 个平台适配器，开始注册
+2026-04-05 10:30:16 | INFO     | registry | 平台 [qwen] 已注册 (3 模型)
+2026-04-05 10:30:16 | INFO     | registry | 平台 [deepseek] 已注册 (2 模型)
+2026-04-05 10:30:16 | INFO     | registry | 注册完成: ['qwen', 'deepseek', 'glm', ...]
+```
+
+### API 调用示例
+
+```bash
+# OpenAI 兼容调用
+curl -X POST http://localhost:1337/v1/chat/completions \
+  -H "Authorization: Bearer sk-xxx" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "qwen-plus",
+    "messages": [{"role": "user", "content": "你好"}]
+  }'
+```
+
+**响应示例：**
+```json
+{
+  "id": "chatcmpl-xxx",
+  "object": "chat.completion",
+  "created": 1234567890,
+  "model": "qwen-plus",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "你好！我是 AI 助手，很高兴为你服务。"
+      },
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 10,
+    "completion_tokens": 20,
+    "total_tokens": 30
+  }
+}
+```
+
+### Swagger UI 文档
+
+启动服务后访问 `http://localhost:1337/docs` 即可看到完整的 API 文档界面。
+
+### 内置 WebUI
+
+启动服务后访问 `http://localhost:1337/webui` 即可打开内置管理界面，支持主题切换、状态刷新和便携设置。
+
+---
 
 ## 🚀 快速开始
 
 ### 环境要求
 
-- Python >= 3.9
-- pip 包管理器
+| 依赖 | 版本要求 |
+|------|----------|
+| Python | >= 3.8 |
+| pip | >= 21.0 |
+| 操作系统 | Windows / macOS / Linux |
 
-### 安装与运行
+### 30 秒快速体验
 
 ```bash
 # 1. 克隆项目
@@ -91,570 +229,1338 @@ cd provider-v2
 # 2. 安装依赖
 pip install -r requirements.txt
 
-# 3. 启动服务
+# 3. 配置平台账号
+# 编辑 config.toml 文件，填入各平台的 API Key
+
+# 4. 启动服务
 python main.py
 ```
 
-服务默认监听 `http://0.0.0.0:1337`。
-
 ### 验证安装
 
-```bash
-curl http://localhost:1337/health
-```
+访问以下地址验证服务是否正常运行：
 
-返回 `{"status": "ok"}` 即表示启动成功。
+| 地址 | 说明 |
+|------|------|
+| http://localhost:1337/health | 健康检查，返回 `{"status": "healthy"}` |
+| http://localhost:1337/docs | Swagger UI 文档界面 |
+| http://localhost:1337/v1/models | 模型列表接口 |
 
-### 快速测试
-
-```bash
-curl -X POST http://localhost:1337/v1/chat/completions \
-  -H "Content-Type: application/json" \
-  -d '{
-    "model": "qwen-turbo",
-    "messages": [{"role": "user", "content": "你好"}]
-  }'
-```
+---
 
 ## 📦 安装指南
 
-### 依赖说明
+### 方式一：pip 安装（推荐）
 
-| 依赖 | 版本 | 用途 |
-|------|------|------|
-| aiohttp | >= 3.9.0 | 异步 HTTP 服务器/客户端 |
-| aiohttp-socks | >= 0.8.0 | SOCKS 代理支持 |
-| pydantic | >= 2.0.0 | 数据校验 |
-| loguru | >= 0.7.0 | 日志管理 |
-| wasmtime | >= 0.40.0 | WASM 运行时 (DeepSeek PoW) |
-| beautifulsoup4 | >= 4.12.0 | HTML 解析 (DeepSeek Web) |
-| pycryptodome | >= 3.20.0 | 加密工具 |
-| tomlkit | >= 0.12.0 | TOML 解析与写入 |
-| watchdog | >= 4.0.0 | 文件监控 (配置热重载) |
-| uvloop | >= 0.19.0 | 高性能事件循环 (Unix) |
-| tomli | >= 2.0.0 | TOML 解析 (Python < 3.11) |
-| cerebras-cloud-sdk | >= 1.0.0 | Cerebras SDK |
-| requests | >= 2.31.0 | HTTP 客户端 |
-| tqdm | >= 4.60.0 | 进度条 |
-| brotli | >= 1.0.0 | Brotli 压缩 |
-| typing-extensions | >= 4.7.0 | 类型提示扩展 |
+```bash
+# 克隆仓库
+git clone https://github.com/nichengfuben/provider-v2.git
+cd provider-v2
 
-完整依赖列表见 `requirements.txt`。
+# 安装依赖
+pip install -r requirements.txt
+```
 
-### 跨平台说明
+### 方式二：使用虚拟环境
 
-- **Linux/macOS**: 自动使用 `uvloop` 提升性能
-- **Windows**: 使用默认 asyncio 事件循环
-- **IDLE 环境**: 自动禁用双进程架构，单进程运行
+```bash
+# 创建虚拟环境
+python -m venv venv
 
-## ⚙️ 配置说明
+# 激活虚拟环境
+# Windows
+.\venv\Scripts\activate
+# macOS / Linux
+source venv/bin/activate
 
-配置文件为项目根目录下的 `config.toml`。支持通过环境变量 `CONFIG_PATH` 指定其他路径。
+# 安装依赖
+pip install -r requirements.txt
+```
 
-### 完整配置示例
+### 方式三：Docker 安装
+
+**Dockerfile：**
+```dockerfile
+FROM python:3.11-slim
+
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY . .
+EXPOSE 1337
+
+CMD ["python", "main.py"]
+```
+
+```bash
+# 构建镜像
+docker build -t provider-v2:latest .
+
+# 运行容器
+docker run -d -p 1337:1337 -v $(pwd)/config.toml:/app/config.toml provider-v2:latest
+```
+
+### 系统特定说明
+
+#### Windows
+
+```powershell
+# 使用虚拟环境
+python -m venv venv
+.\venv\Scripts\activate
+pip install -r requirements.txt
+python main.py
+```
+
+> **注意**：Windows 平台使用 `asyncio` 事件循环，其他平台优先使用 `uvloop`。
+
+#### macOS
+
+```bash
+# 安装 Homebrew（如已安装可跳过）
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+# 安装 Python 3.11
+brew install python@3.11
+
+# 创建虚拟环境并安装
+python3.11 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+python main.py
+```
+
+#### Linux (Ubuntu/Debian)
+
+```bash
+# 安装 Python 和依赖
+sudo apt-get update
+sudo apt-get install python3 python3-pip python3-venv
+
+# 创建虚拟环境并安装
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+python main.py
+
+# 使用 systemd 管理（可选）
+sudo systemctl enable python3
+```
+
+---
+
+## 💻 使用说明
+
+### 基础用法
+
+#### OpenAI API 调用
+
+```python
+import aiohttp
+import asyncio
+
+async def chat_with_openai():
+    async with aiohttp.ClientSession() as session:
+        headers = {
+            "Authorization": "Bearer your-api-key",
+            "Content-Type": "application/json"
+        }
+        data = {
+            "model": "qwen-plus",
+            "messages": [
+                {"role": "user", "content": "你好，请介绍一下你自己"}
+            ],
+            "stream": False
+        }
+
+        async with session.post(
+            "http://localhost:1337/v1/chat/completions",
+            headers=headers,
+            json=data
+        ) as response:
+            result = await response.json()
+            print(result["choices"][0]["message"]["content"])
+
+asyncio.run(chat_with_openai())
+```
+
+#### Anthropic API 调用
+
+```python
+import aiohttp
+import asyncio
+
+async def chat_with_anthropic():
+    async with aiohttp.ClientSession() as session:
+        headers = {
+            "x-api-key": "your-api-key",
+            "Content-Type": "application/json",
+            "anthropic-version": "2023-06-01"
+        }
+        data = {
+            "model": "claude-3-sonnet-20240229",
+            "max_tokens": 1024,
+            "messages": [
+                {"role": "user", "content": "你好，请介绍一下你自己"}
+            ]
+        }
+
+        async with session.post(
+            "http://localhost:1337/v1/messages",
+            headers=headers,
+            json=data
+        ) as response:
+            result = await response.json()
+            print(result["content"][0]["text"])
+
+asyncio.run(chat_with_anthropic())
+```
+
+### 高级用法
+
+#### 工具调用（Function Calling）
+
+Provider-V2 使用 XML 标签格式将工具描述注入到提示中。模型需要按照以下格式返回函数调用：
+
+```xml
+<function=函数名>
+<参数名1>
+参数值
+</参数名1>
+<参数名2>
+参数值
+</参数名2>
+</function>
+```
+
+**重要格式要求：**
+- XML 标签名必须与参数名完全一致
+- 标签和值之间**必须**有换行符
+- 必须包含所有必需参数
+- 支持多行参数（如代码块）
+
+**示例代码：**
+
+```python
+import aiohttp
+import asyncio
+
+async def function_calling_example():
+    async with aiohttp.ClientSession() as session:
+        headers = {
+            "Authorization": "Bearer your-api-key",
+            "Content-Type": "application/json"
+        }
+        data = {
+            "model": "qwen-plus",
+            "messages": [
+                {"role": "user", "content": "北京今天的天气怎么样？"}
+            ],
+            "tools": [
+                {
+                    "type": "function",
+                    "function": {
+                        "name": "get_weather",
+                        "description": "获取指定城市的天气",
+                        "parameters": {
+                            "type": "object",
+                            "properties": {
+                                "city": {
+                                    "type": "string",
+                                    "description": "城市名称"
+                                }
+                            },
+                            "required": ["city"]
+                        }
+                    }
+                }
+            ]
+        }
+
+        async with session.post(
+            "http://localhost:1337/v1/chat/completions",
+            headers=headers,
+            json=data
+        ) as response:
+            result = await response.json()
+            tool_call = result["choices"][0]["message"]["tool_calls"][0]
+            print(f"模型调用了工具: {tool_call['function']['name']}")
+            print(f"参数: {tool_call['function']['arguments']}")
+
+asyncio.run(function_calling_example())
+```
+
+**自定义模板：**
+
+可以在 `config.toml` 中自定义中英文提示模板：
 
 ```toml
-[server]
-version = "2.2.1"
-host = "0.0.0.0"
-port = 1337
-debug = false
-STARTUP_FORCE_KILL_PORT = true
+[fncall.templates]
+en = """
+You are a helpful AI assistant that can interact with tools to solve tasks.
 
-[anthropic]
-api_version = "2023-06-01"
+<chat_history>
+{chat_history}
+</chat_history>
 
-[anthropic.model_mapping]
-"claude-haiku-4-5-20251001" = "qwen3-coder-plus"
-"claude-sonnet-4-6" = "qwen3-coder-plus"
+# Available Tools
 
-[auth]
-enabled = false                    # 是否启用 API Key 认证
-keys = ["your-api-key-here"]       # 允许的 API Key 列表
-group_list_type = "blacklist"      # 黑白名单策略
-group_list = []
+<tools>
+{tool_descs}
+</tools>
 
-[gateway]
-concurrent_enabled = true          # 是否启用并发控制
-concurrent_count = 3               # 最大并发数
-min_tokens = 10                    # 最小 token 数
+To call a function, wrap each parameter value in XML tags named after the parameter:
 
-[proxy]
-proxy_server = "http://127.0.0.1:7890"  # 代理地址
-proxy_enabled = true                      # 是否启用全局代理
-proxy_urls = []                           # 额外代理 URL 列表
+<function=function_name>
+<first_parameter>
+value
+</first_parameter>
+<second_parameter>
+value
+</second_parameter>
+</function>
 
-[platforms_proxy]
-enabled_platforms = []             # 允许切换代理的平台列表
+<IMPORTANT>
+- The XML tag name MUST exactly match the parameter name defined above.
+- There MUST be a line break between the opening tag and the value, and between the value and the closing tag.
+- Required parameters MUST be included.
+- Only provide reasoning BEFORE the function call, never after.
+- If no function call is needed, answer normally without mentioning tools.
+</IMPORTANT>"""
 
-[platforms]
-platform_list_type = "blacklist"   # 平台黑白名单策略
-platform_list = []                 # 黑名单/白名单中的平台名
+zh = """
+你是一个乐于助人的AI助手，可以使用工具来解决任务。
 
-[platforms.qwen]
-enabled = true
+<chat_history>
+{chat_history}
+</chat_history>
 
-[platforms.deepseek]
-enabled = true
+# 可用工具
 
-[fncall]
-record_prompt = false
+<tools>
+{tool_descs}
+</tools>
 
-[debug]
-level = "INFO"                     # 日志级别: DEBUG/INFO/WARNING/ERROR
+调用函数时，将每个参数值用与参数名同名的XML标签包裹：
+
+<function=函数名>
+<第一个参数名>
+值
+</第一个参数名>
+<第二个参数名>
+值
+</第二个参数名>
+</function>
+
+<IMPORTANT>
+- XML标签名必须与参数名完全一致，不要添加前缀。
+- 标签和值之间必须有换行符。
+- 必须包含所有必需参数。
+- 只能在函数调用之前提供推理说明，不能在之后。
+- 如果不需要调用函数，请正常回答问题。
+</IMPORTANT>"""
 ```
 
-### 配置优先级
+#### 流式响应
 
-1. 环境变量 `CONFIG_PATH` 指定的文件 (最高优先级)
-2. 项目根目录 `config.toml`
-3. 代码默认值 (最低优先级)
+```python
+import aiohttp
+import asyncio
+import json
 
-### 认证配置
+async def streaming_example():
+    async with aiohttp.ClientSession() as session:
+        headers = {
+            "Authorization": "Bearer your-api-key",
+            "Content-Type": "application/json"
+        }
+        data = {
+            "model": "qwen-plus",
+            "messages": [
+                {"role": "user", "content": "请写一首关于春天的诗"}
+            ],
+            "stream": True
+        }
 
-```toml
-[auth]
-enabled = true
-keys = ["sk-key1", "sk-key2"]
-group_list_type = "whitelist"   # "blacklist" 或 "whitelist"
-group_list = ["sk-key1"]        # 白名单模式: 仅允许列表中的 key
+        async with session.post(
+            "http://localhost:1337/v1/chat/completions",
+            headers=headers,
+            json=data
+        ) as response:
+            async for line in response.content:
+                line = line.decode('utf-8').strip()
+                if line.startswith('data: '):
+                    data_str = line[6:]
+                    if data_str == '[DONE]':
+                        break
+                    try:
+                        chunk = json.loads(data_str)
+                        if chunk['choices'][0]['delta'].get('content'):
+                            print(chunk['choices'][0]['delta']['content'], end='', flush=True)
+                    except json.JSONDecodeError:
+                        continue
+
+asyncio.run(streaming_example())
 ```
 
-请求时携带 Header:
-```
-Authorization: Bearer sk-key1
-# 或
-X-API-Key: sk-key1
-```
+#### Thinking 推理增强
 
-### 代理系统
+```python
+import aiohttp
+import asyncio
 
-代理支持多级控制:
+async def thinking_example():
+    async with aiohttp.ClientSession() as session:
+        headers = {
+            "Authorization": "Bearer your-api-key",
+            "Content-Type": "application/json"
+        }
+        data = {
+            "model": "deepseek-reasoner",
+            "messages": [
+                {"role": "user", "content": "解释量子纠缠现象"}
+            ],
+            "extra_body": {
+                "thinking": True  # 启用 thinking 模式
+            }
+        }
 
-| 层级 | 配置 | 说明 |
-|------|------|------|
-| 全局代理 | `[proxy]` 节 | 所有请求使用指定代理 |
-| 环境变量 | `HTTP_PROXY`/`HTTPS_PROXY`/`ALL_PROXY` | 自动检测 |
-| 平台切换 | `[platforms_proxy]` 节 | 指定平台可动态切换代理 |
+        async with session.post(
+            "http://localhost:1337/v1/chat/completions",
+            headers=headers,
+            json=data
+        ) as response:
+            result = await response.json()
+            if result.get("reasoning_content"):
+                print("推理过程:", result["reasoning_content"])
+            print("最终答案:", result["choices"][0]["message"]["content"])
 
-## 💻 API 使用
-
-### 聊天补全
-
-```http
-POST /v1/chat/completions
-POST /chat/completions
-```
-
-**请求体:**
-
-| 字段 | 类型 | 必填 | 说明 |
-|------|------|------|------|
-| model | string | 否 | 模型名称，默认 `qwen-turbo` |
-| messages | array | 是 | 消息列表 |
-| stream | boolean | 否 | 是否流式输出，默认 `false` |
-| temperature | number | 否 | 温度参数 |
-| max_tokens | integer | 否 | 最大 token 数 |
-| tools | array | 否 | 工具定义列表 |
-
-**非流式请求示例:**
-
-```bash
-curl -X POST http://localhost:1337/v1/chat/completions \
-  -H "Content-Type: application/json" \
-  -d '{
-    "model": "qwen-turbo",
-    "messages": [
-      {"role": "system", "content": "你是一个助手"},
-      {"role": "user", "content": "请解释什么是异步编程"}
-    ],
-    "temperature": 0.7
-  }'
+asyncio.run(thinking_example())
 ```
 
-**流式请求示例:**
+### 请求参数说明
 
-```bash
-curl -X POST http://localhost:1337/v1/chat/completions \
-  -H "Content-Type: application/json" \
-  -d '{
-    "model": "qwen-turbo",
-    "messages": [{"role": "user", "content": "你好"}],
-    "stream": true
-  }'
-```
+| 参数名 | 类型 | 默认值 | 说明 |
+|--------|------|--------|------|
+| `model` | string | - | 模型名称，如 `qwen-plus`、`deepseek-chat` |
+| `messages` | array | - | 消息列表，格式为 `[{role, content}]` |
+| `stream` | boolean | `false` | 是否启用流式输出 |
+| `max_tokens` | integer | - | 最大生成 Token 数 |
+| `temperature` | float | `1.0` | 温度参数，控制随机性（0-2） |
+| `top_p` | float | `1.0` | 核采样参数（0-1） |
+| `tools` | array | - | 工具定义列表（fncall） |
+| `extra_body` | object | - | 额外参数，如 `thinking`、`search` |
 
-### Anthropic 格式聊天补全
-
-```http
-POST /v1/messages
-```
-
-支持 Anthropic Claude API 格式的请求，包括 tool_use/tool_result 等特性。
-
-### 模型列表
-
-```http
-GET /v1/models
-GET /v1/models/{model_name}
-```
-
-```bash
-curl http://localhost:1337/v1/models
-```
-
-### 健康检查
-
-```http
-GET /health
-```
-
-```bash
-curl http://localhost:1337/health
-# 返回: {"status": "ok"}
-```
-
-### 函数调用
-
-```http
-POST /v1/function/call
-GET /v1/functions
-```
+---
 
 ## 🏗️ 项目结构
 
 ```
 provider-v2/
-├── main.py                  # 入口文件 (Runner-Worker 双进程架构)
-├── config.toml              # 主配置文件
-├── requirements.txt         # Python 依赖
-├── record.md                # 变更记录日志
-│
-├── src/
-│   ├── core/                # 核心模块
-│   │   ├── config/          # 模块化配置系统
-│   │   │   ├── __init__.py  # 导出公共 API
-│   │   │   ├── base.py      # 配置基类与数据类
-│   │   │   ├── sections.py  # 各配置段定义 (server/auth/gateway/proxy等)
-│   │   │   ├── manager.py   # 配置加载、热重载与路由匹配
-│   │   │   └── resolver.py  # 模型到平台的路由解析
-│   │   ├── server.py        # aiohttp 应用创建与中间件
-│   │   ├── registry.py      # 平台注册表与适配器发现
-│   │   ├── selector.py      # 候选项选择器
-│   │   ├── candidate.py     # 候选项模型
-│   │   ├── http.py          # 共享 HTTP 工具
-│   │   ├── scheduler.py     # 异步任务调度器
-│   │   ├── watcher.py       # 文件监控 (配置热重载)
-│   │   ├── proxy.py         # 代理系统
-│   │   ├── gateway.py       # 请求分发网关
-│   │   ├── errors.py        # 错误分类
-│   │   ├── retry.py         # 重试逻辑
-│   │   ├── tools.py         # 工具调用处理
-│   │   ├── ids.py           # ID 生成
-│   │   ├── io_utils.py      # IO 工具
-│   │   ├── process.py       # 进程管理
-│   │   └── webui/           # WebUI 支撑模块
-│   │       ├── page.py      # 页面渲染
-│   │       └── __init__.py
-│   │
-│   ├── webui/               # WebUI 子系统
-│   │   ├── __init__.py      # 包初始化
-│   │   ├── app.py           # WebUI 应用入口
-│   │   ├── server.py        # WebUI 服务器
-│   │   ├── routes.py        # WebUI 路由
-│   │   ├── page.py          # 页面组件
-│   │   ├── models.py        # 数据模型
-│   │   ├── config_schema.py # 配置 schema
-│   │   ├── dependencies.py  # 依赖注入
-│   │   ├── logs_ws.py       # 日志 WebSocket
-│   │   ├── core/            # 核心功能
-│   │   ├── middleware/      # 中间件
-│   │   ├── routers/         # 路由器
-│   │   ├── schemas/         # 数据 Schema
-│   │   ├── services/        # 服务层
-│   │   ├── templates/       # HTML 模板
-│   │   └── utils/           # 工具函数
-│   │
-│   ├── routes/              # HTTP 路由
-│   │   ├── __init__.py
-│   │   ├── openai.py        # OpenAI 兼容路由
-│   │   ├── anthropic.py     # Anthropic 兼容路由
-│   │   ├── static.py        # 静态路由 (health, 等)
-│   │   ├── chat.py          # 聊天补全端点
-│   │   ├── models.py        # 模型列表端点
-│   │   ├── function_call.py # 函数调用端点
-│   │   └── health.py        # 健康检查端点
-│   │
-│   ├── platforms/           # 平台适配器 (20+)
-│   │   ├── base.py          # 平台适配器基类
-│   │   ├── qwen/            # Qwen (DashScope) 平台
-│   │   ├── deepseek/        # DeepSeek 平台 (Web 抓取)
-│   │   ├── ollama/          # Ollama 本地服务
-│   │   ├── cerebras/        # Cerebras
-│   │   ├── nvidia/          # NVIDIA NIM
-│   │   ├── openrouter/      # OpenRouter
-│   │   ├── chatmoe/         # ChatMoe
-│   │   ├── cursor/          # Cursor
-│   │   ├── codebuddy/       # CodeBuddy
-│   │   ├── chutes/          # Chutes
-│   │   ├── caiyuesbk/       # 彩月 SBK
-│   │   ├── apiairforce/     # APiAirForce
-│   │   ├── n1n/             # N1N
-│   │   ├── perplexity/      # Perplexity
-│   │   ├── openaifm/        # OpenAI-FM
-│   │   ├── edgetts/         # Edge TTS 语音合成
-│   │   └── gtts/            # Google TTS 语音合成
-│   │
-│   └── logger.py            # 日志模块
-│
-├── docs-src/                # 文档源文件
-│   ├── INDEX.md             # 文档索引
-│   ├── docs-src-guide.md    # 文档编写指南
-│   ├── AGENTS.md            # AI 代理指南
-│   ├── core/                # 核心模块文档
-│   ├── platforms/           # 平台开发规范
-│   ├── src/                 # 源代码文档 (镜像)
-│   ├── tests/               # 测试文档
-│   └── template/            # 模板文档
-│
-├── tests/                   # 测试套件
-│   ├── conftest.py          # pytest 配置
-│   ├── helpers/             # 测试辅助工具
-│   └── src/                 # 按源码结构组织的测试
-│       ├── core/            # 核心模块测试
-│       └── platforms/       # 平台适配器测试
-│
-├── persist/                 # 持久化数据
-│   ├── qwen/                # Qwen 模型缓存
-│   ├── deepseek/            # DeepSeek 模型与 WASM 元数据
-│   ├── ollama/              # Ollama 服务发现数据
-│   ├── chutes/              # Chutes 缓存
-│   ├── codebuddy/           # CodeBuddy 缓存
-│   ├── cursor/              # Cursor 缓存
-│   ├── nvidia/              # NVIDIA 缓存
-│   └── openrouter/          # OpenRouter 缓存
+├── 📁 persist/                  # 持久化数据目录
+│   ├── 📁 deepseek/           # DeepSeek WASM 文件和状态
+│   ├── 📁 ollama/             # Ollama 模型缓存
+│   └── 📁 qwen/               # Qwen 账号状态
+├── 📁 src/                     # 源代码目录
+│   ├── 📁 core/               # 核心模块
+│   │   ├── 📄 candidate.py    # 候选项定义
+│   │   ├── 📄 config.py       # 配置管理
+│   │   ├── 📄 errors.py       # 异常定义
+│   │   ├── 📄 gateway.py      # 网关核心逻辑
+│   │   ├── 📄 models_cache.py # 模型缓存
+│   │   ├── 📄 proxy.py        # 代理配置
+│   │   ├── 📄 registry.py     # 平台注册表
+│   │   ├── 📄 retry.py        # 重试机制
+│   │   ├── 📄 selector.py     # TAS 候选项选择器
+│   │   ├── 📄 server.py       # 服务器创建
+│   │   ├── 📄 tools.py        # 工具调用处理
+│   │   └── 📄 watcher.py      # 文件监视器（热重载）
+│   ├── 📁 platforms/          # 平台适配器
+│   │   ├── 📄 base.py         # 适配器基类
+│   │   ├── 📁 qwen/           # Qwen 平台
+│   │   ├── 📁 deepseek/       # DeepSeek 平台
+│   │   ├── 📁 glm/            # GLM 平台
+│   │   ├── 📁 cerebras/       # Cerebras 平台
+│   │   ├── 📁 ollama/         # Ollama 平台
+│   │   ├── 📁 chatmoe/        # ChatMoe 平台
+│   │   ├── 📁 cursor/         # Cursor 平台
+│   │   ├── 📁 codebuddy/      # CodeBuddy 平台
+│   │   └── 📁 nvidia/         # NVIDIA 平台
+│   └── 📁 routes/             # 路由层
+│       ├── 📄 anthropic.py    # Anthropic API 路由
+│       ├── 📄 openai.py       # OpenAI API 路由
+│       └── 📄 static.py       # 静态路由（健康检查等）
+├── 📄 config.toml             # 配置文件
+├── 📄 main.py                 # 应用入口
+├── 📄 requirements.txt        # Python 依赖
+├── 📄 README.md               # 项目文档
+└── 📄 LICENSE                 # MIT 许可证
 ```
 
-## 🏛️ 架构概览
+### 核心目录说明
 
-### Runner-Worker 双进程模型
-
-```
-main.py
-├── Runner 进程 (父进程)
-│   └── 监控 Worker 子进程
-│       · exit code 42 → 自动重启
-│       · Ctrl+C → 终止 Worker
-│       · 最多 50 次重启
-│
-└── Worker 进程 (子进程, WORKER_PROCESS=1)
-    └── asyncio 事件循环
-        · aiohttp.web 服务器
-        · 所有平台适配器
-        · 配置热重载
-        · WebUI 服务器
-```
-
-### 请求处理流程
-
-```
-客户端 → aiohttp.web → 中间件 (CORS/认证/错误/自定义) → 路由处理器 → 平台适配器 → AI 后端
-                                    ↓
-                              根据 model 字段自动选择平台
-```
-
-### 中间件链
-
-| 中间件 | 顺序 | 功能 |
-|--------|------|------|
-| `_cors_middleware` | 1 | CORS 跨域支持 |
-| `_auth_middleware` | 2 | API Key 鉴权 (可选) |
-| `_error_middleware` | 3 | 统一错误处理 |
-
-### 平台适配器接口
-
-所有平台适配器实现统一的 `PlatformAdapter` 抽象基类 (`src/platforms/base.py`):
-
-| 方法 | 说明 |
+| 目录 | 说明 |
 |------|------|
-| `name` | 平台标识 (与目录名一致) |
-| `init(session)` | 初始化 (必须立即返回，耗时操作放后台) |
-| `candidates()` | 返回当前可用候选项 |
-| `ensure_candidates(count)` | 确保候选项数量 |
-| `complete(...)` | 聊天补全，yield 文本/字典 |
-| `close()` | 清理资源 |
+| `src/core/` | 核心网关逻辑，包括配置管理、请求分发、TAS 候选项选择、文件监视热重载 |
+| `src/platforms/` | 各平台适配器实现，自动发现机制，支持热重载 |
+| `src/routes/` | HTTP 路由层，实现 OpenAI 和 Anthropic 兼容接口 |
+| `persist/` | 平台状态持久化，如 DeepSeek WASM 文件、账号池等 |
 
-### 平台目录规范
+---
+
+## ⚙️ 配置说明
+
+### 配置文件位置
+
+Provider-V2 按以下顺序查找配置文件：
+1. 环境变量 `CONFIG_PATH` 指定的路径
+2. 项目根目录的 `config.toml`
+3. 当前目录的 `config.toml`
+4. 向上遍历 5 层目录查找 `config.toml`
+
+### 完整配置示例
+
+```toml
+# Provider-V2 配置文件
+
+# ============================================================
+# 服务器配置
+# ============================================================
+[server]
+host = "0.0.0.0"          # 监听地址
+port = 1337               # 监听端口
+debug = false             # 调试模式
+
+[server.anthropic]
+api_version = "2023-06-01"
+
+[server.anthropic.model_mapping]
+# 可选：自定义模型映射
+# "claude-3-sonnet" = "qwen-plus"
+
+# ============================================================
+# 鉴权配置
+# ============================================================
+[auth]
+enabled = false           # 是否启用鉴权
+keys = [
+    "sk-your-api-key-1",
+    "sk-your-api-key-2"
+]
+
+# ============================================================
+# 网关配置
+# ============================================================
+[gateway]
+concurrent_enabled = true # 是否启用并发竞速
+concurrent_count = 3      # 并发请求数
+min_tokens = 10           # 选择胜者的最小 Token 阈值
+
+# ============================================================
+# 代理配置
+# ============================================================
+[proxy]
+proxy_server = "http://127.0.0.1:40000"
+proxy_enabled = false
+
+# ============================================================
+# 工具调用配置
+# ============================================================
+[fncall]
+call_start_tag = "<function="
+call_end_tag = "</function>"
+tools_start_tag = "<tools>"
+tools_end_tag = "</tools>"
+
+[fncall.templates]
+en = """
+You are a helpful AI assistant that can interact with tools to solve tasks.
+
+<chat_history>
+{chat_history}
+</chat_history>
+
+# Available Tools
+
+<tools>
+{tool_descs}
+</tools>
+
+To call a function, wrap each parameter value in XML tags named after the parameter:
+
+<function=function_name>
+<first_parameter>
+value
+</first_parameter>
+<second_parameter>
+value
+</second_parameter>
+</function>
+
+<IMPORTANT>
+- The XML tag name MUST exactly match the parameter name defined above.
+- There MUST be a line break between the opening tag and the value, and between the value and the closing tag.
+- Required parameters MUST be included.
+- Only provide reasoning BEFORE the function call, never after.
+- If no function call is needed, answer normally without mentioning tools.
+</IMPORTANT>"""
+
+zh = """
+你是一个乐于助人的AI助手，可以使用工具来解决任务。
+
+<chat_history>
+{chat_history}
+</chat_history>
+
+# 可用工具
+
+<tools>
+{tool_descs}
+</tools>
+
+调用函数时，将每个参数值用与参数名同名的XML标签包裹：
+
+<function=函数名>
+<第一个参数名>
+值
+</第一个参数名>
+<第二个参数名>
+值
+</第二个参数名>
+</function>
+
+<IMPORTANT>
+- XML标签名必须与参数名完全一致，不要添加前缀。
+- 标签和值之间必须有换行符。
+- 必须包含所有必需参数。
+- 只能在函数调用之前提供推理说明，不能在之后。
+- 如果不需要调用函数，请正常回答问题。
+</IMPORTANT>"""
+```
+
+### 配置项详解
+
+#### 服务器配置
+
+```toml
+[server]
+host = "0.0.0.0"        # 监听地址，0.0.0.0 表示监听所有网卡
+port = 1337             # 监听端口
+debug = false           # 调试模式，开启后输出更多日志
+```
+
+#### Anthropic 兼容层配置
+
+```toml
+[server.anthropic]
+api_version = "2023-06-01"  # Anthropic API 版本
+
+[server.anthropic.model_mapping]
+# 模型名称映射，将 Anthropic 模型名映射到实际平台模型
+# "claude-3-sonnet" = "qwen-plus"
+```
+
+#### 鉴权配置
+
+```toml
+[auth]
+enabled = true                      # 是否启用鉴权
+keys = ["key1", "key2", "key3"]    # 允许的 API Key 列表
+```
+
+**鉴权方式**：
+- 优先从 `Authorization: Bearer {key}` 头提取
+- 失败后从 `x-api-key` 头提取
+- 以下路径跳过鉴权：`/`、`/health`、`/docs`、`/redoc`、`/openapi.json`
+
+#### 网关配置
+
+```toml
+[gateway]
+concurrent_enabled = true    # 是否启用并发竞速
+concurrent_count = 3         # 并发请求数（同时请求多少个候选项）
+min_tokens = 10              # 选择胜者的最小 Token 阈值
+```
+
+**并发竞速机制**：
+- 同时向 `concurrent_count` 个候选项发送请求
+- 当任一候选项累积 Token 数 ≥ `min_tokens` 时立即选择该候选项
+- 适用于低延迟场景，会消耗更多配额
+
+#### 代理配置
+
+```toml
+[proxy]
+proxy_server = "http://proxy.example.com:8080"  # 代理服务器地址
+proxy_enabled = true                             # 是否启用代理
+proxy_list_type = "whitelist"                    # 列表类型：whitelist（白名单）或 blacklist（黑名单）
+proxy_urls = [                                   # URL 正则匹配列表
+    ".*qwen\\.ai.*",
+    ".*deepseek\\.com.*"
+]
+```
+
+**说明：**
+- `whitelist` 模式：仅匹配 `proxy_urls` 正则的请求走代理，其余直连
+- `blacklist` 模式：匹配 `proxy_urls` 正则的请求直连，其余走代理
+- 直接 IP 地址始终 bypass 代理
+- `proxy_urls` 为空时：whitelist 模式全部直连，blacklist 模式全部走代理
+
+> **注意**：代理在 `src.core.proxy` 模块导入时即生效，修改后需重启服务。
+
+#### 工具调用配置
+
+```toml
+[fncall]
+call_start_tag = "<function="      # 函数调用开始标签
+call_end_tag = "</function>"       # 函数调用结束标签
+tools_start_tag = "<tools>"        # 工具列表开始标签
+tools_end_tag = "</tools>"         # 工具列表结束标签
+
+[fncall.templates]
+en = "..."    # 英文模板，支持 {chat_history} 和 {tool_descs} 占位符
+zh = "..."    # 中文模板
+```
+
+### 配置热加载
+
+- 修改 `config.toml` 后自动重载，无需重启服务
+- 配置监听器每 2 秒检查一次变更
+- 代理配置修改后需要重启服务
+
+---
+
+## 🔌 API 文档
+
+### 接口概览
+
+| 方法 | 端点 | 说明 |
+|------|------|------|
+| GET | `/health` | 健康检查 |
+| GET | `/v1/models` | 获取模型列表 |
+| POST | `/v1/chat/completions` | OpenAI 聊天补全 |
+| POST | `/v1/messages` | Anthropic 聊天接口 |
+| POST | `/v1/completions` | Legacy 文本补全 |
+| POST | `/v1/embeddings` | 嵌入向量生成 |
+| POST | `/v1/images/generations` | 图片生成 |
+| POST | `/v1/audio/speech` | 语音合成 |
+| POST | `/v1/audio/transcriptions` | 语音转录 |
+| POST | `/v1/moderations` | 内容审核 |
+| GET | `/docs` | Swagger UI 文档 |
+| GET | `/redoc` | ReDoc 文档 |
+
+### 接口详情
+
+#### 健康检查
+
+```http
+GET /health
+```
+
+**响应示例：**
+```json
+{
+  "status": "healthy",
+  "timestamp": 1234567890
+}
+```
+
+#### 获取模型列表
+
+```http
+GET /v1/models
+Authorization: Bearer <api-key>
+```
+
+**响应示例：**
+```json
+{
+  "object": "list",
+  "data": [
+    {
+      "id": "qwen-plus",
+      "object": "model",
+      "created": 1234567890,
+      "owned_by": "qwen",
+      "capabilities": {
+        "chat": true,
+        "tools": true,
+        "vision": true,
+        "search": true
+      }
+    },
+    {
+      "id": "deepseek-chat",
+      "object": "model",
+      "created": 1234567890,
+      "owned_by": "deepseek",
+      "capabilities": {
+        "chat": true,
+        "thinking": true,
+        "search": true
+      }
+    }
+  ]
+}
+```
+
+#### OpenAI 聊天补全
+
+```http
+POST /v1/chat/completions
+Authorization: Bearer <api-key>
+Content-Type: application/json
+```
+
+**请求示例：**
+```json
+{
+  "model": "qwen-plus",
+  "messages": [
+    {"role": "system", "content": "你是一个乐于助人的助手"},
+    {"role": "user", "content": "你好"}
+  ],
+  "stream": false,
+  "max_tokens": 1024,
+  "temperature": 0.7
+}
+```
+
+**响应示例：**
+```json
+{
+  "id": "chatcmpl-xxx",
+  "object": "chat.completion",
+  "created": 1234567890,
+  "model": "qwen-plus",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "你好！我是 AI 助手，很高兴为你服务。"
+      },
+      "finish_reason": "stop",
+      "logprobs": null
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 10,
+    "completion_tokens": 20,
+    "total_tokens": 30
+  },
+  "system_fingerprint": null
+}
+```
+
+#### Anthropic 聊天接口
+
+```http
+POST /v1/messages
+x-api-key: <api-key>
+anthropic-version: 2023-06-01
+Content-Type: application/json
+```
+
+**请求示例：**
+```json
+{
+  "model": "claude-3-sonnet-20240229",
+  "max_tokens": 1024,
+  "messages": [
+    {"role": "user", "content": "你好"}
+  ],
+  "stream": false
+}
+```
+
+**响应示例：**
+```json
+{
+  "id": "msg-xxx",
+  "type": "message",
+  "role": "assistant",
+  "content": [
+    {
+      "type": "text",
+      "text": "你好！我是 Claude，很高兴为你服务。"
+    }
+  ],
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "usage": {
+    "input_tokens": 10,
+    "output_tokens": 20
+  }
+}
+```
+
+### 错误码说明
+
+| HTTP 状态码 | 错误类型 | 说明 |
+|------------|---------|------|
+| 400 | `invalid_request_error` | 请求参数错误 |
+| 401 | `authentication_error` | API Key 无效或缺失 |
+| 404 | `not_found_error` | 资源不存在 |
+| 429 | `rate_limit_error` | 请求频率超限 |
+| 500 | `server_error` | 服务器内部错误 |
+| 503 | `overloaded_error` | 服务过载，无可用候选项 |
+
+### 完整 API 文档
+
+启动服务后访问以下地址：
+- 📚 **Swagger UI**: http://localhost:1337/docs
+- 📚 **ReDoc**: http://localhost:1337/redoc
+
+---
+
+## 🧪 测试指南
+
+### 运行测试
+
+```bash
+# 运行所有测试
+pytest tests/
+
+# 运行特定测试文件
+pytest tests/test_gateway.py
+
+# 运行特定测试函数
+pytest tests/test_gateway.py::test_dispatch
+
+# 生成覆盖率报告
+pytest --cov=src tests/
+```
+
+### 平台独立测试
+
+每个平台都提供独立的 `test.py` 测试脚本：
+
+```bash
+# 测试 Qwen 平台
+cd src/platforms/qwen
+python test.py
+
+# 测试 DeepSeek 平台
+cd src/platforms/deepseek
+python test.py
+```
+
+### 测试覆盖率要求
+
+| 类型 | 最低覆盖率 |
+|------|:---------:|
+| 语句覆盖 | 70% |
+| 分支覆盖 | 60% |
+| 函数覆盖 | 80% |
+
+---
+
+## 📝 开发指南
+
+### 开发状态
+
+> ⚠️ **项目状态：Alpha 2.1 - 活跃开发中**
+>
+> 本项目正处于**活跃开发阶段**，代码和文档持续更新中。
+>
+> **贡献者请注意**：
+> - 请将 Pull Request 提交到 **`dev` 分支**
+> - `main` 分支仅用于稳定版本发布
+> - 新功能开发请基于 `dev` 分支创建功能分支
+
+### 开发环境搭建
+
+```bash
+# 1. Fork 并克隆项目
+git clone https://github.com/你的用户名/provider-v2.git
+cd provider-v2
+
+# 2. 添加上游仓库
+git remote add upstream https://github.com/nichengfuben/provider-v2.git
+
+# 3. 切换到 dev 分支
+git checkout dev
+
+# 4. 创建功能分支
+git checkout -b feature/你的功能名
+
+# 5. 安装开发依赖
+pip install -r requirements.txt
+pip install pytest pytest-cov black isort mypy
+
+# 6. 运行测试确保环境正常
+pytest tests/
+```
+
+### 代码规范
+
+- 遵循 PEP 8 代码风格
+- 使用 `black` 进行格式化：`black src/`
+- 使用 `isort` 进行导入排序：`isort src/`
+- 使用 `mypy` 进行类型检查：`mypy src/`
+- 添加类型注解
+- 编写中文注释和文档字符串
+- **不使用 f-string**，使用 `str.format()` 保持 Python 3.8 兼容
+
+### Git 提交规范
+
+采用 [Conventional Commits](https://conventionalcommits.org/) 规范：
 
 ```
-src/platforms/{platform}/
-├── __init__.py          # 包初始化
-├── adapter.py           # 重导出 adapter_impl (不写逻辑)
-├── util.py              # 工具函数 (延迟导入)
-├── client.py            # HTTP 客户端
-├── accounts.py          # 账户管理 (可选)
-└── core/
-    ├── adapter_impl.py  # 适配器核心实现
-    ├── constants.py     # 常量定义
-    └── ...
+<type>(<scope>): <description>
+
+[optional body]
+
+[optional footer]
 ```
 
-## 🔌 平台开发
-
-新平台开发请阅读 `docs-src/platforms/PLATFORM_GUIDE.md`。
-
-### 关键原则
-
-1. **`init()` 必须立即返回** — 不得阻塞，耗时操作交后台 Task
-2. **`adapter.py` 不写逻辑** — 仅重导出 `core/adapter_impl.py`
-3. **`util.py` 使用 `__getattr__` 延迟导入** — 避免循环依赖
-4. **共享 Session** — 所有客户端使用 `main.py` 创建的单一 Session
-5. **SSL 全局禁用** — 所有请求 `ssl=False`
-
-### yield 协议
-
-`complete()` 方法 yield 的数据类型:
-
+**Type 类型：**
 | 类型 | 说明 |
 |------|------|
-| `str` | 文本增量 |
-| `dict` | `{"thinking": "..."}` 思考内容 |
-| `dict` | `{"usage": {"prompt_tokens": N, "completion_tokens": N}}` 用量 |
-| `dict` | `{"tool_calls": [...]}` 工具调用 |
+| `feat` | 新功能 |
+| `fix` | Bug 修复 |
+| `docs` | 文档更新 |
+| `style` | 代码格式调整 |
+| `refactor` | 重构 |
+| `test` | 测试相关 |
+| `chore` | 构建/工具相关 |
+
+**示例：**
+```
+feat(qwen): 添加 qwen3.5-122b 模型支持
+
+- 更新 MODELS 列表
+- 调整 max_tokens 限制
+
+fix(gateway): 修复并发竞速时 token 计数错误
+```
+
+### 分支命名规范
+
+| 分支类型 | 命名格式 | 示例 |
+|----------|----------|------|
+| 功能分支 | `feature/xxx` | `feature/qwen-new-model` |
+| 修复分支 | `fix/xxx` | `fix/gateway-timeout` |
+| 文档分支 | `docs/xxx` | `docs/api-update` |
+| 重构分支 | `refactor/xxx` | `refactor/selector` |
+
+### 添加新平台适配器
+
+参考 [平台适配器开发指南](./src/PLATFORM_GUIDE.md) 了解如何添加新平台支持。
+
+---
+
+## 🗺️ 路线图
+
+### 当前版本：v2.2.0
+
+✅ 已完成（v2.2.0）：
+- 核心网关架构重构
+- OpenAI 和 Anthropic API 兼容
+- 11+ 平台适配器
+- 并发竞速机制
+- 工具调用（fncall）XML 模板可配置
+- 配置热加载
+- 文件监视热重载（平台代码热重载）
+- TAS 选择器（Thompson Sampling + 冷却）
+- 错误类命名修复（RequestTimeoutError）
+- 热重载 BUG 修复（清理 sys.modules）
+
+### v2.1（计划中）
+
+- [ ] 更多平台适配器
+- [ ] 请求缓存机制
+- [ ] 负载均衡策略优化
+- [ ] 更完善的监控指标
+- [ ] WebSocket 实时通信支持
+
+### v2.2（规划中）
+
+- [ ] 分布式部署支持
+- [ ] 请求限流和熔断
+- [x] 可视化控制台
+- [ ] 插件化架构
+
+### 长期目标
+
+- 成为最全面的 AI 模型网关
+- 支持 30+ AI 平台
+- 毫秒级延迟
+- 99.99% 可用性
+
+📢 欢迎在 [Issues](https://github.com/nichengfuben/provider-v2/issues) 中提出功能建议！
+
+---
 
 ## ❓ 常见问题
 
 <details>
-<summary><b>Q: 启动后无法访问服务？</b></summary>
+<summary><b>Q1: 启动时提示 "ModuleNotFoundError: No module named 'xxx'" 怎么办？</b></summary>
 
-**排查步骤:**
+**问题描述**：运行 `python main.py` 时提示缺少依赖模块
 
-1. 检查端口是否被占用: `netstat -an | grep 1337`
-2. 检查防火墙是否放行该端口
-3. 查看日志输出是否有错误信息
-4. 尝试修改 `config.toml` 中的 `port` 为其他值
+**解决方案：**
+```bash
+# 确保已安装所有依赖
+pip install -r requirements.txt
 
-</details>
-
-<details>
-<summary><b>Q: 如何启用 API Key 认证？</b></summary>
-
-在 `config.toml` 中设置:
-
-```toml
-[auth]
-enabled = true
-keys = ["your-api-key"]
+# 或使用虚拟环境
+python -m venv venv
+source venv/bin/activate  # Windows: .\venv\Scripts\activate
+pip install -r requirements.txt
 ```
-
-请求时携带 `Authorization: Bearer your-api-key` 或 `X-API-Key: your-api-key`。
-
 </details>
 
 <details>
-<summary><b>Q: 如何添加新平台？</b></summary>
+<summary><b>Q2: 如何配置代理服务器？</b></summary>
 
-1. 在 `src/platforms/` 下创建平台目录
-2. 遵循 `docs-src/platforms/PLATFORM_GUIDE.md` 规范
-3. 实现 `PlatformAdapter` 抽象类
-4. 在 `config.toml` 中添加平台配置
+**解决方案：**
 
-</details>
-
-<details>
-<summary><b>Q: 配置修改后如何生效？</b></summary>
-
-Provider-V2 支持**配置热重载**。修改 `config.toml` 后，后台 watcher 会在 2 秒内自动检测并重载配置，无需重启服务。
-
-</details>
-
-<details>
-<summary><b>Q: 如何配置代理？</b></summary>
-
-**方式一: 全局代理**
-
+编辑 `config.toml` 文件：
 ```toml
 [proxy]
-proxy_server = "http://127.0.0.1:7890"
+proxy_server = "http://proxy.example.com:8080"
 proxy_enabled = true
+proxy_list_type = "blacklist"
+proxy_urls = []
 ```
 
-**方式二: 环境变量**
-
-```bash
-export HTTP_PROXY=http://127.0.0.1:7890
-export HTTPS_PROXY=http://127.0.0.1:7890
-```
-
-**方式三: 平台级代理** (仅对 `enabled_platforms` 中的平台有效)
-
-```toml
-[platforms_proxy]
-enabled_platforms = ["qwen"]
-```
-
+> **注意**：代理配置在 `src.core.proxy` 模块导入时即生效，修改后需重启服务。
 </details>
 
 <details>
-<summary><b>Q: 如何在 IDLE 中调试？</b></summary>
+<summary><b>Q3: 并发竞速模式下如何控制配额消耗？</b></summary>
 
-在 IDLE 中运行时，双进程架构自动禁用，以单进程模式运行。这便于调试，但会失去自动重启功能。
+**解决方案：**
 
+编辑 `config.toml` 调整参数：
+```toml
+[gateway]
+concurrent_enabled = true    # 启用并发竞速
+concurrent_count = 2         # 减少并发数（降低配额消耗）
+min_tokens = 50              # 增加 Token 阈值（减少早期切换）
+```
+
+**建议：**
+- 配额紧张时设置 `concurrent_count = 1`（禁用竞速）
+- 低延迟优先时设置 `concurrent_count = 3`，`min_tokens = 10`
 </details>
 
-## 🗺️ 开发路线图
+<details>
+<summary><b>Q4: DeepSeek 平台提示 "WASM 下载失败" 怎么办？</b></summary>
 
-### ✅ 已完成
+**可能原因：**
+1. 代理配置不正确
+2. 网络连接问题
+3. `persist/deepseek/` 目录无写入权限
 
-- [x] 模块化配置系统 (`src/core/config/` — base/sections/manager/resolver)
-- [x] 20+ 平台适配器 (Qwen, DeepSeek, Ollama, Cerebras, NVIDIA, OpenRouter, ChatMoe, Cursor, CodeBuddy, Chutes, CaiYueSBK, APiAirForce, N1N, Perplexity, OpenAI-FM, Edge TTS, Gtts 等)
-- [x] Watchdog 配置热重载 (2 秒轮询检测 mtime)
-- [x] Runner-Worker 双进程架构与自动重启 (exit code 42)
-- [x] 平台代理切换系统
-- [x] XML 格式函数调用 (`<function_calls>` 自定义格式)
-- [x] 日志颜色自动回退 (支持 Git Bash / Windows Terminal / 管道)
-- [x] SSL 全局禁用 (TCPConnector CERT_NONE)
-- [x] Anthropic 格式 API 支持 (`/v1/messages`)
-- [x] WebUI 管理界面
+**排查步骤：**
+```bash
+# 检查目录权限
+ls -la persist/deepseek/
 
-### 🚧 进行中
+# 手动创建目录
+mkdir -p persist/deepseek/
 
-- [ ] 平台级 accounts 配置统一
-- [ ] 集成测试框架
+# 检查代理配置
+# 确保 config.toml 中 [proxy] 配置正确
+```
 
-### 📋 计划中
+**WASM 文件位置：**
+- 保存路径：`persist/deepseek/sha3_wasm_bg.7b9ca65ddd.wasm`
+- 自动下载 URL：`https://fe-static.deepseek.com/chat/static/sha3_wasm_bg.7b9ca65ddd.wasm`
+- 更新检查频率：24 小时
+</details>
 
-- [ ] Docker 容器化支持
-- [ ] CI/CD 配置 (GitHub Actions)
-- [ ] 请求指标与 Prometheus 导出
-- [ ] 模型缓存跨平台共享
+<details>
+<summary><b>Q5: 如何添加新的平台适配器？</b></summary>
 
-## 📜 许可证
+**解决方案：**
 
-本项目采用 MIT 许可证。详见 [LICENSE](./LICENSE) 文件。
+1. 在 `src/platforms/` 下创建新目录
+2. 创建 `adapter.py` 实现 `PlatformAdapter` 接口
+3. 创建 `accounts.py` 管理账号
+4. 创建 `client.py` 实现 HTTP 请求
+5. 创建 `util.py` 实现工具函数
+
+详细步骤请参考 [平台适配器开发指南](./src/PLATFORM_GUIDE.md)。
+</details>
+
+<details>
+<summary><b>Q6: 工具调用（fncall）中 XML 标签格式有何要求？</b></summary>
+
+**解决方案：**
+
+Provider-V2 要求模型返回的 XML 遵循以下格式：
+
+```xml
+<function=函数名>
+<参数名1>
+参数值
+</参数名1>
+<参数名2>
+参数值
+</参数名2>
+</function>
+```
+
+**关键要求：**
+- XML 标签名必须与工具定义中的参数名完全一致
+- 标签和值之间**必须**有换行符
+- 支持多行参数（如代码块），换行符会被保留
+- 必须包含所有必需参数
+
+如果模型没有按此格式返回，Provider-V2 将无法正确解析工具调用。
+</details>
+
+<details>
+<summary><b>Q7: 配置文件修改后不生效怎么办？</b></summary>
+
+**解决方案：**
+
+```bash
+# 方法一：等待自动重载（最多延迟 2 秒）
+
+# 方法二：重启服务
+# Ctrl+C 停止，然后重新运行
+python main.py
+
+# 方法三：检查配置文件语法
+python -c "import tomllib; print(tomllib.load(open('config.toml', 'rb')))"
+```
+
+**代理配置需要重启**：
+- `config.toml` 中的 `[proxy]` 配置在模块导入时生效
+- 修改代理配置后必须重启服务
+</details>
+
+<details>
+<summary><b>Q8: 如何禁用鉴权？</b></summary>
+
+**解决方案：**
+
+编辑 `config.toml`：
+```toml
+[auth]
+enabled = false  # 设置为 false
+keys = []
+```
+
+**跳过鉴权的路径**：
+- `/`
+- `/health`
+- `/docs`
+- `/redoc`
+- `/openapi.json`
+</details>
+
+### 更多问题
+
+- 🐛 在 [Issues](https://github.com/nichengfuben/provider-v2/issues) 中报告问题
+- 💬 加入社区讨论
+
+---
 
 ## 🤝 贡献指南
 
-欢迎提交 Issue 和 Pull Request！
+我们欢迎所有形式的贡献！
 
-> **⚠️ 重要**：所有贡献必须提交到 `dev` 分支，**禁止直接提交到 `main` 或 `classical` 分支**。
-> `main` 和 `classical` 由作者维护，仅用于稳定版本发布。
+### 如何贡献
 
-1. Fork 本仓库
-2. 基于 `dev` 分支创建功能分支 (`git checkout -b feature/your-feature`)
-3. 提交更改 (`git commit -m 'Add your feature'`)
-4. 推送到分支 (`git push origin feature/your-feature`)
-5. 创建 Pull Request，**目标分支必须为 `dev`**，由作者审核后合并
+1. **报告 Bug**：通过 [Issues](https://github.com/nichengfuben/provider-v2/issues) 提交详细报告
+2. **功能建议**：在 [Discussions](https://github.com/nichengfuben/provider-v2/discussions) 中提出想法
+3. **代码贡献**：提交 Pull Request 到 **`dev` 分支**
+4. **文档改进**：帮助完善 README 和 API 文档
+5. **分享经验**：在社区分享使用心得
+
+### Pull Request 流程
+
+```bash
+# 1. 确保在 dev 分支基础上创建
+git checkout dev
+git pull upstream dev
+git checkout -b feature/your-feature
+
+# 2. 提交更改
+git add .
+git commit -m "feat: add your feature"
+
+# 3. 运行测试
+pytest tests/
+
+# 4. 推送到你的 fork
+git push origin feature/your-feature
+
+# 5. 创建 Pull Request（目标分支：dev）
+```
+
+### 代码规范检查
+
+```bash
+# 格式化代码
+black src/
+
+# 排序导入
+isort src/
+
+# 类型检查
+mypy src/
+
+# 运行测试
+pytest tests/
+```
+
+### 贡献者名单
+
+感谢所有贡献者！
+
+<a href="https://github.com/nichengfuben/provider-v2/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=nichengfuben/provider-v2" />
+</a>
+
+---
+
+## 📜 许可证
+
+本项目采用 [MIT 许可证](./LICENSE)。
+
+```
+MIT License
+
+Copyright (c) 2026 Provider-V2 Contributors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
+
+---
 
 ## 📮 联系方式
 
-- **作者**: nichengfuben
-- **邮箱**: nichengfuben@outlook.com
-- **主页**: https://github.com/nichengfuben/provider-v2
+- **作者**：nichengfuben
+- **邮箱**：nichengfuben@outlook.com
+- **主页**：https://github.com/nichengfuben/provider-v2
 
 ### 技术支持
 
-- 📧 技术支持邮箱: nichengfuben@outlook.com
+- 📧 技术支持邮箱：nichengfuben@outlook.com
 - 🐛 [问题反馈](https://github.com/nichengfuben/provider-v2/issues)
 - 💬 [社区讨论](https://github.com/nichengfuben/provider-v2/discussions)
 
