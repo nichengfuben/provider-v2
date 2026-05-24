@@ -1,3 +1,23 @@
+2026-05-24 | 修复 /docs 路由冲突 — 移除静态占位符，释放 WebUI 文档页面
+
+### 变更文件
+
+- src/routes/static.py
+
+### 变更说明
+
+**Bug 修复：**
+- `src/routes/static.py` — 删除 `/docs` 静态路由（返回 JSON `{"docs": "暂未提供在线文档"}`），该路由优先于 WebUI 的 `/docs` 页面导致文档无法渲染
+- `src/routes/static.py` — 根路由 `/` 的 `docs` 字段从 `"/docs"` 改为 `"/webui"`，指向正确的管理界面
+- 删除不再使用的 `docs()` 函数
+
+### 验证结果
+
+- `py_compile` 通过
+- `/docs` 和 `/webui` 均正常返回 HTML 页面
+
+---
+
 2026-05-24 | ServerCfg 补全 STARTUP_FORCE_KILL_PORT + Hook 版本管理规则重写
 
 ### 变更文件

@@ -34,7 +34,7 @@ async def root(request: aiohttp.web.Request) -> aiohttp.web.Response:
         {
             "service": "Provider-V2",
             "version": cfg.server.version,
-            "docs": "/docs",
+            "docs": "/webui",
         }
     )
 
@@ -51,18 +51,6 @@ async def health(request: aiohttp.web.Request) -> aiohttp.web.Response:
     from src.core.config import get_config  # noqa: PLC0415
     cfg = get_config()
     return _json({"status": "healthy", "version": cfg.server.version, "timestamp": int(time.time())})
-
-
-async def docs(request: aiohttp.web.Request) -> aiohttp.web.Response:
-    """文档占位端点 /docs。
-
-    Args:
-        request: 请求对象。
-
-    Returns:
-        响应对象。
-    """
-    return _json({"docs": "暂未提供在线文档", "openapi": "/openapi.json"})
 
 
 async def list_models(request: aiohttp.web.Request) -> aiohttp.web.Response:
@@ -212,7 +200,6 @@ def setup_routes(app: aiohttp.web.Application) -> None:
     """
     app.router.add_get("/", root)
     app.router.add_get("/health", health)
-    app.router.add_get("/docs", docs)
     app.router.add_get("/v1/models", list_models)
     app.router.add_get("/v1/models/{model_id}", get_model)
     app.router.add_get("/v1/status", status)
