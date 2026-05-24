@@ -373,8 +373,7 @@ provider-v2/
 │   │   ├── openaifm/        # OpenAI-FM (备用)
 │   │   ├── edge_tts/        # Edge TTS 语音合成
 │   │   ├── edgetts/         # Edge TTS (备用)
-│   │   ├── gtts/            # Google TTS 语音合成
-│   │   └── aitianhu2/       # AItianhu2 (实验性)
+│   │   └── gtts/            # Google TTS 语音合成
 │   │
 │   └── logger.py            # 日志模块
 │
