@@ -204,5 +204,5 @@ async def start_config_watcher(interval: float = 2.0) -> None:
                 if mt > _mtime:
                     logger.info("config.toml 变更，重载")
                     _load()
-            except Exception:
-                pass
+            except Exception as exc:
+                logger.warning("检查配置文件变更失败: %s", exc)
