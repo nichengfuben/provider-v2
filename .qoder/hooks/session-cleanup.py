@@ -206,13 +206,35 @@ Session ID: {session_id}
 - 每个平台至少有一个 MVP 测试。
 - 运行 `pytest tests -q` 并记录结果。
 
-#### 2.3 record.md (变更记录)
-- **追加**新章节到 `record.md`:
-  - 日期(使用当前日期)
-  - 变更的简明要点
+#### 2.3 record.md (变更记录) — 必须更新
+- **每次有实质性代码变更时，必须更新 record.md**，这是强制要求，不能跳过。
+- **追加**新章节到 `record.md` **最顶部**（在所有已有内容之前）：
+  - 日期(使用当前日期) + 简明标题
+  - 变更文件列表（相对路径）
+  - 变更的简明要点（按文件逐一说明，不要笼统概括）
   - **跳过被 .gitignore 过滤的平台**。
   - 外部阻塞或跳过的测试及原因
   - 测试结果摘要(通过/失败/跳过数量)
+- **格式示例**：
+  ```
+  2026-05-24 | 简短标题
+
+  ### 变更文件
+
+  - src/core/server.py
+  - src/routes/static.py
+
+  ### 变更说明
+
+  **Bug 修复/新功能/重构：**
+  - `src/core/server.py` — 具体改了什么
+  - `src/routes/static.py` — 具体改了什么
+
+  ### 验证结果
+
+  - `py_compile` 通过/失败
+  - pytest: X passed, Y failed, Z skipped
+  ```
 
 #### 2.4 README.md
 - 如果新增平台、API 或功能，更新相关章节。
@@ -227,6 +249,15 @@ Session ID: {session_id}
 - **当前版本以 `config.toml` 中 `server.version` 的实际值为准**，禁止猜测或凭空设定。
 - **禁止私自大幅修改版本号**（如 2.1.x → 2.2.x），除非用户明确说明。
 - README.md 中的版本徽章必须与 `config.toml` 中的 `server.version` 保持一致。
+- **版本号一致性检查（必须执行）**：修改 `config.toml` 版本后，必须检查并同步更新以下文件中的版本：
+  1. `template/template_config.toml` 中的 `server.version`
+  2. `README.md` 中的版本徽章（status 和 version 两个 badge）
+  3. `README.md` 路线图中的「当前版本」标题和已完成版本标题
+  4. **检查源码中是否有硬编码版本字符串**（如 `src/routes/static.py`、`src/routes/health.py` 等路由中的 `"version": "x.x.x"`）
+     - 如果存在硬编码版本，**应当改为从 config 读取**（`get_config().server.version`），而不是跟着改数字
+     - 新增代码时也要避免硬编码版本，统一从 config 读取
+  5. `.agents/provider-guide/SKILL.md` 中的 `version` 字段（如适用）
+- **修改版本前先检查**：在动手改任何版本之前，先用 `grep` 搜索项目中所有包含当前版本号的文字，确认需要更新的位置，再统一修改。
 
 #### 2.7 requirements.txt
 - 如果引入了新的第三方 Python 包，添加版本约束。

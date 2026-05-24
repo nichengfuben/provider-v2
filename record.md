@@ -1,3 +1,29 @@
+2026-05-24 | 版本硬编码修复 + WebUI 路由挂载 + 清理冗余日志
+
+### 变更文件
+
+- src/core/server.py
+- src/routes/static.py
+- src/routes/health.py
+- src/platforms/qwen/core/client.py
+- src/platforms/edgetts/core/tts.py
+
+### 变更说明
+
+**Bug 修复：**
+- `src/core/server.py` — `create_app` 缺少 WebUI 路由挂载，新增 `setup_webui(app)` 调用
+- `src/routes/static.py` — 根路由 `/` 版本号从硬编码 `"2.0.0"` 改为从 config 读取
+- `src/routes/health.py` — 健康检查 `/health` 版本号从硬编码 `"2.0.4"` 改为从 config 读取
+- `src/platforms/qwen/core/client.py` — 删除冗余的"已登出，尝试重新登录"日志
+- `src/platforms/edgetts/core/tts.py` — 移除无效的 `typing.bytes` 导入（Python 3.9+ 已移除）
+
+### 验证结果
+
+- `py_compile` 通过
+- pytest 存在预失败的测试（config manager 相关），与本次变更无关
+
+---
+
 2026-05-24 | 配置管理改进
 
 ### 变更文件
