@@ -8,8 +8,8 @@
 
 <div align="center">
 
-![Status](https://img.shields.io/badge/status-v2.2.4-blue)
-![Version](https://img.shields.io/badge/version-2.2.4-blue)
+![Status](https://img.shields.io/badge/status-v2.2.5-blue)
+![Version](https://img.shields.io/badge/version-2.2.5-blue)
 ![Python](https://img.shields.io/badge/python-3.8+-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Platforms](https://img.shields.io/badge/platforms-11+-orange)
@@ -1254,9 +1254,11 @@ fix(gateway): 修复并发竞速时 token 计数错误
 
 ## 🗺️ 路线图
 
-### 当前版本：v2.2.4
+### 当前版本：v2.2.5
 
-✅ 已完成（v2.2.4）：
+✅ 已完成（v2.2.5）：
+- 修复 antml 协议 prompt 缺少 Function Invocation Syntax
+- 延迟 `_build_param_schema_index` 构建至确认有 function_calls 块后
 - 修复 ServerCfg 缺少 version 字段
 - 消除 silent `except Exception: pass` 模式（10 处）
 - 补全缺失的 `from __future__ import annotations`（4 文件）

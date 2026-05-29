@@ -1,3 +1,27 @@
+2026-05-30 | 修复 antml 协议 prompt 指令缺失 + 延迟 schema index 构建
+
+### 变更文件
+
+- src/core/fncall/protocols/antml.py
+- template/template_config.toml — 版本 2.2.4 → 2.2.5
+- config.toml — 跟随模板版本 2.2.5
+
+### 变更说明
+
+**Bug 修复：**
+- `src/core/fncall/protocols/antml.py` — `_ANTML_INSTRUCTION` 缺少 Function Invocation Syntax 段落，LLM 不知道应该输出什么格式的 tool call。新增明确的 XML 格式示例（`<antml:function_calls>/<antml:invoke>/<antml:parameters>`），使 antml 协议在流式和非流式模式下均能正确触发工具调用。
+
+**性能优化：**
+- `src/core/fncall/protocols/antml.py` — `parse()` 中的 `_build_param_schema_index(tools)` 原在方法开头无条件执行，即使 LLM 响应中没有任何 `<antml:function_calls>` 块也会构建完整的 schema 索引。改为延迟构建：仅在确认至少存在一个 function_calls 块后才创建 schema index。
+
+### 验证结果
+
+- py_compile: OK
+- pytest: 25 passed, 0 failed, 0 skipped (test_tools.py)
+- antml 协议测试: 非流式 + 流式均通过
+
+---
+
 2026-05-30 | 修复 FncallStreamParser 提前闭合 bug + gateway 协议感知调用
 
 ### 变更文件

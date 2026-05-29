@@ -30,6 +30,18 @@ _ANTML_INSTRUCTION = """\
 
 All functions are defined inside a `<functions>` wrapper block. Each function is a JSON object inside a `<function>` tag containing `description`, `name`, and `parameters` (JSON Schema).
 
+**Function Invocation Syntax:**
+
+When calling tools, respond with ONLY the following XML block format:
+
+<antml:function_calls>
+<antml:invoke name="tool_name">
+<antml:parameters>{"param_name": "value"}</antml:parameters>
+</antml:invoke>
+</antml:function_calls>
+
+Multiple invocations can be stacked inside one `<antml:function_calls>` block for parallel execution.
+
 ## Function Call Instructions
 
 When making function calls using tools that accept array or object parameters, ensure those are structured using JSON.
@@ -145,10 +157,15 @@ class AntmlProtocol(ToolProtocol):
     ) -> Tuple[str, List[Dict[str, Any]]]:
         """从文本中提取工具调用，返回 (清理后文本, tool_calls 列表)。"""
         tool_calls: List[Dict[str, Any]] = []
-        schema_index = _build_param_schema_index(tools) if tools else None
+        schema_index: Optional[Dict[str, Any]] = None
 
         for block_m in _BLOCK_RE.finditer(text):
             block_body = block_m.group(1)
+
+            # Build schema index lazily on first invocation
+            if schema_index is None and tools is not None:
+                schema_index = _build_param_schema_index(tools)
+
             for invoke_m in _INVOKE_RE.finditer(block_body):
                 name = invoke_m.group(1).strip()
                 body = invoke_m.group(2)
