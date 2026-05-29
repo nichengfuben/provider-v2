@@ -1,0 +1,126 @@
+# tests/src/core/fncall/test_bracket_protocol.py
+"""Test BracketProtocol with correct and fallback format parsing."""
+
+import pytest
+
+from src.core.fncall.protocols.bracket import BracketProtocol
+
+
+class TestBracketProtocol:
+    """Test BracketProtocol basic operations."""
+
+    @pytest.fixture
+    def protocol(self):
+        return BracketProtocol()
+
+    def test_id(self, protocol):
+        assert protocol.id == "bracket"
+
+    def test_supports_streaming(self, protocol):
+        assert protocol.supports_streaming() is True
+
+    def test_trigger_tags(self, protocol):
+        tags = protocol.get_trigger_tags()
+        assert "[function_calls]" in tags
+
+    def test_detect_start(self, protocol):
+        found, pos = protocol.detect_start("some text [function_calls]")
+        assert found is True
+        assert pos == 10
+
+    def test_render_prompt_has_format_rules(self, protocol):
+        prompt = protocol.render_prompt("Tool: test", "en")
+        assert "[function_calls]" in prompt
+        assert "[call:exact_tool_name]" in prompt
+        assert "Do NOT use [ToolName]" in prompt
+
+    def test_format_assistant_tool_calls(self, protocol):
+        tool_calls = [{
+            "id": "call_123",
+            "function": {"name": "Bash", "arguments": '{"command": "echo hello"}'}
+        }]
+        result = protocol.format_assistant_tool_calls(tool_calls)
+        assert "[function_calls]" in result
+        assert "[call:Bash]" in result
+        assert "[/call]" in result
+
+    def test_clean_tags(self, protocol):
+        content = "text [function_calls][call:Bash]{\"cmd\":\"echo hi\"}[/call][/function_calls] more"
+        cleaned = protocol.clean_tags(content)
+        assert "[function_calls]" not in cleaned
+        assert "text" in cleaned
+        assert "more" in cleaned
+
+
+class TestBracketParseCorrectFormat:
+    """Test parsing correct [call:name]{args}[/call] format."""
+
+    @pytest.fixture
+    def protocol(self):
+        return BracketProtocol()
+
+    def test_parse_single_call(self, protocol):
+        text = '[function_calls]\n[call:Bash]{"command": "echo hello"}[/call]\n[/function_calls]'
+        tools = [{
+            "type": "function",
+            "function": {
+                "name": "Bash",
+                "parameters": {"type": "object", "properties": {"command": {"type": "string"}}, "required": ["command"]}
+            }
+        }]
+        clean, tool_calls = protocol.parse(text, tools)
+        assert len(tool_calls) == 1
+        assert tool_calls[0]["function"]["name"] == "Bash"
+        assert "command" in tool_calls[0]["function"]["arguments"]
+        assert clean.strip() == ""
+
+    def test_parse_multiple_calls(self, protocol):
+        text = """[function_calls]
+[call:Bash]{"command": "echo hello"}[/call]
+[call:ReadFile]{"path": "/tmp/test.txt"}[/call]
+[/function_calls]"""
+        clean, tool_calls = protocol.parse(text)
+        assert len(tool_calls) == 2
+        assert tool_calls[0]["function"]["name"] == "Bash"
+        assert tool_calls[1]["function"]["name"] == "ReadFile"
+
+
+class TestBracketParseFallbackFormat:
+    """Test parsing simplified [ToolName]{args}[/ToolName] fallback format."""
+
+    @pytest.fixture
+    def protocol(self):
+        return BracketProtocol()
+
+    def test_parse_simple_call(self, protocol):
+        text = '[function_calls]\n[Bash]{"command": "echo hello"}[/Bash]\n[/function_calls]'
+        clean, tool_calls = protocol.parse(text)
+        assert len(tool_calls) == 1
+        assert tool_calls[0]["function"]["name"] == "Bash"
+        assert "command" in tool_calls[0]["function"]["arguments"]
+
+    def test_parse_simple_call_non_json_args(self, protocol):
+        text = '[function_calls]\n[Bash]echo hello[/Bash]\n[/function_calls]'
+        clean, tool_calls = protocol.parse(text)
+        assert len(tool_calls) == 1
+        assert tool_calls[0]["function"]["name"] == "Bash"
+        args = tool_calls[0]["function"]["arguments"]
+        assert "value" in args
+
+    def test_parse_skips_function_calls_tag(self, protocol):
+        """Ensure [function_calls] tag itself is not parsed as a tool call."""
+        text = '[function_calls]\n[call:Bash]{"cmd":"echo"}[/call]\n[/function_calls]'
+        clean, tool_calls = protocol.parse(text)
+        assert len(tool_calls) == 1
+        assert tool_calls[0]["function"]["name"] == "Bash"
+        # Should NOT have a call named "function_calls"
+
+    def test_parse_prefers_correct_format(self, protocol):
+        """If both formats appear, prefer correct [call:name] format."""
+        text = """[function_calls]
+[call:Bash]{"command": "correct"}[/call]
+[/function_calls]"""
+        clean, tool_calls = protocol.parse(text)
+        assert len(tool_calls) == 1
+        assert tool_calls[0]["function"]["name"] == "Bash"
+        assert "command" in tool_calls[0]["function"]["arguments"]

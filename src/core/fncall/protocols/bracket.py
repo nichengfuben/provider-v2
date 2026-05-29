@@ -15,20 +15,41 @@ class BracketProtocol(ToolProtocol):
     _END_TAG = "[/function_calls]"
     _BLOCK_RE = re.compile(r"\[function_calls\]([\s\S]*?)\[/function_calls\]", re.DOTALL)
     _CALL_RE = re.compile(r"\[call:([^\]]+)\]([\s\S]*?)\[/call\]", re.DOTALL)
+    # Fallback for incorrect [ToolName]{...}[/ToolName] format
+    _SIMPLE_CALL_RE = re.compile(r"\[([A-Za-z_][A-Za-z0-9_]*)\]([\s\S]*?)\[/\1\]", re.DOTALL)
 
     def get_trigger_tags(self) -> List[str]:
         return [self._TRIGGER]
 
     def render_prompt(self, tool_descs, lang, user_system_prompt="", history_text="", loop_warning="", current_user_message=""):
-        instruction = f"""You can invoke the following developer tools. Tool names are case-sensitive.
+        instruction = f"""## Available Tools
+You can invoke the following developer tools. Tool names are case-sensitive.
+Use only the exact tool names listed below. Do not rename, camelCase, translate, shorten, or invent tool names.
 
 {tool_descs}
 
-When calling tools, respond with only this block:
+## Tool Invocation Format
+
+When calling tools, you MUST respond with ONLY this exact bracket format:
 
 [function_calls]
-[call:exact_tool_name]{{"argument":"value"}}[/call]
-[/function_calls]"""
+[call:exact_tool_name]{{"argument_name":"argument_value"}}[/call]
+[/function_calls]
+
+Rules:
+1. Always wrap tool calls in [function_calls]...[/function_calls]
+2. Use [call:tool_name]...[/call] for each invocation (note the colon before tool name)
+3. Arguments must be valid JSON inside the [call] tags
+4. Tool names are case-sensitive — use exact names from the list above
+5. Do NOT use [ToolName]{{...}}[/ToolName] format — that is incorrect
+6. Do NOT output plain text between [function_calls] tags
+
+Example correct invocation:
+[function_calls]
+[call:Bash]{{"command":"echo hello"}}[/call]
+[/function_calls]
+
+Tool results will be provided in a corresponding result block."""
 
         sections = [instruction]
         if user_system_prompt and user_system_prompt.strip():
@@ -39,8 +60,6 @@ When calling tools, respond with only this block:
             sections.append(f"<loop_warning>\n{loop_warning}\n</loop_warning>")
         if current_user_message:
             sections.append(f"<current_user_message>\n{current_user_message}\n</current_user_message>")
-        else:
-            sections.append("<current_user_message>\n</current_user_message>")
 
         return "\n\n".join(sections)
 
@@ -54,41 +73,60 @@ When calling tools, respond with only this block:
 
         for block_m in self._BLOCK_RE.finditer(text):
             block_body = block_m.group(1)
+            
+            # Try correct [call:name]{...}[/call] format first
             for call_m in self._CALL_RE.finditer(block_body):
                 name = call_m.group(1).strip()
                 args_raw = call_m.group(2).strip()
-
-                # Parse JSON arguments
-                try:
-                    args = json.loads(args_raw)
-                    if not isinstance(args, dict):
-                        args = {"value": args_raw}
-                except json.JSONDecodeError:
-                    args = {"value": args_raw}
-
-                # Apply schema coercion
-                if schema_index and name in schema_index:
-                    coerced = {}
-                    for k, v in args.items():
-                        pschema = schema_index[name].get(k, {})
-                        coerced[k] = _coerce_param_value(
-                            json.dumps(v) if not isinstance(v, str) else v,
-                            pschema,
-                        )
-                    args = coerced
-
-                arguments = json.dumps(args, ensure_ascii=False)
+                args = self._parse_args(args_raw, name, schema_index)
                 tool_calls.append({
                     "id": f"call_{len(tool_calls):04d}",
                     "type": "function",
-                    "function": {"name": name, "arguments": arguments},
+                    "function": {"name": name, "arguments": args},
                 })
+
+            # Fallback: if no correct calls found, try simplified [ToolName]{...}[/ToolName]
+            if not tool_calls:
+                for simple_m in self._SIMPLE_CALL_RE.finditer(block_body):
+                    name = simple_m.group(1).strip()
+                    # Skip if it looks like a block tag
+                    if name.lower() in ('function_calls',):
+                        continue
+                    args_raw = simple_m.group(2).strip()
+                    args = self._parse_args(args_raw, name, schema_index)
+                    tool_calls.append({
+                        "id": f"call_{len(tool_calls):04d}",
+                        "type": "function",
+                        "function": {"name": name, "arguments": args},
+                    })
 
         clean = text
         if tool_calls:
             clean = self._BLOCK_RE.sub("", text).strip()
 
         return (clean, tool_calls)
+
+    def _parse_args(self, args_raw, func_name, schema_index):
+        """Parse and optionally coerce arguments."""
+        try:
+            args = json.loads(args_raw)
+            if not isinstance(args, dict):
+                args = {"value": args_raw}
+        except json.JSONDecodeError:
+            args = {"value": args_raw}
+
+        # Apply schema coercion
+        if schema_index and func_name in schema_index:
+            coerced = {}
+            for k, v in args.items():
+                pschema = schema_index[func_name].get(k, {})
+                coerced[k] = _coerce_param_value(
+                    json.dumps(v) if not isinstance(v, str) else v,
+                    pschema,
+                )
+            args = coerced
+
+        return json.dumps(args, ensure_ascii=False)
 
     def parse_fragment(self, fragment, tools=None):
         _, tool_calls = self.parse(fragment, tools)
