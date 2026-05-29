@@ -38,9 +38,18 @@ class FncallStreamParser:
         self._waiting_tail: str = ""
         self._fncall_buf: str = ""
         self._detected: bool = False
-        self._end_tags: List[str] = []  # 由协议在检测时填充
         self._state: str = self.WAITING_FOR_TAG
         self._finalized_result: Optional[Tuple[str, List[Dict[str, Any]]]] = None
+
+        # Precompute end tags from trigger tags (avoids per-chunk string parsing)
+        self._end_tags: List[str] = []
+        for tag in protocol.get_trigger_tags():
+            if tag.startswith("<") and not tag.startswith("</"):
+                tag_name = tag.lstrip("<").split(">")[0].split()[0]
+                self._end_tags.append(f"</{tag_name}>")
+            elif tag.startswith("[") and not tag.startswith("[/"):
+                inner = tag.lstrip("[").split("]")[0]
+                self._end_tags.append(f"[/{inner}]")
 
     @staticmethod
     def _split_safe_text(
@@ -89,9 +98,14 @@ class FncallStreamParser:
 
     def _is_call_closed(self) -> bool:
         """检测 fncall 缓冲区中是否包含结束标记。"""
-        # 简单启发式：检查缓冲区是否包含常见的结束模式
-        # 各协议应在 parse 中处理不完整的闭合
-        return "</" in self._fncall_buf or "]" in self._fncall_buf or "}" in self._fncall_buf
+        buf = self._fncall_buf
+        for end_tag in self._end_tags:
+            if end_tag in buf:
+                return True
+        # Fallback only for protocols without recognizable end tags
+        if not self._end_tags:
+            return "</" in buf or "]" in buf or "}" in buf
+        return False
 
     def feed(self, chunk: str) -> None:
         """喂入新的流式文本块。DONE 或 finalize 后调用静默忽略。"""

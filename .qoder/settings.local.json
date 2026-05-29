@@ -1,5 +1,20 @@
 {
   "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 .qoder/hooks/inject-provider-guide.py",
+            "name": "inject-provider-guide",
+            "description": "Inject provider-guide skill at session start, skip if already injected",
+            "timeout": 30,
+            "statusMessage": "Loading provider-guide skill..."
+          }
+        ]
+      }
+    ],
     "Stop": [
       {
         "hooks": [

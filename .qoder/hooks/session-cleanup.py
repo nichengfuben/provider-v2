@@ -94,7 +94,8 @@ def _detect_changes() -> str | None:
         return None
 
     excluded_prefixes = {'logs/', '.git/', '.qoder/'}
-    all_files = {f for f in all_files if not any(f.startswith(p) for p in excluded_prefixes)}
+    excluded_files = {'record.md', 'config.toml'}
+    all_files = {f for f in all_files if not any(f.startswith(p) for p in excluded_prefixes) and f not in excluded_files}
 
     if not all_files:
         return None
@@ -240,32 +241,36 @@ Session ID: {session_id}
 - 如果新增平台、API 或功能，更新相关章节。
 - 如果项目结构有实质性变化，更新目录树图。
 
-#### 2.5 template/template_config.toml
-- 如果 `config.toml` 新增了配置项或修改了配置结构，**必须同步到模板**。
-- 模板是用户分发的基准文件，遗漏模板更新视为 bug。
-
-#### 2.6 config.toml — 版本号规则(重要)
-- **版本号每次只能 +0.0.1**（如 `2.1.1` → `2.1.2`）。
-- **当前版本以 `config.toml` 中 `server.version` 的实际值为准**，禁止猜测或凭空设定。
+#### 2.5 template/template_config.toml — 版本基准(重要)
+- **`template/template_config.toml` 是版本的唯一基准文件**。
+- 每次有实质性代码变更时，**必须先将模板中的 `server.version` +0.0.1**（如 `2.1.2` → `2.1.3`）。
 - **禁止私自大幅修改版本号**（如 2.1.x → 2.2.x），除非用户明确说明。
-- README.md 中的版本徽章必须与 `config.toml` 中的 `server.version` 保持一致。
-- **版本号一致性检查（必须执行）**：修改 `config.toml` 版本后，必须检查并同步更新以下文件中的版本：
-  1. `template/template_config.toml` 中的 `server.version`
+- 模板是用户分发的基准文件，遗漏模板更新视为 bug。
+- 如果 `config.toml` 新增了配置项或修改了配置结构，也**必须同步到模板**（结构同步 + 版本递增）。
+
+#### 2.6 config.toml — 跟随模板版本
+- **`config.toml` 的 `server.version` 必须与 `template/template_config.toml` 保持一致**。
+- 改了模板版本后，**立即同步到 `config.toml`**。
+- 不要独立递增 config.toml 的版本——它只跟随模板。
+
+#### 2.7 版本号一致性检查(必须执行)
+改了模板版本后，必须检查并同步更新以下所有版本引用：
+  1. `config.toml` 中的 `server.version`（跟随模板）
   2. `README.md` 中的版本徽章（status 和 version 两个 badge）
   3. `README.md` 路线图中的「当前版本」标题和已完成版本标题
-  4. **检查源码中是否有硬编码版本字符串**（如 `src/routes/static.py`、`src/routes/health.py` 等路由中的 `"version": "x.x.x"`）
+  4. **检查源码中是否有硬编码版本字符串**（如路由中的 `"version": "x.x.x"`）
      - 如果存在硬编码版本，**应当改为从 config 读取**（`get_config().server.version`），而不是跟着改数字
      - 新增代码时也要避免硬编码版本，统一从 config 读取
-  5. `.agents/provider-guide/SKILL.md` 中的 `version` 字段（如适用）
+  5. `.agents/provider-guide/SKILL.md` frontmatter 中的 `version` 字段
 - **修改版本前先检查**：在动手改任何版本之前，先用 `grep` 搜索项目中所有包含当前版本号的文字，确认需要更新的位置，再统一修改。
 
-#### 2.7 requirements.txt
+#### 2.8 requirements.txt
 - 如果引入了新的第三方 Python 包，添加版本约束。
 
-#### 2.8 .agents/provider-guide/ (项目技能)
+#### 2.9 .agents/provider-guide/ (项目技能)
 - 如果平台接口、架构、编码标准或脚本变更，更新 `.agents/provider-guide/references/` 下的相关文档。
 
-#### 2.9 验证
+#### 2.10 验证
 - 对所有修改的 Python 文件运行 `py_compile`。
 - 运行 `pytest tests -q` 进行回归测试。
 - 将验证结果(通过/失败/跳过数量)记录到 `record.md`。

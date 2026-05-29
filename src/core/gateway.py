@@ -7,6 +7,7 @@ from typing import Any, AsyncGenerator, Dict, List, Optional, Union
 from src.core.candidate import Candidate
 from src.core.config import get_config
 from src.core.errors import NoCandidateError, ProviderError
+from src.core.fncall.registry import get_protocol
 from src.core.tools import FncallStreamParser, inject_fncall
 from src.logger import get_logger
 
@@ -129,7 +130,8 @@ async def dispatch(
     fncall_lang = raw_fncall_lang if raw_fncall_lang in ("en", "zh") else "en"
 
     if tools:
-        final_msgs = inject_fncall(messages, tools, fncall_lang)
+        protocol = get_protocol()
+        final_msgs = inject_fncall(messages, tools, protocol, lang=fncall_lang)
         thinking = False
     else:
         final_msgs = messages
