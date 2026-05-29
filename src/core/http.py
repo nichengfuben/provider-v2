@@ -1,62 +1,58 @@
 from __future__ import annotations
 
-"""Shared HTTP utilities for route handlers."""
+"""Shared HTTP utilities for route handlers.
+
+Protocol-aware: clean_fncall and safe_flush use the active protocol's
+tag detection and cleaning logic.
+"""
 
 import re
 from typing import Any, Tuple
 
 import aiohttp.web
 
-# Pre-compiled regex for cleaning fncall tags from response text
-_FNCALL_CLEAN_NEW_RE = re.compile(
-    r"<function_calls>\s*<invoke[^>]*>.*?</invoke>\s*</function_calls>",
-    re.DOTALL,
-)
-_FNCALL_CLEAN_OLD_RE = re.compile(
-    r"<function=[^>]*>.*?</function>",
-    re.DOTALL,
-)
 
-# fncall detection tag (for _safe_flush)
-_FNCALL_OPEN_TAG = "<function_calls>"
-_FNCALL_TAG_LEN = len(_FNCALL_OPEN_TAG)
+def _get_protocol():
+    """获取当前活跃的协议实例。"""
+    from src.core.fncall.registry import get_protocol
+    return get_protocol()
 
 
 def clean_fncall(content: str) -> str:
-    """Remove all fncall tag remnants from response text.
-
-    Supports both new format (<function_calls>...</function_calls>)
-    and old format (<function=name>...</function>).
+    """使用当前协议清理响应中的 fncall 标签。
 
     Args:
-        content: Raw text.
+        content: 原始文本。
 
     Returns:
-        Cleaned text (stripped).
+        清理后的文本。
     """
-    content = _FNCALL_CLEAN_NEW_RE.sub("", content)
-    content = _FNCALL_CLEAN_OLD_RE.sub("", content)
-    return content.strip()
+    protocol = _get_protocol()
+    return protocol.clean_tags(content)
 
 
 def safe_flush(buffer: str) -> Tuple[str, str]:
-    """Extract safe-to-output prefix from buffer, preserving potential fncall tag suffix.
+    """提取 buffer 中可安全输出的前缀，保留潜在的协议触发标记尾部。
 
     Args:
-        buffer: Current text buffer.
+        buffer: 当前文本缓冲区。
 
     Returns:
-        (safe, remain): safe is the outputtable prefix, remain is the pending suffix.
+        (safe, remain): safe 是可输出前缀，remain 是待保留尾部。
     """
+    protocol = _get_protocol()
+    tags = protocol.get_trigger_tags()
+    if not tags:
+        return buffer, ""
+
     buf_len = len(buffer)
-    safe_end = buf_len
-    check_len = min(_FNCALL_TAG_LEN, buf_len)
+    max_keep = max(len(t) - 1 for t in tags)
+    check_len = min(max_keep, buf_len)
     for length in range(check_len, 0, -1):
-        start = buf_len - length
-        if _FNCALL_OPEN_TAG.startswith(buffer[start:]):
-            safe_end = start
-            break
-    return buffer[:safe_end], buffer[safe_end:]
+        suffix = buffer[buf_len - length:]
+        if any(tag.startswith(suffix) and suffix != tag for tag in tags):
+            return buffer[:buf_len - length], buffer[buf_len - length:]
+    return buffer, ""
 
 
 async def get_json(request: aiohttp.web.Request) -> Any:

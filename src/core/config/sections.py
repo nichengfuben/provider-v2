@@ -75,13 +75,13 @@ class ProxyCfg(ConfigBase):
 
 @dataclass
 class FncallCfg(ConfigBase):
-    """函数调用标签与模板配置。"""
-    call_start_tag: str = "<function_calls>"
-    call_end_tag: str = "</function_calls>"
-    tools_start_tag: str = "<tools>"
-    tools_end_tag: str = "</tools>"
+    """函数调用协议与模板配置。"""
+    protocol: str = "xml"                      # 协议模式：xml | original | antml | bracket | custom
+    custom_prompt_en: str = ""                 # custom 协议英文 prompt 模板
+    custom_prompt_zh: str = ""                 # custom 协议中文 prompt 模板
     templates: Dict[str, str] = field(default_factory=dict)
     record_prompt: bool = False
+    print_prompt: bool = False                 # 注入 prompt 时是否写入日志文件
 
 
 @dataclass

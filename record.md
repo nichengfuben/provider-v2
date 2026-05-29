@@ -1,3 +1,98 @@
+2026-05-30 | 工具调用协议重构 — 5 种协议模式 + fncall 模块化 + 配置节重构
+
+### 变更文件
+
+- src/core/fncall/ (新建包，23 个文件)
+- src/core/tools.py — 改为薄适配层，从 fncall/ 重新导出
+- src/core/http.py — clean_fncall/safe_flush 改为协议感知
+- src/core/config/sections.py — FncallCfg 新增 protocol/custom_prompt 字段，删除 tag 字段
+- template/template_config.toml — [fncall] 段落重构
+- config.toml — 跟随模板版本
+- README.md — 版本徽章更新
+
+### 变更说明
+
+**重构 + 新功能：**
+- `src/core/fncall/` — 新建协议包，包含 ToolProtocol ABC、注册表、共享工具、5 种协议实现
+  - `base.py` — ToolProtocol 抽象基类 + 协议注册表
+  - `registry.py` — get_protocol() 配置驱动解析 + list_protocols()
+  - `shared/coercion.py` — Schema 感知类型转换（从 tools.py 迁移）
+  - `shared/normalization.py` — normalize_content, format_tool_descs
+  - `shared/loop_detect.py` — detect_tool_loop, LoopDetectionResult
+  - `shared/uuid7.py` — UUIDv7 生成
+  - `parsers/xml_parser.py` — parse_fncall, parse_fncall_xml（从 tools.py 迁移）
+  - `parsers/stream.py` — FncallStreamParser 改造为协议感知版本
+  - `prompt/templates.py` — 内置 prompt 模板（从 tools.py 迁移）
+  - `prompt/history.py` — 对话历史格式化（从 tools.py 迁移）
+  - `prompt/inject.py` — inject_fncall 改造为协议感知
+  - `protocols/xml.py` — XML 协议（现有默认行为）
+  - `protocols/original.py` — codexResponses JSON 协议
+  - `protocols/antml.py` — anthropicToolUse 协议（含硬性 prompt）
+  - `protocols/bracket.py` — managedBracket 方括号协议
+  - `protocols/custom.py` — 自定义 prompt 协议（不解析响应）
+- `src/core/tools.py` — 改为薄适配层，从 fncall/ 重新导出所有名称，FncallStreamParser shim 自动解析协议
+- `src/core/http.py` — clean_fncall/safe_flush 改为从当前协议获取标签检测逻辑
+- `src/core/config/sections.py` — FncallCfg 新增 protocol/custom_prompt_en/custom_prompt_zh/print_prompt 字段，删除 call_start_tag 等 4 个 tag 字段
+- `template/template_config.toml` — [fncall] 段落：protocol = "xml" 默认值，新增 custom_prompt 字段，删除 tag 配置
+- 版本号 2.2.3 → 2.2.4
+
+### 验证结果
+
+- py_compile: 23 files OK
+- pytest: 25 passed, 0 failed, 0 skipped
+- 5 种协议全部注册并可用：xml, original, antml, bracket, custom
+- 向后兼容：所有现有导入（gateway.py, routes/*, tests/*）无需修改
+
+---
+
+2026-05-29 | Session 自动审查 — hook 配置增强 + .gitignore 优化
+
+### 变更文件
+
+- .gitignore
+- .qoder/hooks/session-cleanup.py
+- .qoder/settings.local.json
+- record.md
+
+### 变更说明
+
+**配置优化：**
+- `.gitignore` — 添加 `agents.md`（小写）到忽略列表，防止与 `AGENTS.md` 冲突
+- `.qoder/hooks/session-cleanup.py` — 增强变更检测逻辑：新增 `excluded_files` 集合排除 `record.md` 和 `config.toml`，防止 hook 误触发自身管理的文件导致死循环
+- `.qoder/settings.local.json` — 新增 SessionStart hook：自动运行 `inject-provider-guide.py` 脚本注入 provider-guide skill，跳过已注入状态，确保每次会话自动加载项目技能
+
+### 验证结果
+
+- `py_compile` 通过（.qoder/hooks/session-cleanup.py）
+- pytest: 0 tests（tests/ 目录存在但无测试文件）
+
+---
+
+2026-05-29 | Skill 自动更新 — gen_merger.py 误用 + 犯错自动更新原则
+
+### 变更文件
+
+- .agents/provider-guide/SKILL.md
+
+### 变更说明
+
+**错误记录：**
+- 用户明确要求合并 8 个指定路径的 `.ts` 文件，但 agent 直接运行 `gen_merger.py` 对整个目录树进行递归合并（18个文件），未按用户指定的文件列表操作
+- 根因：SKILL.md 缺少"当用户明确指定文件列表时，不应使用目录遍历脚本"的规则
+
+**Skill 更新：**
+- 新增 `Script usage rules` 章节：要求运行脚本前确认输入路径、用户给文件列表时精确合并、先 dry run、确认输出位置
+- 新增 `Failure-driven skill auto-update principle` 章节：犯错后立即更新 skill、根因分析、规则具体化、保留旧规则、record.md 记录、版本号递增
+
+**版本递增（2.2.3 → 2.2.4）：**
+- SKILL.md frontmatter version → 2.2.4
+
+### 验证结果
+
+- 待确认 upload.txt 内容正确
+
+---
+
 2026-05-24 | 修复 WebUI 日志实时推送 — 在 _on_startup 中捕获事件循环
 
 ### 变更文件
