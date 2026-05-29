@@ -1,6 +1,8 @@
 # tests/src/core/fncall/test_bracket_protocol.py
 """Test BracketProtocol with correct and fallback format parsing."""
 
+import json
+
 import pytest
 
 from src.core.fncall.protocols.bracket import BracketProtocol
@@ -100,12 +102,14 @@ class TestBracketParseFallbackFormat:
         assert "command" in tool_calls[0]["function"]["arguments"]
 
     def test_parse_simple_call_non_json_args(self, protocol):
-        text = '[function_calls]\n[Bash]echo hello[/Bash]\n[/function_calls]'
+        """Fallback requires JSON-like content (starts with {)."""
+        text = '[function_calls]\n[Bash]{"value": "echo hello"}[/Bash]\n[/function_calls]'
         clean, tool_calls = protocol.parse(text)
         assert len(tool_calls) == 1
         assert tool_calls[0]["function"]["name"] == "Bash"
-        args = tool_calls[0]["function"]["arguments"]
+        args = json.loads(tool_calls[0]["function"]["arguments"])
         assert "value" in args
+        assert args["value"] == "echo hello"
 
     def test_parse_skips_function_calls_tag(self, protocol):
         """Ensure [function_calls] tag itself is not parsed as a tool call."""
@@ -124,3 +128,42 @@ class TestBracketParseFallbackFormat:
         assert len(tool_calls) == 1
         assert tool_calls[0]["function"]["name"] == "Bash"
         assert "command" in tool_calls[0]["function"]["arguments"]
+
+    def test_parse_multiple_blocks_mixed_formats(self, protocol):
+        """Per-block fallback: block 1 uses correct format, block 2 uses simplified."""
+        text = """[function_calls]
+[call:Bash]{"command": "correct"}[/call]
+[/function_calls]
+[function_calls]
+[ReadFile]{"path": "/tmp/test.txt"}[/ReadFile]
+[/function_calls]"""
+        clean, tool_calls = protocol.parse(text)
+        assert len(tool_calls) == 2
+        assert tool_calls[0]["function"]["name"] == "Bash"
+        assert tool_calls[1]["function"]["name"] == "ReadFile"
+
+    def test_parse_empty_block(self, protocol):
+        """Empty [function_calls] block should produce no calls."""
+        text = '[function_calls][/function_calls]'
+        clean, tool_calls = protocol.parse(text)
+        assert len(tool_calls) == 0
+
+    def test_parse_malformed_no_closing_tag(self, protocol):
+        """Malformed block without closing tag should produce no calls."""
+        text = '[function_calls][call:Bash]{}'
+        clean, tool_calls = protocol.parse(text)
+        assert len(tool_calls) == 0
+
+    def test_parse_fallback_requires_json_brace(self, protocol):
+        """Fallback regex only matches when body starts with {."""
+        text = '[function_calls]\n[Bash]echo hello[/Bash]\n[/function_calls]'
+        clean, tool_calls = protocol.parse(text)
+        # Should NOT match because "echo hello" doesn't start with {
+        assert len(tool_calls) == 0
+
+    def test_parse_skips_call_tag_in_fallback(self, protocol):
+        """Fallback should not parse [call]{...}[/call] as a tool call."""
+        text = '[function_calls]\n[call]{"something":"x"}[/call]\n[/function_calls]'
+        clean, tool_calls = protocol.parse(text)
+        # Should NOT match because 'call' is in the skip list
+        assert len(tool_calls) == 0

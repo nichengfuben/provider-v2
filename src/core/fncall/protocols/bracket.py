@@ -15,8 +15,8 @@ class BracketProtocol(ToolProtocol):
     _END_TAG = "[/function_calls]"
     _BLOCK_RE = re.compile(r"\[function_calls\]([\s\S]*?)\[/function_calls\]", re.DOTALL)
     _CALL_RE = re.compile(r"\[call:([^\]]+)\]([\s\S]*?)\[/call\]", re.DOTALL)
-    # Fallback for incorrect [ToolName]{...}[/ToolName] format
-    _SIMPLE_CALL_RE = re.compile(r"\[([A-Za-z_][A-Za-z0-9_]*)\]([\s\S]*?)\[/\1\]", re.DOTALL)
+    # Fallback for incorrect [ToolName]{...}[/ToolName] format — only when body starts with {
+    _SIMPLE_CALL_RE = re.compile(r"\[([A-Za-z_][A-Za-z0-9_]*)\](\{[\s\S]*?)\[/\1\]", re.DOTALL)
 
     def get_trigger_tags(self) -> List[str]:
         return [self._TRIGGER]
@@ -73,7 +73,8 @@ Tool results will be provided in a corresponding result block."""
 
         for block_m in self._BLOCK_RE.finditer(text):
             block_body = block_m.group(1)
-            
+            block_had_correct_calls = False
+
             # Try correct [call:name]{...}[/call] format first
             for call_m in self._CALL_RE.finditer(block_body):
                 name = call_m.group(1).strip()
@@ -84,15 +85,17 @@ Tool results will be provided in a corresponding result block."""
                     "type": "function",
                     "function": {"name": name, "arguments": args},
                 })
+                block_had_correct_calls = True
 
-            # Fallback: if no correct calls found, try simplified [ToolName]{...}[/ToolName]
-            if not tool_calls:
+            # Fallback: if no correct calls in this block, try simplified [ToolName]{...}[/ToolName]
+            if not block_had_correct_calls:
                 for simple_m in self._SIMPLE_CALL_RE.finditer(block_body):
                     name = simple_m.group(1).strip()
                     # Skip if it looks like a block tag
-                    if name.lower() in ('function_calls',):
+                    if name.lower() in ('function_calls', 'call'):
                         continue
                     args_raw = simple_m.group(2).strip()
+                    # Only treat as fallback if body looks like JSON or plain text
                     args = self._parse_args(args_raw, name, schema_index)
                     tool_calls.append({
                         "id": f"call_{len(tool_calls):04d}",
