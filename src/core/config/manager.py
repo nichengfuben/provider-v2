@@ -200,7 +200,7 @@ class ConfigManager:
         logger.info("已备份旧配置到: %s", backup_path)
 
         # 合并：把模板中有但用户配置中没有的键加进去
-        self._merge_dicts(raw, dict(tpl_raw.value()))
+        self._merge_dicts(raw, dict(tpl_raw))
 
         # 写回
         self._write_merged(raw)

@@ -16,6 +16,7 @@ __all__ = [
     "ProxyCfg",
     "FncallCfg",
     "DebugCfg",
+    "AutoupdateCfg",
     "PlatformsCfg",
     "PlatformsProxyCfg",
     "ModelMappingCfg",
@@ -93,6 +94,14 @@ class DebugCfg(ConfigBase):
 
 
 @dataclass
+class AutoupdateCfg(ConfigBase):
+    """自动更新配置：开关、分支和检查间隔。"""
+    enabled: bool = False
+    branch: str = "main"
+    interval: int = 300  # 检查间隔（秒）
+
+
+@dataclass
 class PlatformsCfg(ConfigBase):
     """平台黑白名单配置。"""
     platform_list_type: str = "blacklist"
@@ -134,6 +143,7 @@ class AppConfig(ConfigBase):
     platforms_cfg: PlatformsCfg = field(default_factory=PlatformsCfg)
     debug: DebugCfg = field(default_factory=DebugCfg)
     model_mapping: ModelMappingCfg = field(default_factory=ModelMappingCfg)
+    autoupdate: AutoupdateCfg = field(default_factory=AutoupdateCfg)
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "AppConfig":

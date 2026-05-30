@@ -2,7 +2,7 @@
 # 复制此文件到项目根目录并重命名为 config.toml
 
 [server]
-version = "2.2.10"
+version = "2.2.11"
 host = "0.0.0.0"
 port = 1337
 debug = false
@@ -75,3 +75,8 @@ record_prompt = false
 [debug]
 level = "INFO"  # "DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"
 color = true    # 日志颜色输出：true 开启，false 关闭
+
+[autoupdate]
+enabled = false
+branch = "main"
+interval = 300  # 检查间隔（秒）

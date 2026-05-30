@@ -111,6 +111,19 @@ async def _run() -> None:
     if not is_idle_env:
         tasks.append(asyncio.ensure_future(_file_watcher_task()))
 
+    # Auto-update task (only when enabled and not in IDLE)
+    async def _autoupdate_task() -> None:
+        from src.core.autoupdate import AutoUpdater
+        updater = AutoUpdater(
+            root=_ROOT,
+            branch=cfg.autoupdate.branch,
+            interval=cfg.autoupdate.interval,
+        )
+        await updater.run()
+
+    if cfg.autoupdate.enabled and not is_idle_env:
+        tasks.append(asyncio.ensure_future(_autoupdate_task()))
+
     try:
         if sys.platform == "win32":
             # Windows 下轮询等待
