@@ -48,6 +48,8 @@ desktop.ini
 test.log
 test.py
 record.md
+nul
+server.log
 
 # aitianhu2 platform
 src/platforms/aitianhu2/
