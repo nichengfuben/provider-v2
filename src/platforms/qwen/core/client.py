@@ -313,6 +313,9 @@ class QwenClient:
                 acc.token_expires = float(info.get("token_expires", 0))
                 acc.memory_disabled = bool(info.get("memory_disabled", False))
                 acc.context_length = info.get("context_length")
+                # 如果有有效token，标记为已登录
+                if acc.token and acc.token_expires > time.time():
+                    acc.is_login = True
 
             saved_cookies = data.get("cookies", {})
             if (
