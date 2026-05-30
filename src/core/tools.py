@@ -52,8 +52,13 @@ class FncallStreamParser:
     IN_FUNCTION_CALLS = "IN_FUNCTION_CALLS"
     DONE = "DONE"
 
-    def __init__(self, tools: Optional[List[Dict[str, Any]]] = None) -> None:
-        protocol = get_protocol()
+    def __init__(
+        self,
+        tools: Optional[List[Dict[str, Any]]] = None,
+        protocol: Optional[Any] = None,
+    ) -> None:
+        if protocol is None:
+            protocol = get_protocol()
         from src.core.fncall.parsers.stream import FncallStreamParser as _Real
 
         self._impl = _Real(protocol=protocol, tools=tools)

@@ -8,8 +8,8 @@
 
 <div align="center">
 
-![Status](https://img.shields.io/badge/status-v2.2.5-blue)
-![Version](https://img.shields.io/badge/version-2.2.5-blue)
+![Status](https://img.shields.io/badge/status-v2.2.10-blue)
+![Version](https://img.shields.io/badge/version-2.2.10-blue)
 ![Python](https://img.shields.io/badge/python-3.8+-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Platforms](https://img.shields.io/badge/platforms-11+-orange)
@@ -1254,7 +1254,10 @@ fix(gateway): 修复并发竞速时 token 计数错误
 
 ## 🗺️ 路线图
 
-### 当前版本：v2.2.5
+### 当前版本：v2.2.10
+
+✅ 已完成（v2.2.10）：
+- 修复工具调用 fncall 协议不一致问题（_single 缺少注入、_race 缺少 fncall_lang 参数、FncallStreamParser 协议错误）
 
 ✅ 已完成（v2.2.5）：
 - 修复 antml 协议 prompt 缺少 Function Invocation Syntax

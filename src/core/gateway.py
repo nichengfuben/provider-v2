@@ -228,16 +228,26 @@ async def _single(
     adapter = reg.adapter_for(cand)
     if not adapter:
         raise ProviderError("无适配器: {}".format(cand.platform))
-    fp = FncallStreamParser(tools=tools) if tools else None
+
+    # 按平台解析协议并注入工具定义
+    protocol = None
+    if tools:
+        protocol = get_protocol(platform_id=cand.platform)
+        worker_msgs = inject_fncall(msgs, tools, protocol, lang=fncall_lang)
+    else:
+        worker_msgs = msgs
+
+    fp = FncallStreamParser(tools=tools, protocol=protocol) if tools else None
     start = time.monotonic()
     ft: Optional[float] = None
     tc = 0
     ok = False
     p_usage: Optional[Dict] = None
     acc_parts: List[str] = []
+
     try:
         async for chunk in adapter.complete(
-            cand, msgs, model, stream, thinking=thinking, search=search, **kw
+            cand, worker_msgs, model, stream, thinking=thinking, search=search, **kw
         ):
             if isinstance(chunk, str):
                 tc += 1
@@ -285,6 +295,7 @@ async def _race(
     tools: Optional[List[Dict]],
     prompt_len: int,
     min_tok: int,
+    fncall_lang: str = "en",
     **kw: Any,
 ) -> AsyncGenerator[Union[str, Dict], None]:
     """多候选项竞速执行。
@@ -435,7 +446,9 @@ async def _race(
                     i["task"].cancel()
                 await _rec(reg, i, i["tok"] > 0, prompt_len)
 
-        fp = FncallStreamParser(tools=tools) if tools else None
+        # 获取 winner 的平台协议
+        winner_protocol = get_protocol(platform_id=winner["cand"].platform) if tools else None
+        fp = FncallStreamParser(tools=tools, protocol=winner_protocol) if tools else None
 
         # 输出缓冲区
         for ch in winner["buf"]:
