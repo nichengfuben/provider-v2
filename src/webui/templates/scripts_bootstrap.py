@@ -88,6 +88,34 @@ WEBUI_SCRIPTS_BOOTSTRAP = """
       document.getElementById('autoupdateSaveBtn').addEventListener('click', saveAutoupdateSettings);
     }
 
+    // Chat tab event listeners
+    var chatSendBtn = document.getElementById('chatSendBtn');
+    var chatMessageInput = document.getElementById('chatMessageInput');
+    var chatClearBtn = document.getElementById('chatClearBtn');
+    var chatRunTestsBtn = document.getElementById('chatRunTestsBtn');
+
+    if (chatSendBtn) {
+      chatSendBtn.addEventListener('click', function() { sendChatMessage(); });
+    }
+    if (chatMessageInput) {
+      chatMessageInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          sendChatMessage();
+        }
+      });
+    }
+    if (chatClearBtn) {
+      chatClearBtn.addEventListener('click', function() {
+        clearChatMessages();
+        chatConversationHistory = [];
+        toast('对话已清空', 'ok');
+      });
+    }
+    if (chatRunTestsBtn) {
+      chatRunTestsBtn.addEventListener('click', runChatTests);
+    }
+
     applyTheme();
     applyCompact();
     scheduleRefresh();

@@ -66,6 +66,45 @@ _HTML_TEMPLATE = """<!doctype html>
     .sidebar-nav-item.active { background: var(--accent-soft); color: var(--accent);
       border-color: var(--accent); font-weight: 600; border-left: 3px solid var(--accent); }
     .webui-content { padding: 14px; min-width: 0; }
+    /* Chat input styles (from quickshot input-box) */
+    .chat-input {
+      caret-color: transparent; resize: none; overflow-y: auto; overflow-x: hidden; color: var(--text);
+    }
+    .chat-input::selection { background: #dbe3ff; color: var(--text); }
+    .custom-caret {
+      position: absolute; left: 0; top: 0; width: 2px; height: 24px; border-radius: 999px;
+      background: var(--accent); pointer-events: none; opacity: 0;
+      transform: translate3d(0, 0, 0); will-change: transform, height, opacity; z-index: 4;
+    }
+    .custom-caret.is-visible { opacity: 1; animation: caretBlink 1.05s cubic-bezier(0.45, 0, 0.2, 1) infinite; }
+    .custom-caret.is-moving { animation: none; opacity: 1; }
+    @keyframes caretBlink { 0%, 48% { opacity: 1; } 50%, 100% { opacity: 0.22; } }
+    .custom-scrollbar-root { opacity: 0; pointer-events: none; transition: opacity 120ms linear; }
+    .custom-scrollbar-root.is-scrollable { opacity: 1; pointer-events: auto; }
+    .custom-scrollbar-track { background: #eef2f8; border-radius: 999px; }
+    .custom-scrollbar-thumb {
+      background: #b9c4da; border-radius: 999px; min-height: 24px;
+      transform: translate3d(0, 0, 0); will-change: transform, height; cursor: grab;
+      transition: background 0.1s ease;
+    }
+    .custom-scrollbar-thumb:active { cursor: grabbing; background: #8f9fc7; }
+    /* Chat message styles */
+    .chat-message { padding: 12px 16px; border-radius: 12px; margin-bottom: 8px; line-height: 1.6; font-size: 14px; }
+    .chat-message-user { background: var(--accent-soft); border-left: 3px solid var(--accent); }
+    .chat-message-assistant { background: var(--panel-alt); border-left: 3px solid var(--ok); }
+    .chat-message-system { background: #fff3e0; border-left: 3px solid var(--warn); }
+    .chat-message-tool { background: #f0f4ff; border-left: 3px solid #6366f1; font-family: monospace; font-size: 12px; }
+    .chat-tool-btn {
+      display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px;
+      border-radius: 6px; background: #e0e7ff; color: #4338ca; font-size: 12px;
+      border: 1px solid #c7d2fe; cursor: default;
+    }
+    /* Chat test report table */
+    .chat-test-report { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .chat-test-report th, .chat-test-report td { padding: 8px 12px; border: 1px solid var(--border); text-align: left; }
+    .chat-test-report th { background: var(--panel-soft); font-weight: 600; }
+    .chat-test-report tr.pass td { background: #f0fdf4; }
+    .chat-test-report tr.fail td { background: #fef2f2; }
     .config-edit-area { min-height: 200px; max-height: 500px; overflow: auto;
       font-family: 'Courier New', monospace; font-size: 13px; line-height: 1.6;
       border: 1px solid var(--border); border-radius: 12px; padding: 12px;
@@ -272,6 +311,57 @@ _HTML_TEMPLATE = """<!doctype html>
           </div>
         </div>
         <div class="min-h-[140px] max-h-[260px] overflow-auto whitespace-pre-wrap font-mono text-[13px] leading-relaxed border border-border rounded-xl p-3 bg-panel-soft" id="logBox"></div>
+      </section>
+
+      <section class="tab-panel hidden" id="tab-chat" aria-labelledby="tab-chat-button">
+        <div class="flex flex-wrap justify-between items-end gap-3">
+          <div>
+            <h2>聊天测试</h2>
+            <p class="m-0 text-muted leading-relaxed">向 AI 模型发送消息，测试不同工具调用协议的响应。</p>
+          </div>
+          <div class="flex flex-wrap gap-2 items-center">
+            <select id="chatModelSelect" class="rounded-[10px] border border-border bg-panel text-text px-3 py-2 text-[14px]"><option value="">加载中...</option></select>
+            <select id="chatProtocolSelect" class="rounded-[10px] border border-border bg-panel text-text px-3 py-2 text-[14px]">
+              <option value="xml">XML 协议</option>
+              <option value="antml">Antml 协议</option>
+              <option value="nous">Nous 协议</option>
+              <option value="bracket">Bracket 协议</option>
+            </select>
+            <button class="cursor-pointer font-bold rounded-lg px-4 py-2.5 text-[14px] border border-ok text-ok bg-panel hover:bg-ok hover:text-white transition" id="chatRunTestsBtn" type="button">批量测试</button>
+            <button class="cursor-pointer font-bold rounded-lg px-4 py-2.5 text-[14px] border border-border bg-panel text-text hover:bg-panel-alt transition" id="chatClearBtn" type="button">清空对话</button>
+          </div>
+        </div>
+        <div id="chatTestReport" class="hidden mb-3"></div>
+        <div id="chatMessagesContainer" class="min-h-[400px] max-h-[600px] overflow-y-auto border border-border rounded-xl p-3 bg-panel-soft"></div>
+        <div id="chatInputSection" class="w-full bg-white border border-[#e5eaf0] rounded-2xl p-4 flex flex-col gap-3 mt-3">
+          <div id="chatInputViewport" class="relative w-full overflow-hidden" style="height: 96px;">
+            <textarea id="chatMessageInput" class="chat-input absolute inset-0 z-[1] w-full h-full border-0 bg-transparent p-0 pr-6 m-0 text-[15px] leading-6 placeholder:text-[#a8b3cf]" placeholder="输入消息...支持多行文本" rows="4" spellcheck="true" autocomplete="off"></textarea>
+            <div id="chatCustomCaret" class="custom-caret"></div>
+            <div id="chatCustomScrollbar" class="custom-scrollbar-root absolute inset-y-0 right-0 z-[5] w-3">
+              <div id="chatCustomTrack" class="custom-scrollbar-track absolute right-[3px] top-1 bottom-1 w-[6px]"></div>
+              <div id="chatCustomThumb" class="custom-scrollbar-thumb absolute right-[3px] top-1 w-[6px]"></div>
+            </div>
+          </div>
+          <div class="flex justify-between items-center h-11">
+            <div class="flex items-center gap-0.5">
+              <button type="button" class="tool-btn" title="表情">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.182 15.182a4.5 4.5 0 0 1-6.364 0M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0ZM9.75 9.75c0 .414-.168.75-.375.75S9 10.164 9 9.75 9.168 9 9.375 9s.375.336.375.75Zm-.375 0h.008v.015h-.008V9.75Zm5.625 0c0 .414-.168.75-.375.75s-.375-.336-.375-.75.168-.75.375-.75.375.336.375.75Zm-.375 0h.008v.015h-.008V9.75Z"/></svg>
+              </button>
+              <button type="button" class="tool-btn" title="文件">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12.75V12A2.25 2.25 0 0 1 4.5 9.75h15A2.25 2.25 0 0 1 21.75 12v.75m-8.69-6.44-2.12-2.12a1.5 1.5 0 0 0-1.061-.44H4.5A2.25 2.25 0 0 0 2.25 6v12a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9a2.25 2.25 0 0 0-2.25-2.25h-5.379a1.5 1.5 0 0 1-1.06-.44Z"/></svg>
+              </button>
+              <button type="button" class="tool-btn" title="语音输入" id="chatVoiceBtn">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 18.75a6 6 0 0 0 6-6v-1.5m-6 7.5a6 6 0 0 1-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 0 1-3-3V4.5a3 3 0 1 1 6 0v8.25a3 3 0 0 1-3 3Z"/></svg>
+              </button>
+            </div>
+            <div class="flex items-center gap-2">
+              <button id="chatSendBtn" type="button" class="bg-[#5865bc] hover:bg-[#4754a3] text-white px-4 h-11 rounded-xl flex items-center justify-center gap-2 font-medium text-sm shadow-sm">
+                <span id="chatBtnText">发送</span>
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 12L3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
       </section>
 
         </main>
