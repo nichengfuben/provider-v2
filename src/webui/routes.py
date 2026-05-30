@@ -5,6 +5,7 @@ from __future__ import annotations
 import aiohttp.web
 
 from src.webui.routers import (
+    autoupdate_check, autoupdate_get, autoupdate_put,
     config_get, config_put, config_reload, docs_page, export_summary,
     logs_ws, reload_service, root_page, summary_api, webui_page,
 )
@@ -24,3 +25,7 @@ def setup_routes(app: aiohttp.web.Application) -> None:
     app.router.add_get("/v1/config", config_get)
     app.router.add_put("/v1/config", config_put)
     app.router.add_post("/v1/config/reload", config_reload)
+    # 自动更新端点
+    app.router.add_get("/v1/admin/autoupdate", autoupdate_get)
+    app.router.add_put("/v1/admin/autoupdate", autoupdate_put)
+    app.router.add_post("/v1/admin/autoupdate/check", autoupdate_check)

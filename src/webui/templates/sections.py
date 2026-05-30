@@ -22,6 +22,7 @@ def render_nav_items() -> str:
         ("models", "🧠 模型"),
         ("docs", "📖 文档"),
         ("config", "⚙️ 配置"),
+        ("autoupdate", "🔄 自动更新"),
         ("logs", "📋 日志"),
     ]
     return "".join(

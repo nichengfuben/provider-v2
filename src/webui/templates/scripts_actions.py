@@ -187,4 +187,65 @@ WEBUI_SCRIPTS_ACTIONS = """
         document.getElementById('configEditToggle').textContent = '编辑配置';
       }
     }
+
+    async function loadAutoupdateSettings() {
+      try {
+        const result = await fetchJson('/v1/admin/autoupdate');
+        if (result.success) {
+          const d = result.data;
+          document.getElementById('autoupdateEnabled').checked = d.enabled || false;
+          document.getElementById('autoupdateBranch').value = d.branch || 'main';
+          document.getElementById('autoupdateInterval').value = d.interval || 300;
+          document.getElementById('autoupdateStatus').textContent = d.enabled ? '已启用' : '未启用';
+        }
+      } catch (error) {
+        toast('加载自动更新设置失败：' + String(error), 'error');
+      }
+    }
+
+    async function saveAutoupdateSettings() {
+      try {
+        const enabled = document.getElementById('autoupdateEnabled').checked;
+        const branch = document.getElementById('autoupdateBranch').value.trim() || 'main';
+        const interval = parseInt(document.getElementById('autoupdateInterval').value) || 300;
+        const result = await fetch('/v1/admin/autoupdate', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ enabled: enabled, branch: branch, interval: interval })
+        });
+        const data = await result.json();
+        if (data.success) {
+          document.getElementById('autoupdateStatus').textContent = data.data.enabled ? '已启用' : '未启用';
+          toast('自动更新设置已保存', 'ok');
+          log('自动更新设置已保存。');
+        } else {
+          toast('保存失败：' + (data.error || '未知错误'), 'error');
+        }
+      } catch (error) {
+        toast('保存失败：' + String(error), 'error');
+        log('自动更新设置保存失败：' + String(error));
+      }
+    }
+
+    async function triggerAutoupdateCheck() {
+      try {
+        log('正在触发自动更新检查...');
+        document.getElementById('autoupdateLastCheck').textContent = '检查中...';
+        const result = await fetch('/v1/admin/autoupdate/check', { method: 'POST' });
+        const data = await result.json();
+        if (data.success) {
+          document.getElementById('autoupdateLastCheck').textContent = '检查完成';
+          toast('更新检查完成', 'ok');
+          log('自动更新检查完成。');
+        } else {
+          document.getElementById('autoupdateLastCheck').textContent = '错误';
+          toast('检查失败：' + (data.error || '未知错误'), 'error');
+          log('自动更新检查失败：' + String(data.error));
+        }
+      } catch (error) {
+        document.getElementById('autoupdateLastCheck').textContent = '错误';
+        toast('检查失败：' + String(error), 'error');
+        log('自动更新检查失败：' + String(error));
+      }
+    }
 """

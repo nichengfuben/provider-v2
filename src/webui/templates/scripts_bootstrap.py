@@ -80,10 +80,19 @@ WEBUI_SCRIPTS_BOOTSTRAP = """
       });
     });
 
+    // Autoupdate tab event listeners
+    if (document.getElementById('autoupdateCheckBtn')) {
+      document.getElementById('autoupdateCheckBtn').addEventListener('click', triggerAutoupdateCheck);
+    }
+    if (document.getElementById('autoupdateSaveBtn')) {
+      document.getElementById('autoupdateSaveBtn').addEventListener('click', saveAutoupdateSettings);
+    }
+
     applyTheme();
     applyCompact();
     scheduleRefresh();
     switchTab(initialTab);
     connectLogsSocket();
     refreshAll();
+    loadAutoupdateSettings();
 """

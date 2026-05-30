@@ -226,6 +226,41 @@ _HTML_TEMPLATE = """<!doctype html>
         <textarea class="config-edit-area hidden" id="configEditArea" spellcheck="false" aria-label="配置编辑器"></textarea>
       </section>
 
+      <section class="tab-panel hidden" id="tab-autoupdate" aria-labelledby="tab-autoupdate-button">
+        <div class="flex flex-wrap justify-between items-end gap-3">
+          <div>
+            <h2>自动更新</h2>
+            <p class="m-0 text-muted leading-relaxed">监控远端 git 仓库新提交，自动拉取更新并重启服务。</p>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <button class="tab-button cursor-pointer font-bold rounded-lg px-4 py-2.5 border border-border bg-panel text-text hover:bg-panel-alt transition" id="autoupdateCheckBtn" type="button">立即检查</button>
+            <button class="tab-button cursor-pointer font-bold rounded-lg px-4 py-2.5 border border-border bg-panel text-text hover:bg-panel-alt transition" id="autoupdateSaveBtn" type="button">保存设置</button>
+            <span id="autoupdateStatus" class="status-saved flex items-center">未启用</span>
+          </div>
+        </div>
+        <div class="grid gap-3 grid-cols-[repeat(auto-fit,minmax(240px,1fr))]" id="autoupdateGrid">
+          <div class="border border-border rounded-[14px] p-3.5 bg-panel">
+            <div class="text-[13px] text-muted m-0 mb-2">启用状态</div>
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" id="autoupdateEnabled" class="w-4 h-4">
+              <span>启用自动更新</span>
+            </label>
+          </div>
+          <div class="border border-border rounded-[14px] p-3.5 bg-panel">
+            <div class="text-[13px] text-muted m-0 mb-2">目标分支</div>
+            <input id="autoupdateBranch" type="text" placeholder="main" class="w-full rounded-[10px] border border-border bg-panel-soft text-text px-3 py-2 text-[14px]">
+          </div>
+          <div class="border border-border rounded-[14px] p-3.5 bg-panel">
+            <div class="text-[13px] text-muted m-0 mb-2">检查间隔（秒）</div>
+            <input id="autoupdateInterval" type="number" min="30" step="30" placeholder="300" class="w-full rounded-[10px] border border-border bg-panel-soft text-text px-3 py-2 text-[14px]">
+          </div>
+          <div class="border border-border rounded-[14px] p-3.5 bg-panel">
+            <div class="text-[13px] text-muted m-0 mb-2">上次检查结果</div>
+            <div id="autoupdateLastCheck" class="text-2xl font-bold">--</div>
+          </div>
+        </div>
+      </section>
+
       <section class="tab-panel hidden" id="tab-logs" aria-labelledby="tab-logs-button">
         <div class="flex flex-wrap justify-between items-end gap-3">
           <div>

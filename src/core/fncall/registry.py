@@ -20,6 +20,8 @@ logger = get_logger(__name__)
 # custom 协议实例缓存
 _custom_instance: ToolProtocol = None
 _registered = False
+# 平台映射日志去重
+_mapping_logged: set[str] = set()
 
 
 def _get_custom_protocol(
@@ -75,7 +77,10 @@ def get_protocol(
             mapped = cfg.fncall.fncall_mapping.get(platform_id)
             if mapped:
                 protocol_id = mapped
-                logger.debug("平台 %s 映射到协议: %s", platform_id, protocol_id)
+                mapping_key = f"{platform_id}:{protocol_id}"
+                if mapping_key not in _mapping_logged:
+                    logger.debug("平台 %s 映射到协议: %s", platform_id, protocol_id)
+                    _mapping_logged.add(mapping_key)
 
         # 回退到全局协议
         if not protocol_id:
