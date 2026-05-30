@@ -183,7 +183,11 @@ def _run_worker() -> None:
         try:
             import uvloop  # type: ignore[import]
 
-            asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
+            # Python 3.14+: use uvloop.run() instead of set_event_loop_policy
+            if sys.version_info >= (3, 14):
+                uvloop.install()
+            else:
+                asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
         except Exception:
             logger.debug("uvloop 不可用，继续使用默认事件循环")
 
