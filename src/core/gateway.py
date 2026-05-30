@@ -129,12 +129,10 @@ async def dispatch(
     raw_fncall_lang = kw.get("fncall_lang", "en")
     fncall_lang = raw_fncall_lang if raw_fncall_lang in ("en", "zh") else "en"
 
+    # 协议注入延迟到候选项选择后（_single/_race 中按平台解析协议）
+    final_msgs = messages
     if tools:
-        protocol = get_protocol()
-        final_msgs = inject_fncall(messages, tools, protocol, lang=fncall_lang)
         thinking = False
-    else:
-        final_msgs = messages
 
     cands = await _wait_for_candidates(registry, model, timeout=15.0)
     if not cands:
@@ -173,6 +171,7 @@ async def dispatch(
             search,
             tools,
             prompt_len,
+            fncall_lang=fncall_lang,
             **extra_kw,
         ):
 ##            print(chunk)
@@ -190,6 +189,7 @@ async def dispatch(
         tools,
         prompt_len,
         cfg.gateway.min_tokens,
+        fncall_lang=fncall_lang,
         **extra_kw,
     ):
         yield chunk
@@ -205,6 +205,7 @@ async def _single(
     search: bool,
     tools: Optional[List[Dict]],
     prompt_len: int,
+    fncall_lang: str = "en",
     **kw: Any,
 ) -> AsyncGenerator[Union[str, Dict], None]:
     """单候选项执行。
@@ -324,9 +325,14 @@ async def _race(
             except Exception as e:
                 logger.debug("竞速 worker[%d] 发送错误消息失败: %s", idx, e)
             return
+        # 按平台解析协议并注入工具定义
+        worker_msgs = msgs
+        if tools:
+            protocol = get_protocol(platform_id=c.platform)
+            worker_msgs = inject_fncall(msgs, tools, protocol, lang=fncall_lang)
         try:
             async for ch in a.complete(
-                c, msgs, model, stream,
+                c, worker_msgs, model, stream,
                 thinking=thinking, search=search, **kw
             ):
                 if ev.is_set():

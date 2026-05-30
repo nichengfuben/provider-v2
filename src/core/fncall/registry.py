@@ -52,6 +52,7 @@ def get_protocol(
     protocol_id: str = "",
     custom_prompt_en: str = "",
     custom_prompt_zh: str = "",
+    platform_id: str = "",
 ) -> ToolProtocol:
     """获取协议实例。
 
@@ -59,15 +60,26 @@ def get_protocol(
         protocol_id: 协议 ID。为空时从配置读取。
         custom_prompt_en: custom 协议的英文 prompt 模板。
         custom_prompt_zh: custom 协议的中文 prompt 模板。
+        platform_id: 平台 ID。用于查找 fncall_mapping 映射。
 
     Returns:
         ToolProtocol 实例。
     """
-    if not protocol_id:
-        from src.core.config import get_config
+    from src.core.config import get_config
 
-        cfg = get_config()
-        protocol_id = cfg.fncall.protocol
+    cfg = get_config()
+
+    if not protocol_id:
+        # 先检查平台映射
+        if platform_id and cfg.fncall.fncall_mapping:
+            mapped = cfg.fncall.fncall_mapping.get(platform_id)
+            if mapped:
+                protocol_id = mapped
+                logger.debug("平台 %s 映射到协议: %s", platform_id, protocol_id)
+
+        # 回退到全局协议
+        if not protocol_id:
+            protocol_id = cfg.fncall.protocol
 
     if protocol_id == "custom":
         return _get_custom_protocol(custom_prompt_en, custom_prompt_zh)

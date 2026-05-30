@@ -2,7 +2,7 @@
 # 复制此文件到项目根目录并重命名为 config.toml
 
 [server]
-version = "2.2.7"
+version = "2.2.8"
 host = "0.0.0.0"
 port = 1337
 debug = false
@@ -55,8 +55,12 @@ platform_list_type = "blacklist"  # "blacklist": 排除列表中的平台; "whit
 platform_list = []
 
 [fncall]
-# 协议模式: "xml" | "original" | "antml" | "bracket" | "custom"
+# 协议模式: "xml" | "original" | "antml" | "bracket" | "custom" | "nous"
 protocol = "xml"
+# 平台到协议的映射（可选）
+# [fncall.fncall_mapping]
+# "qwen" = "nous"
+# "ollama" = "xml"
 
 # custom 协议专用（仅 protocol="custom" 时生效）
 custom_prompt_en = ""
