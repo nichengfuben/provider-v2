@@ -455,6 +455,23 @@ section.tab-panel > *:nth-child(6) { animation-delay: 0.3s; }
   opacity: 0.5;
 }
 
+/* Chat code blocks */
+.chat-codeblock {
+  margin: 8px 0;
+  padding: 12px;
+  border-radius: 8px;
+  background: var(--panel-alt);
+  border: 1px solid var(--border);
+  overflow-x: auto;
+  font-family: 'SF Mono', 'Cascadia Code', 'Consolas', 'Monaco', monospace;
+  font-size: 13px;
+  line-height: 1.5;
+  white-space: pre;
+}
+.chat-codeblock code {
+  font-family: inherit;
+}
+
 [data-compact="1"] .custom-dropdown-trigger {
   padding: 6px 10px;
   font-size: 13px;

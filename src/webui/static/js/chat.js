@@ -155,6 +155,24 @@
   thumb.addEventListener("pointercancel", releaseDragText);
 })();
 
+// ========================= Code Block Rendering =========================
+/**
+ * 将包含 ```code``` 块的文本转换为 HTML，保持代码缩进。
+ * @param {string} text - 原始文本
+ * @returns {string} HTML 字符串
+ */
+function renderWithCodeBlocks(text) {
+  var escaped = escapeHtml(text);
+  // Match ```language\ncode\n``` patterns
+  var codeBlockRegex = /```(\w*)\n([\s\S]*?)```/g;
+  var result = escaped.replace(codeBlockRegex, function(match, lang, code) {
+    var langClass = lang ? ' class="language-' + lang.toLowerCase() + '"' : '';
+    return '<pre class="chat-codeblock"><code' + langClass + '>' + code + '</code></pre>';
+  });
+  // Replace remaining newlines with <br> outside code blocks
+  return result;
+}
+
 // ========================= Chat Message Rendering =========================
 function appendChatMessage(role, content, options) {
   options = options || {};
@@ -170,9 +188,9 @@ function appendChatMessage(role, content, options) {
       toolHtml += '<span class="chat-tool-btn">' + escapeHtml(name) + '</span> ';
     }
     toolHtml += '</div>';
-    msg.innerHTML = toolHtml + '<pre style="margin:0;white-space:pre-wrap;">' + escapeHtml(content) + '</pre>';
+    msg.innerHTML = toolHtml + renderWithCodeBlocks(content);
   } else if (role === "assistant") {
-    msg.innerHTML = escapeHtml(content).replace(/\n/g, "<br>");
+    msg.innerHTML = renderWithCodeBlocks(content);
   } else {
     msg.textContent = content;
   }
@@ -189,7 +207,7 @@ function updateStreamingMessage(content) {
   if (!msg) {
     msg = appendChatMessage("assistant", "", { isStreaming: true });
   }
-  msg.innerHTML = escapeHtml(content).replace(/\n/g, "<br>");
+  msg.innerHTML = renderWithCodeBlocks(content);
   var container = document.getElementById("chatMessagesContainer");
   if (container) container.scrollTop = container.scrollHeight;
 }
@@ -220,9 +238,16 @@ function escapeHtml(text) {
 
 function clearChatMessages() {
   var container = document.getElementById("chatMessagesContainer");
-  if (container) container.innerHTML = "";
+  if (container) {
+    container.innerHTML = "";
+  }
   var report = document.getElementById("chatTestReport");
   if (report) { report.innerHTML = ""; report.classList.add("hidden"); }
+  // 确保不清空其他元素
+  var inputSection = document.getElementById("chatInputSection");
+  if (inputSection && !document.body.contains(inputSection)) {
+    document.body.appendChild(inputSection);
+  }
 }
 
 // ========================= Model List =========================
@@ -414,9 +439,14 @@ async function sendChatMessage() {
 
 // ========================= Batch Test (qwen3.7-max + all protocols) =========================
 async function runChatTests() {
-  var protocols = ["xml", "antml", "nous", "bracket"];
-  var testModel = "qwen3.7-max";
-  var testMessage = "请用工具调用测试一下当前协议是否正常工作。调用一个名为 echo 的工具，参数为 {\"text\": \"hello\"}。";
+  var modelSelect = document.getElementById("chatModelSelect");
+  var protocolSelect = document.getElementById("chatProtocolSelect");
+  var input = document.getElementById("chatMessageInput");
+
+  var testModel = modelSelect ? modelSelect.value : "qwen3.7-max";
+  var protocols = protocolSelect && protocolSelect.value ? [protocolSelect.value] : ["xml", "antml", "nous", "bracket"];
+  var testMessage = (input && input.value.trim()) || "请用工具调用测试一下当前协议是否正常工作。调用一个名为 echo 的工具，参数为 {\"text\": \"hello\"}。";
+
   var report = document.getElementById("chatTestReport");
   if (!report) return;
 
