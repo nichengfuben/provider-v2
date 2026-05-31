@@ -163,9 +163,13 @@ function initAllMotionEffects() {
     const toolBtns = document.querySelectorAll('.tool-btn');
     toolBtns.forEach((btn, i) => appearIn(btn, 120 + i * 40, 5));
 
-    // Primary action buttons
-    const primaryBtns = document.querySelectorAll('button.bg-accent, button#chatSendBtn');
-    primaryBtns.forEach((btn, i) => appearIn(btn, 200 + i * 50, 5));
+    // Primary action buttons (exclude chatSendBtn as it has its own animation)
+    const primaryBtns = document.querySelectorAll('button.bg-accent');
+    primaryBtns.forEach((btn, i) => {
+        if (btn.id !== 'chatSendBtn') {
+            appearIn(btn, 200 + i * 50, 5);
+        }
+    });
 
     // Sidebar nav items - staggered
     const sidebarItems = document.querySelectorAll('.sidebar-nav-item');
@@ -196,9 +200,9 @@ function attachHoverMotion() {
     const toolButtons = Array.from(document.querySelectorAll('.tool-btn'));
     toolButtons.forEach((btn) => MotionKit.floatScale(btn, 108, 96, 100, 0.18));
 
-    // Primary send button
+    // Primary send button - skip animation, only add hover effect
     const sendBtn = document.getElementById('chatSendBtn');
-    if (sendBtn) MotionKit.floatScale(sendBtn, 107, 96, 100, 0.18);
+    // Do NOT apply floatScale to avoid opacity issues
 
     // Action buttons (non-tab buttons)
     const actionBtns = Array.from(document.querySelectorAll('button:not(.tab-button):not(.tool-btn):not(.sidebar-nav-item)'));
@@ -227,16 +231,8 @@ function attachHoverMotion() {
 
 // ========================= Tab panel transitions =========================
 function animateTabIn(panel) {
-    if (!panel) return;
-    // Animate children elements
-    const children = panel.querySelectorAll('h2, p, button, label, div.border, section, pre, textarea, .grid > div');
-    children.forEach((child, i) => {
-        MotionKit.setState(child, { opacity: 0, size: 95 });
-        setTimeout(() => {
-            MotionKit.opacityTo(child, 1, 6);
-            MotionKit.sizeTo(child, 100, 6);
-        }, 40 + i * 30);
-    });
+    // Disabled - conflicts with CSS fadeInUp animation
+    return;
 }
 
 // ========================= Toast animation =========================

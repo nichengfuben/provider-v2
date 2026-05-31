@@ -124,6 +124,11 @@ if (typeof initAllMotionEffects === 'function') {
   setTimeout(initAllMotionEffects, 100);
 }
 
+// Load models list for chat test
+if (typeof loadModelsList === 'function') {
+  loadModelsList();
+}
+
 // Override switchTab to add animation when switching tabs
 var originalSwitchTab = window.switchTab;
 if (typeof switchTab === 'function') {
