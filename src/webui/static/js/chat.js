@@ -6,6 +6,11 @@
   const thumb = document.getElementById("chatCustomThumb");
   const caret = document.getElementById("chatCustomCaret");
 
+  // Exit early if chat input elements don't exist (e.g., docs page)
+  if (!textarea || !viewport || !scrollbar || !thumb || !caret) {
+    return;
+  }
+
   const minRows = 4, maxRows = 6;
   let visualHeight = 96, targetHeight = 96, heightFrame = 0;
   let thumbY = 0, thumbTargetY = 0, thumbHeight = 28, thumbFrame = 0;

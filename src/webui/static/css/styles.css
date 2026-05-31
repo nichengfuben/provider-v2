@@ -43,6 +43,16 @@ body { margin: 0; font-family: Arial, sans-serif;
 /* Chat input styles (from quickshot input-box) */
 .chat-input {
   caret-color: transparent; resize: none; overflow-y: auto; overflow-x: hidden; color: var(--text);
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+}
+.chat-input::placeholder {
+  color: var(--muted);
+  opacity: 1;
 }
 .chat-input::selection { background: var(--selection-bg); color: var(--text); }
 .custom-caret {
