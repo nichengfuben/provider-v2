@@ -67,7 +67,22 @@
     this._originalSelect = selectEl;
 
     // Build the custom dropdown HTML
-    wrapper.innerHTML = this._triggerHTML() + this._listHTML();
+    wrapper.innerHTML = this._triggerHTML();
+
+    // Create the list element separately and append to body for unrestricted positioning
+    var list = document.createElement('div');
+    list.className = 'custom-dropdown-list';
+    list.setAttribute('role', 'listbox');
+    list.setAttribute('aria-hidden', 'true');
+    list.id = this._id + '-list';
+    for (var i = 0; i < this._options.length; i++) {
+      var opt = this._options[i];
+      var selected = opt.value === this._selectedValue ? ' aria-selected="true"' : ' aria-selected="false"';
+      list.innerHTML += '<div class="custom-dropdown-option" role="option" data-value="' + escapeHtml(opt.value) + '"' + selected + '>' +
+        escapeHtml(opt.text) + '</div>';
+    }
+    document.body.appendChild(list);
+    this._listEl = list;
 
     // Replace the <select> in the DOM
     selectEl.parentNode.replaceChild(wrapper, selectEl);
@@ -132,7 +147,7 @@
   CustomDropdown.prototype._bindEvents = function() {
     var self = this;
     var trigger = this.el.querySelector('.custom-dropdown-trigger');
-    var list = this.el.querySelector('.custom-dropdown-list');
+    var list = this._listEl;
 
     if (!trigger || !list) return;
 
@@ -209,7 +224,7 @@
   };
 
   CustomDropdown.prototype._highlightNext = function(delta) {
-    var list = this.el.querySelector('.custom-dropdown-list');
+    var list = this._listEl;
     var options = list.querySelectorAll('.custom-dropdown-option');
     var currentIndex = -1;
     for (var i = 0; i < options.length; i++) {
@@ -231,7 +246,7 @@
       activeDropdown.close();
     }
 
-    var list = this.el.querySelector('.custom-dropdown-list');
+    var list = this._listEl;
     var trigger = this.el.querySelector('.custom-dropdown-trigger');
     if (!list || !trigger) return;
 
@@ -267,7 +282,7 @@
   };
 
   CustomDropdown.prototype.close = function() {
-    var list = this.el.querySelector('.custom-dropdown-list');
+    var list = this._listEl;
     var trigger = this.el.querySelector('.custom-dropdown-trigger');
     if (!list || !trigger) return;
 
@@ -295,7 +310,7 @@
     this._selectedValue = value;
 
     // Update aria-selected on options
-    var list = this.el.querySelector('.custom-dropdown-list');
+    var list = this._listEl;
     if (list) {
       var options = list.querySelectorAll('.custom-dropdown-option');
       for (var i = 0; i < options.length; i++) {
@@ -351,7 +366,7 @@
     }
 
     // Rebuild the list DOM
-    var list = this.el.querySelector('.custom-dropdown-list');
+    var list = this._listEl;
     if (list) {
       list.innerHTML = '';
       for (var j = 0; j < this._options.length; j++) {
@@ -374,8 +389,12 @@
 
   // ========================= Global click-outside handler =========================
   document.addEventListener('click', function(e) {
-    if (activeDropdown && !activeDropdown.el.contains(e.target)) {
-      activeDropdown.close();
+    if (activeDropdown) {
+      var isInsideWrapper = activeDropdown.el.contains(e.target);
+      var isInsideList = activeDropdown._listEl && activeDropdown._listEl.contains(e.target);
+      if (!isInsideWrapper && !isInsideList) {
+        activeDropdown.close();
+      }
     }
   });
 
