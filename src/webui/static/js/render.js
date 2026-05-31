@@ -7,6 +7,20 @@ function renderOverview(summary) {
     'startup_force_kill_port=' + String((config.server || {}).startup_force_kill_port ?? '-'),
     'available_platforms=' + String((summary.counts || {}).available_platforms ?? '-')
   ].join(' | ');
+
+  // Update header badges
+  var versionBadge = document.getElementById('versionBadge');
+  if (versionBadge) {
+    versionBadge.textContent = '版本: ' + ((config.server || {}).version || '-');
+    versionBadge.classList.remove('badge-loading');
+  }
+  var hostBadge = document.getElementById('hostBadge');
+  if (hostBadge) {
+    var server = config.server || {};
+    hostBadge.textContent = (server.host || '-') + ':' + (server.port || '-');
+    hostBadge.classList.remove('badge-loading');
+  }
+
   cards.push(makeCard('服务信息', [
     'service: ' + (summary.service || '-'),
     'version: ' + ((config.server || {}).version || '-'),

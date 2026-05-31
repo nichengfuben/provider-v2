@@ -207,13 +207,20 @@ function updateStreamingMessage(content) {
   if (!msg) {
     msg = appendChatMessage("assistant", "", { isStreaming: true });
   }
-  msg.innerHTML = renderWithCodeBlocks(content);
+  // Only update innerHTML if there's actual content (preserve tool calls structure if present)
+  if (content) {
+    msg.innerHTML = renderWithCodeBlocks(content);
+  }
   var container = document.getElementById("chatMessagesContainer");
   if (container) container.scrollTop = container.scrollHeight;
 }
 
 function finalizeStreamingMessage(toolCalls) {
   var msg = document.getElementById("chatStreamingMessage");
+  // If no message element exists but there are tool calls, create one
+  if (!msg && toolCalls && toolCalls.length > 0) {
+    msg = appendChatMessage("assistant", "", { isStreaming: false });
+  }
   if (!msg) return;
   msg.removeAttribute("id");
 
@@ -456,7 +463,7 @@ async function sendChatMessage() {
     }
 
     // 如果流结束但助手消息未添加到历史（某些服务器不发送 finish_reason），手动添加
-    if (!assistantAdded && assistantContent) {
+    if (!assistantAdded && (assistantContent || toolCalls.length > 0)) {
       finalizeStreamingMessage(toolCalls);
       if (toolCalls.length > 0) {
         chatConversationHistory.push({ role: "assistant", content: assistantContent, tool_calls: toolCalls });
