@@ -162,7 +162,7 @@ function appendChatMessage(role, content, options) {
     for (var i = 0; i < options.toolCalls.length; i++) {
       var tc = options.toolCalls[i];
       var name = (tc.function && tc.function.name) || "unknown";
-      toolHtml += '<span class="chat-tool-btn">&#x1F527; ' + escapeHtml(name) + '</span> ';
+      toolHtml += '<span class="chat-tool-btn">' + escapeHtml(name) + '</span> ';
     }
     toolHtml += '</div>';
     msg.innerHTML = toolHtml + '<pre style="margin:0;white-space:pre-wrap;">' + escapeHtml(content) + '</pre>';
@@ -199,7 +199,7 @@ function finalizeStreamingMessage(toolCalls) {
       for (var i = 0; i < toolCalls.length; i++) {
         var tc = toolCalls[i];
         var name = (tc.function && tc.function.name) || "unknown";
-        toolHtml += '<span class="chat-tool-btn">&#x1F527; ' + escapeHtml(name) + '</span> ';
+        toolHtml += '<span class="chat-tool-btn">' + escapeHtml(name) + '</span> ';
       }
       toolHtml += '</div>';
       msg.innerHTML = toolHtml + '<pre style="margin:0;white-space:pre-wrap;">' + escapeHtml(content) + '</pre>';
@@ -409,7 +409,7 @@ async function runChatTests() {
 
   for (var i = 0; i < protocols.length; i++) {
     var protocol = protocols[i];
-    var status = "⏳ 测试中...";
+    var status = "测试中...";
     report.innerHTML = '<div style="text-align:center;padding:12px;color:var(--muted);">正在测试: ' + protocol + ' (' + (i+1) + '/' + protocols.length + ')</div>';
 
     try {
@@ -470,7 +470,7 @@ async function runChatTests() {
         protocol: protocol,
         status: "pass",
         content: content.substring(0, 80) + (content.length > 80 ? "..." : ""),
-        toolCalls: hasToolCalls ? "✅ 检测到工具调用" : "ℹ️ 无工具调用"
+        toolCalls: hasToolCalls ? "检测到工具调用" : "无工具调用"
       });
     } catch (error) {
       results.push({ protocol: protocol, status: "fail", error: String(error) });
@@ -483,7 +483,7 @@ async function runChatTests() {
   for (var r = 0; r < results.length; r++) {
     var row = results[r];
     var cls = row.status === "pass" ? "pass" : "fail";
-    var statusIcon = row.status === "pass" ? "✅ 通过" : "❌ 失败";
+    var statusIcon = row.status === "pass" ? "通过" : "失败";
     if (row.status === "pass") passCount++;
     tableHtml += '<tr class="' + cls + '"><td>' + escapeHtml(row.protocol) + '</td><td>' + statusIcon + '</td><td>' + escapeHtml(row.content || row.error || "") + '</td><td>' + escapeHtml(row.toolCalls || "") + '</td></tr>';
   }
