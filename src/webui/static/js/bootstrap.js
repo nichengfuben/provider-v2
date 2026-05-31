@@ -111,6 +111,20 @@ if (chatRunTestsBtn) {
 
 applyTheme();
 applyCompact();
+
+// ========================= Custom Dropdown Initialization =========================
+window._dropdowns = {};
+['modelPlatformSelect', 'modelCapabilitySelect', 'chatModelSelect',
+ 'chatProtocolSelect', 'themeSelect', 'compactSelect'].forEach(function(id) {
+  var el = document.getElementById(id);
+  if (el) {
+    window._dropdowns[id] = new CustomDropdown(el);
+  }
+});
+// Re-apply settings after dropdown initialization (needed for themeSelect/compactSelect)
+applyTheme();
+applyCompact();
+
 scheduleRefresh();
 switchTab(initialTab);
 connectLogsSocket();

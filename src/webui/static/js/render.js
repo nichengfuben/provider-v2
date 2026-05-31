@@ -68,10 +68,8 @@ function renderConfig(summary) {
 }
 
 function syncModelFilterOptions(models) {
-  const platformSelect = document.getElementById('modelPlatformSelect');
-  const capabilitySelect = document.getElementById('modelCapabilitySelect');
-  const currentPlatform = platformSelect.value;
-  const currentCapability = capabilitySelect.value;
+  const platformDropdown = window._dropdowns && window._dropdowns['modelPlatformSelect'];
+  const capabilityDropdown = window._dropdowns && window._dropdowns['modelCapabilitySelect'];
   const platforms = Array.from(new Set((models || []).map(function(model) {
     return String(model.owned_by || '');
   }).filter(Boolean))).sort();
@@ -80,14 +78,14 @@ function syncModelFilterOptions(models) {
       return model.capabilities[key];
     });
   }))).sort();
-  platformSelect.innerHTML = '<option value="">全部平台</option>' + platforms.map(function(name) {
-    return '<option value="' + name + '">' + name + '</option>';
-  }).join('');
-  capabilitySelect.innerHTML = '<option value="">全部能力</option>' + capabilities.map(function(name) {
-    return '<option value="' + name + '">' + name + '</option>';
-  }).join('');
-  platformSelect.value = platforms.includes(currentPlatform) ? currentPlatform : '';
-  capabilitySelect.value = capabilities.includes(currentCapability) ? currentCapability : '';
+  const platformOpts = [{ value: '', text: '全部平台' }].concat(platforms.map(function(name) {
+    return { value: name, text: name };
+  }));
+  const capabilityOpts = [{ value: '', text: '全部能力' }].concat(capabilities.map(function(name) {
+    return { value: name, text: name };
+  }));
+  if (platformDropdown) platformDropdown.setOptions(platformOpts, true);
+  if (capabilityDropdown) capabilityDropdown.setOptions(capabilityOpts, true);
 }
 
 function renderModels(models) {

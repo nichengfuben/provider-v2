@@ -229,24 +229,21 @@ function clearChatMessages() {
 async function loadModelsList() {
   try {
     var result = await fetchJson("/v1/models");
-    var select = document.getElementById("chatModelSelect");
-    if (!select || !result || !result.data) return;
-    select.innerHTML = "";
+    var dropdown = window._dropdowns && window._dropdowns["chatModelSelect"];
+    if (!dropdown || !result || !result.data) return;
     var models = result.data;
-    // Auto-select qwen3.7-max if available
-    var hasQwen37 = false;
+    var opts = [];
+    var autoSelect = null;
     for (var i = 0; i < models.length; i++) {
-      var opt = document.createElement("option");
-      opt.value = models[i].id;
-      opt.textContent = models[i].id;
-      select.appendChild(opt);
-      if (models[i].id === "qwen3.7-max") hasQwen37 = true;
+      opts.push({ value: models[i].id, text: models[i].id });
+      if (models[i].id === "qwen3.7-max") autoSelect = models[i].id;
     }
-    if (hasQwen37) select.value = "qwen3.7-max";
-    else if (models.length > 0) select.value = models[0].id;
+    dropdown.setOptions(opts, false);
+    if (autoSelect) dropdown.setValue(autoSelect);
+    else if (opts.length > 0) dropdown.setValue(opts[0].value);
   } catch (error) {
-    var select = document.getElementById("chatModelSelect");
-    if (select) select.innerHTML = '<option value="">加载失败</option>';
+    var dropdown = window._dropdowns && window._dropdowns["chatModelSelect"];
+    if (dropdown) dropdown.setOptions([{ value: '', text: '加载失败' }], false);
   }
 }
 
