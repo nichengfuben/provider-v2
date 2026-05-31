@@ -5,6 +5,33 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Provider-V2 WebUI</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            panel: 'var(--panel)',
+            'panel-alt': 'var(--panel-alt)',
+            'panel-soft': 'var(--panel-soft)',
+          },
+          borderColor: {
+            border: 'var(--border)',
+          },
+          textColor: {
+            text: 'var(--text)',
+            muted: 'var(--muted)',
+            accent: 'var(--accent)',
+            ok: 'var(--ok)',
+            warn: 'var(--warn)',
+            err: 'var(--err)',
+          },
+          backgroundColor: {
+            'accent-soft': 'var(--accent-soft)',
+          },
+        }
+      }
+    }
+  </script>
   <link rel="stylesheet" href="/webui/static/css/styles.css">
 </head>
 <body data-initial-tab="overview">
@@ -199,24 +226,29 @@
         </div>
         <div class="border border-border rounded-[14px] p-3.5 bg-panel-alt min-h-[300px] max-h-[500px] overflow-auto" id="chatMessagesContainer"></div>
         <div id="chatTestReport" class="hidden"></div>
-        <div class="relative border border-border rounded-[14px] bg-panel overflow-hidden" id="chatInputViewport" style="height: 96px;">
-          <textarea id="chatMessageInput" class="chat-input" rows="4" placeholder="输入消息... (Shift+Enter 换行, Enter 发送)" spellcheck="true" autocomplete="off"></textarea>
-          <div class="custom-caret" id="chatCustomCaret"></div>
-          <div class="custom-scrollbar-root" id="chatCustomScrollbar"><div class="custom-scrollbar-thumb" id="chatCustomThumb"></div></div>
-        </div>
-        <div class="flex justify-between items-center h-11">
-          <div class="flex items-center gap-0.5">
-            <button type="button" class="tool-btn" title="文件" id="chatFileBtn">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12.75V12A2.25 2.25 0 0 1 4.5 9.75h15A2.25 2.25 0 0 1 21.75 12v.75m-8.69-6.44-2.12-2.12a1.5 1.5 0 0 0-1.061-.44H4.5A2.25 2.25 0 0 0 2.25 6v12a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9a2.25 2.25 0 0 0-2.25-2.25h-5.379a1.5 1.5 0 0 1-1.06-.44Z"/></svg>
-            </button>
-            <button type="button" class="tool-btn" title="语音输入" id="chatVoiceBtn">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 18.75a6 6 0 0 0 6-6v-1.5m-6 7.5a6 6 0 0 1-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 0 1-3-3V4.5a3 3 0 1 1 6 0v8.25a3 3 0 0 1-3 3Z"/></svg>
-            </button>
+        <section class="w-full bg-panel border border-border rounded-2xl p-4 flex flex-col gap-3" id="chatInputSection">
+          <div class="relative w-full overflow-hidden" style="height: 96px;" id="chatInputViewport">
+            <textarea id="chatMessageInput" class="chat-input" rows="4" placeholder="输入消息... (Shift+Enter 换行, Enter 发送)" spellcheck="true" autocomplete="off"></textarea>
+            <div class="custom-caret" id="chatCustomCaret"></div>
+            <div class="custom-scrollbar-root" id="chatCustomScrollbar"><div class="custom-scrollbar-thumb" id="chatCustomThumb"></div></div>
           </div>
-          <div class="flex items-center gap-2">
-            <button id="chatSendBtn" class="cursor-pointer font-bold rounded-lg px-4 py-2.5 text-[14px] bg-accent text-white border border-transparent hover:opacity-90 transition" type="button"><span id="chatBtnText">发送</span></button>
+          <div class="flex justify-between items-center h-11">
+            <div class="flex items-center gap-0.5">
+              <button type="button" class="tool-btn" title="文件" id="chatFileBtn">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12.75V12A2.25 2.25 0 0 1 4.5 9.75h15A2.25 2.25 0 0 1 21.75 12v.75m-8.69-6.44-2.12-2.12a1.5 1.5 0 0 0-1.061-.44H4.5A2.25 2.25 0 0 0 2.25 6v12a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9a2.25 2.25 0 0 0-2.25-2.25h-5.379a1.5 1.5 0 0 1-1.06-.44Z"/></svg>
+              </button>
+              <button type="button" class="tool-btn" title="语音输入" id="chatVoiceBtn">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 18.75a6 6 0 0 0 6-6v-1.5m-6 7.5a6 6 0 0 1-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 0 1-3-3V4.5a3 3 0 1 1 6 0v8.25a3 3 0 0 1-3 3Z"/></svg>
+              </button>
+            </div>
+            <div class="flex items-center gap-2">
+              <button id="chatSendBtn" type="button" class="bg-accent hover:opacity-90 text-white px-4 h-11 rounded-xl flex items-center justify-center gap-2 font-medium text-sm shadow-sm">
+                <span id="chatBtnText">发送</span>
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 12L3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5"/></svg>
+              </button>
+            </div>
           </div>
-        </div>
+        </section>
       </section>
 
       <section class="tab-panel hidden" id="tab-logs" aria-labelledby="tab-logs-button">
