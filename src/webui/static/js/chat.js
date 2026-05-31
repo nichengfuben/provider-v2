@@ -326,6 +326,7 @@ async function sendChatMessage() {
     var assistantContent = "";
     var toolCalls = [];
     var currentToolCall = null;
+    var assistantAdded = false; // 标记助手消息是否已添加到历史
 
     while (true) {
       var result = await reader.read();
@@ -374,11 +375,22 @@ async function sendChatMessage() {
               } else {
                 chatConversationHistory.push({ role: "assistant", content: assistantContent });
               }
+              assistantAdded = true;
             }
           }
         } catch (parseError) {
           // Ignore parse errors for non-JSON data lines
         }
+      }
+    }
+
+    // 如果流结束但助手消息未添加到历史（某些服务器不发送 finish_reason），手动添加
+    if (!assistantAdded && assistantContent) {
+      finalizeStreamingMessage(toolCalls);
+      if (toolCalls.length > 0) {
+        chatConversationHistory.push({ role: "assistant", content: assistantContent, tool_calls: toolCalls });
+      } else {
+        chatConversationHistory.push({ role: "assistant", content: assistantContent });
       }
     }
   } catch (error) {
