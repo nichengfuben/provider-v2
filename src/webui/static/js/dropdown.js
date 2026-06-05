@@ -347,13 +347,18 @@
     this.el.classList.add('is-open');
     activeDropdown = this;
 
-    // Highlight the currently selected option
+    // Highlight the currently selected option and scroll to it
     var options = list.querySelectorAll('.custom-dropdown-option');
+    var selectedOption = null;
     for (var i = 0; i < options.length; i++) {
       options[i].removeAttribute('data-highlighted');
       if (options[i].getAttribute('data-value') === this._selectedValue) {
         options[i].setAttribute('data-highlighted', 'true');
+        selectedOption = options[i];
       }
+    }
+    if (selectedOption) {
+      setTimeout(function() { selectedOption.scrollIntoView({ block: 'nearest' }); }, 30);
     }
 
     // Focus search input if visible, for immediate typing
