@@ -335,21 +335,23 @@ document.addEventListener("click", function(e) {
 function appendMessageActions(role, msg) {
   var bar = document.createElement("div");
   bar.className = "chat-msg-actions chat-msg-actions-" + role;
-  var buttons = [
-    { action: "copy", title: "复制", icon:
+  var allButtons = {
+    copy: { title: "复制", icon:
       '<rect x="9" y="9" width="13" height="13" rx="2"/>' +
       '<path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>' },
-    { action: "edit", title: "编辑", icon:
+    edit: { title: "编辑", icon:
       '<path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>' +
       '<path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>' },
-    { action: "retry", title: role === "user" ? "重新发送" : "重新生成", icon:
+    retry: { title: "重新生成", icon:
       '<polyline points="23 4 23 10 17 10"/>' +
       '<path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/>' }
-  ];
+  };
+  var actions = (role === "user") ? ["copy", "edit"] : ["copy", "edit", "retry"];
   var html = "";
-  for (var i = 0; i < buttons.length; i++) {
-    var b = buttons[i];
-    html += '<button class="chat-msg-action" data-action="' + b.action + '" data-role="' + role + '" type="button" title="' + b.title + '">' +
+  for (var i = 0; i < actions.length; i++) {
+    var key = actions[i];
+    var b = allButtons[key];
+    html += '<button class="chat-msg-action" data-action="' + key + '" data-role="' + role + '" type="button" title="' + b.title + '">' +
       '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + b.icon + '</svg>' +
       '</button>';
   }
@@ -429,6 +431,7 @@ document.addEventListener("click", function(e) {
 
     if (role === "assistant") {
       userMsg.scrollIntoView({ behavior: "smooth", block: "center" });
+      toast("已打开对应的用户消息进行编辑", "ok");
     }
     return;
   }
