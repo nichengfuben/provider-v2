@@ -783,10 +783,23 @@ async function runChatTests() {
 
   if (!toolsList || !template || !addBtn) return;
 
+  var firstToolTemplate = {
+    name: "get_weather",
+    desc: "获取指定城市的当前天气",
+    params: '{\n  "city": {\n    "type": "string",\n    "description": "城市名称"\n  }\n}'
+  };
+
   addBtn.addEventListener("click", function() {
+    var isFirst = toolsList.children.length === 0;
     var clone = template.content.cloneNode(true);
     var item = clone.querySelector(".tool-item");
     var removeBtn = item.querySelector(".tool-remove-btn");
+
+    if (isFirst) {
+      item.querySelector(".tool-name-input").value = firstToolTemplate.name;
+      item.querySelector(".tool-desc-input").value = firstToolTemplate.desc;
+      item.querySelector(".tool-params-input").value = firstToolTemplate.params;
+    }
 
     removeBtn.addEventListener("click", function() {
       item.remove();
