@@ -133,7 +133,7 @@ function scheduleConfigSave() {
 function switchTab(nextTab) {
   state.activeTab = nextTab;
   localStorage.setItem('provider.webui.activeTab', nextTab);
-  document.querySelectorAll('.tab-button').forEach(function(node) {
+  document.querySelectorAll('.tab-button[data-tab]').forEach(function(node) {
     node.classList.toggle('active', node.dataset.tab === nextTab);
     node.setAttribute('aria-selected', node.dataset.tab === nextTab ? 'true' : 'false');
   });

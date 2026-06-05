@@ -66,7 +66,7 @@ if (configEditArea) {
     }
   });
 }
-document.querySelectorAll('.tab-button').forEach(function(node) {
+document.querySelectorAll('.tab-button[data-tab]').forEach(function(node) {
   node.id = 'tab-' + node.dataset.tab + '-button';
   node.addEventListener('click', function() {
     switchTab(node.dataset.tab);
