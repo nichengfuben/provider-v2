@@ -255,7 +255,38 @@ body { margin: 0; font-family: Arial, sans-serif;
   margin-right: auto;
   max-width: 100%;
   border-bottom-left-radius: 4px;
+  position: relative;
 }
+
+.chat-msg-retry-btn {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  color: var(--muted);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease;
+  padding: 0;
+}
+
+.chat-message-assistant:hover .chat-msg-retry-btn {
+  opacity: 1;
+}
+
+.chat-msg-retry-btn:hover {
+  background: var(--panel-alt);
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
 .chat-message-system {
   background: var(--panel-soft);
   color: var(--muted);

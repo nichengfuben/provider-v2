@@ -307,6 +307,17 @@ function finalizeStreamingMessage(toolCalls) {
       });
     }
   }
+
+  var retryBtn = document.createElement('button');
+  retryBtn.className = 'chat-msg-retry-btn';
+  retryBtn.type = 'button';
+  retryBtn.title = '重新生成';
+  retryBtn.innerHTML =
+    '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+    '<polyline points="23 4 23 10 17 10"/>' +
+    '<path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/>' +
+    '</svg>';
+  msg.appendChild(retryBtn);
 }
 
 function escapeHtml(text) {
@@ -383,6 +394,36 @@ document.addEventListener("click", function(e) {
 
     sendChatMessage(newText);
   });
+});
+
+// ========================= Assistant Message Retry =========================
+document.addEventListener("click", function(e) {
+  var retryBtn = e.target.closest(".chat-msg-retry-btn");
+  if (!retryBtn) return;
+  var assistantMsg = retryBtn.closest(".chat-message-assistant");
+  if (!assistantMsg) return;
+
+  var userMsg = assistantMsg.previousElementSibling;
+  while (userMsg && !userMsg.classList.contains("chat-message-user")) {
+    userMsg = userMsg.previousElementSibling;
+  }
+  if (!userMsg) return;
+
+  var rawText = userMsg.getAttribute("data-raw") || "";
+  var histIdx = parseInt(userMsg.getAttribute("data-hist-index"), 10);
+  if (!rawText) return;
+
+  var container = document.getElementById("chatMessagesContainer");
+  var allMsgs = container.querySelectorAll(".chat-message");
+  var found = false;
+  for (var i = 0; i < allMsgs.length; i++) {
+    if (allMsgs[i] === assistantMsg) found = true;
+    if (found) allMsgs[i].remove();
+  }
+
+  chatConversationHistory = chatConversationHistory.slice(0, histIdx + 1);
+
+  sendChatMessage(rawText);
 });
 
 function clearChatMessages() {
