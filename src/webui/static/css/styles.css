@@ -765,6 +765,24 @@ section.tab-panel > *:nth-child(6) { animation-delay: 0.3s; }
     border-radius: 8px;
     white-space: nowrap;
   }
+  .model-filters {
+    flex-direction: column;
+  }
+  .model-filters > label {
+    min-width: 0;
+  }
+}
+
+/* ========================= Model Filters ========================= */
+.model-filters {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.model-filters > label {
+  flex: 1;
+  min-width: 180px;
 }
 
 /* ========================= Confirm Dialog ========================= */
