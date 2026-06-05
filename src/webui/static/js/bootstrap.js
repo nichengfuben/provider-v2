@@ -180,6 +180,11 @@ if (typeof loadModelsList === 'function') {
   loadModelsList();
 }
 
+// Restore chat history from localStorage
+if (typeof loadChatState === 'function') {
+  loadChatState();
+}
+
 // Override switchTab to add animation when switching tabs
 var originalSwitchTab = window.switchTab;
 if (typeof switchTab === 'function') {

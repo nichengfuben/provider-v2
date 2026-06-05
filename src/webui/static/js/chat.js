@@ -307,6 +307,7 @@ function finalizeStreamingMessage(toolCalls) {
   }
 
   appendMessageActions("assistant", msg);
+  saveChatState();
 }
 
 function escapeHtml(text) {
@@ -511,6 +512,7 @@ function clearChatMessages() {
   if (inputSection && !document.body.contains(inputSection)) {
     document.body.appendChild(inputSection);
   }
+  saveChatState();
 }
 
 // ========================= Model List =========================
@@ -538,6 +540,30 @@ async function loadModelsList() {
 // ========================= Send Chat Message (Streaming) =========================
 var chatConversationHistory = [];
 
+function saveChatState() {
+  try {
+    var container = document.getElementById("chatMessagesContainer");
+    var html = container ? container.innerHTML : "";
+    localStorage.setItem("provider.webui.chatHistory", JSON.stringify(chatConversationHistory));
+    localStorage.setItem("provider.webui.chatDom", html);
+    localStorage.setItem("provider.webui.userMsgCount", String(_userMsgCount));
+  } catch (e) { /* quota exceeded or private mode */ }
+}
+
+function loadChatState() {
+  try {
+    var hist = localStorage.getItem("provider.webui.chatHistory");
+    var dom = localStorage.getItem("provider.webui.chatDom");
+    var count = localStorage.getItem("provider.webui.userMsgCount");
+    if (hist) chatConversationHistory = JSON.parse(hist);
+    if (count) _userMsgCount = parseInt(count, 10) || 0;
+    if (dom) {
+      var container = document.getElementById("chatMessagesContainer");
+      if (container) container.innerHTML = dom;
+    }
+  } catch (e) { /* corrupt data */ }
+}
+
 async function sendChatMessage(textOverride) {
   var input = document.getElementById("chatMessageInput");
   var sendBtn = document.getElementById("chatSendBtn");
@@ -557,6 +583,7 @@ async function sendChatMessage(textOverride) {
   // Add user message
   appendChatMessage("user", text);
   chatConversationHistory.push({ role: "user", content: text });
+  saveChatState();
 
   // Clear input (only when not called from edit)
   if (textOverride === undefined) {
