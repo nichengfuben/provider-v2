@@ -205,9 +205,9 @@ function attachHoverMotion() {
     // Do NOT apply floatScale to avoid opacity issues
 
     // Action buttons (non-tab buttons)
-    const actionBtns = Array.from(document.querySelectorAll('button:not(.tab-button):not(.tool-btn):not(.sidebar-nav-item)'));
+    const actionBtns = Array.from(document.querySelectorAll('button:not(.tab-button):not(.tool-btn):not(.sidebar-nav-item):not(.custom-dropdown-trigger):not(.chat-msg-action)'));
     actionBtns.forEach(btn => {
-        if (btn.id !== 'chatSendBtn' && !btn.classList.contains('bg-accent')) {
+        if (btn.id !== 'chatSendBtn' && !btn.classList.contains('bg-accent') && !btn.closest('.model-filters')) {
             MotionKit.floatScale(btn, 105, 97, 100, 0.15);
         }
     });
