@@ -147,7 +147,108 @@ body { margin: 0; font-family: Arial, sans-serif;
   margin-left: auto;
   max-width: 70%;
   border-bottom-right-radius: 4px;
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 6px;
 }
+
+.chat-user-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.chat-msg-edit-btn {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  border: none;
+  background: rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s ease, background 0.15s ease;
+  padding: 0;
+}
+
+.chat-message-user:hover .chat-msg-edit-btn {
+  opacity: 1;
+}
+
+.chat-msg-edit-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  color: #fff;
+}
+
+.chat-msg-edit-area {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.chat-msg-edit-input {
+  width: 100%;
+  min-height: 48px;
+  max-height: 120px;
+  resize: vertical;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  font-size: 13px;
+  font-family: inherit;
+  padding: 8px 10px;
+  line-height: 1.5;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.chat-msg-edit-input:focus {
+  border-color: rgba(255, 255, 255, 0.7);
+}
+
+.chat-msg-edit-actions {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.chat-msg-edit-send,
+.chat-msg-edit-cancel {
+  padding: 4px 14px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  font-size: 12px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s ease;
+}
+
+.chat-msg-edit-send {
+  background: rgba(255, 255, 255, 0.25);
+  color: #fff;
+  font-weight: 600;
+}
+
+.chat-msg-edit-send:hover {
+  background: rgba(255, 255, 255, 0.4);
+}
+
+.chat-msg-edit-cancel {
+  background: transparent;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.chat-msg-edit-cancel:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
 .chat-message-assistant {
   background: var(--panel);
   border: 1px solid var(--border);

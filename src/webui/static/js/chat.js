@@ -189,6 +189,8 @@ function renderWithCodeBlocks(text) {
 }
 
 // ========================= Chat Message Rendering =========================
+var _userMsgCount = 0;
+
 function appendChatMessage(role, content, options) {
   options = options || {};
   var container = document.getElementById("chatMessagesContainer");
@@ -206,6 +208,16 @@ function appendChatMessage(role, content, options) {
     msg.innerHTML = toolHtml + renderWithCodeBlocks(content);
   } else if (role === "assistant") {
     msg.innerHTML = renderWithCodeBlocks(content);
+  } else if (role === "user") {
+    var histIdx = _userMsgCount++;
+    msg.setAttribute("data-hist-index", histIdx);
+    msg.setAttribute("data-raw", content);
+    msg.innerHTML = '<div class="chat-user-text">' + escapeHtml(content) + '</div>' +
+      '<button class="chat-msg-edit-btn" type="button" title="编辑并重发">' +
+      '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+      '<path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>' +
+      '<path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>' +
+      '</svg></button>';
   } else {
     msg.textContent = content;
   }
@@ -319,11 +331,66 @@ document.addEventListener("click", function(e) {
   });
 });
 
+// ========================= User Message Edit =========================
+document.addEventListener("click", function(e) {
+  var editBtn = e.target.closest(".chat-msg-edit-btn");
+  if (!editBtn) return;
+  e.stopPropagation();
+  var msg = editBtn.closest(".chat-message-user");
+  if (!msg || msg.querySelector(".chat-msg-edit-area")) return;
+
+  var rawText = msg.getAttribute("data-raw") || "";
+  var histIdx = parseInt(msg.getAttribute("data-hist-index"), 10);
+
+  var area = document.createElement("div");
+  area.className = "chat-msg-edit-area";
+  area.innerHTML =
+    '<textarea class="chat-msg-edit-input" rows="2">' + escapeHtml(rawText) + '</textarea>' +
+    '<div class="chat-msg-edit-actions">' +
+    '<button class="chat-msg-edit-send" type="button">发送</button>' +
+    '<button class="chat-msg-edit-cancel" type="button">取消</button>' +
+    '</div>';
+
+  var textEl = msg.querySelector(".chat-user-text");
+  if (textEl) textEl.style.display = "none";
+  editBtn.style.display = "none";
+  msg.appendChild(area);
+
+  var textarea = area.querySelector(".chat-msg-edit-input");
+  textarea.focus();
+  textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+
+  area.querySelector(".chat-msg-edit-cancel").addEventListener("click", function() {
+    area.remove();
+    if (textEl) textEl.style.display = "";
+    editBtn.style.display = "";
+  });
+
+  area.querySelector(".chat-msg-edit-send").addEventListener("click", function() {
+    var newText = textarea.value.trim();
+    if (!newText) return;
+
+    var container = document.getElementById("chatMessagesContainer");
+    var allMsgs = container.querySelectorAll(".chat-message");
+    var found = false;
+    for (var i = 0; i < allMsgs.length; i++) {
+      if (allMsgs[i] === msg) found = true;
+      if (found) allMsgs[i].remove();
+    }
+
+    chatConversationHistory = chatConversationHistory.slice(0, histIdx);
+    _userMsgCount = histIdx;
+
+    sendChatMessage(newText);
+  });
+});
+
 function clearChatMessages() {
   var container = document.getElementById("chatMessagesContainer");
   if (container) {
     container.innerHTML = "";
   }
+  _userMsgCount = 0;
   var report = document.getElementById("chatTestReport");
   if (report) { report.innerHTML = ""; report.classList.add("hidden"); }
   // 确保不清空其他元素
@@ -358,12 +425,12 @@ async function loadModelsList() {
 // ========================= Send Chat Message (Streaming) =========================
 var chatConversationHistory = [];
 
-async function sendChatMessage() {
+async function sendChatMessage(textOverride) {
   var input = document.getElementById("chatMessageInput");
   var sendBtn = document.getElementById("chatSendBtn");
   var btnText = document.getElementById("chatBtnText");
   if (!input || !sendBtn) return;
-  var text = input.value.trim();
+  var text = (textOverride !== undefined) ? textOverride : input.value.trim();
   if (!text) { input.focus(); return; }
 
   var model = document.getElementById("chatModelSelect").value;
@@ -378,10 +445,12 @@ async function sendChatMessage() {
   appendChatMessage("user", text);
   chatConversationHistory.push({ role: "user", content: text });
 
-  // Clear input
-  input.value = "";
-  input.dispatchEvent(new Event("input", { bubbles: true }));
-  input.focus();
+  // Clear input (only when not called from edit)
+  if (textOverride === undefined) {
+    input.value = "";
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+    input.focus();
+  }
 
   try {
     var tools = getToolsDefinition();
