@@ -36,7 +36,7 @@
 </head>
 <body data-initial-tab="overview">
   <div class="max-w-[1440px] mx-auto p-3 md:p-4 grid gap-4">
-    <section class="bg-panel border border-border rounded-2xl shadow-panel p-5 grid gap-4" id="headerSection">
+    <section class="bg-panel border border-border rounded-2xl shadow-panel p-5 grid gap-4" id="headerSection" style="position: relative;">
       <div class="grid gap-3 md:grid-cols-[1fr_auto] items-start">
         <div>
           <h1 class="text-[30px] font-bold m-0">Provider-V2 WebUI</h1>
@@ -56,7 +56,7 @@
         <button class="cursor-pointer font-bold rounded-lg px-4 py-2.5 text-[14px] border border-warn text-warn bg-panel hover:bg-warn hover:text-white transition" id="reloadServerButton" type="button">重启服务</button>
         <button class="cursor-pointer font-bold rounded-lg px-4 py-2.5 text-[14px] border border-border bg-panel text-text hover:bg-panel-alt transition" id="reloadConfigButton" type="button">重载配置</button>
       </div>
-      <section class="bg-panel border border-border rounded-2xl shadow-panel p-5 grid gap-4 hidden" id="portablePanel">
+      <section class="bg-panel border border-border rounded-2xl shadow-panel p-5 grid gap-4 hidden" id="portablePanel" style="position: absolute; left: 16px; right: 16px; top: 100%; z-index: 100; margin-top: 8px; box-shadow: 0 12px 32px rgba(0,0,0,0.12);">
         <div class="flex flex-wrap justify-between items-end gap-3">
           <div>
             <h2>便携设置</h2>
