@@ -228,9 +228,10 @@ async def create_app(registry: Any, session: Any) -> aiohttp.web.Application:
     from src.routes.openai import setup_routes as setup_oai
     from src.routes.static import setup_routes as setup_static
     from src.webui.routes import setup_routes as setup_webui
+    from src.webui.middleware.static_nocache import static_nocache_middleware
 
     app = aiohttp.web.Application(
-        middlewares=[_cors_middleware, _auth_middleware, _custom_middleware, _error_middleware],
+        middlewares=[_cors_middleware, _auth_middleware, _custom_middleware, static_nocache_middleware, _error_middleware],
         client_max_size=100 * 1024 * 1024,  # 100MB
     )
 
