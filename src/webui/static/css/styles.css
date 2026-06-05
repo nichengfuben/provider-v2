@@ -779,9 +779,35 @@ section.tab-panel > *:nth-child(6) { animation-delay: 0.3s; }
 }
 
 @media (max-width: 768px) {
-  .webui-layout { grid-template-columns: 1fr; }
-  .webui-sidebar { display: none; position: fixed; top: 0; left: 0;
-    width: 240px; height: 100vh; z-index: 1000; padding: 60px 12px 12px;
-    box-shadow: var(--shadow); }
-  .webui-sidebar.open { display: grid; }
+  .webui-layout { grid-template-columns: 1fr; padding-bottom: 56px; }
+  .webui-sidebar {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    top: auto;
+    width: 100%;
+    height: auto;
+    z-index: 1000;
+    padding: 4px 6px;
+    gap: 2px;
+    border-right: none;
+    border-top: 1px solid var(--border);
+    background: var(--panel);
+    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.08);
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .webui-sidebar::-webkit-scrollbar { display: none; }
+  .webui-sidebar .sidebar-nav-item {
+    flex-shrink: 0;
+    text-align: center;
+    padding: 8px 12px;
+    font-size: 12px;
+    border-radius: 8px;
+    white-space: nowrap;
+  }
 }
