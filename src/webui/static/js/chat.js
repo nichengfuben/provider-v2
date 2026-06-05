@@ -797,9 +797,9 @@ async function runChatTests() {
 
   clearBtn.addEventListener("click", function() {
     if (toolsList.children.length === 0) return;
-    if (confirm("确定要清空所有工具定义吗？")) {
-      toolsList.innerHTML = "";
-    }
+    showConfirmDialog("确定要清空所有工具定义吗？").then(function(ok) {
+      if (ok) toolsList.innerHTML = "";
+    });
   });
 })();
 
