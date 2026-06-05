@@ -230,6 +230,8 @@ function updateStreamingMessage(content) {
   if (container) container.scrollTop = container.scrollHeight;
 }
 
+var _toolIdCounter = 0;
+
 function finalizeStreamingMessage(toolCalls) {
   var msg = document.getElementById("chatStreamingMessage");
   // If no message element exists but there are tool calls, create one
@@ -240,13 +242,14 @@ function finalizeStreamingMessage(toolCalls) {
   msg.removeAttribute("id");
 
   if (toolCalls && toolCalls.length > 0) {
+    var msgUid = ++_toolIdCounter;
     var content = msg.textContent || msg.innerText || "";
     var toolHtml = '<div class="chat-tools-container">';
     for (var i = 0; i < toolCalls.length; i++) {
       var tc = toolCalls[i];
       var name = (tc.function && tc.function.name) || "unknown";
       var args = (tc.function && tc.function.arguments) || "";
-      var toolId = "tool-" + msg.id + "-" + i;
+      var toolId = "tool-" + msgUid + "-" + i;
       // 尝试解析参数为格式化 JSON
       var formattedArgs = "";
       try {
