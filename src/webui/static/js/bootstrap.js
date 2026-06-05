@@ -9,13 +9,10 @@ document.getElementById('fabThemeButton').addEventListener('click', function() {
   log('主题已切换为 ' + state.settings.theme + '。');
 });
 document.getElementById('portableButton').addEventListener('click', function() {
-  var isOpen = portablePanel.style.display === 'flex';
-  portablePanel.style.display = isOpen ? 'none' : 'flex';
-  portablePanel.classList.toggle('hidden', isOpen);
+  portablePanel.style.display = portablePanel.style.display === 'flex' ? 'none' : 'flex';
 });
 document.getElementById('portableBackdrop').addEventListener('click', function() {
   portablePanel.style.display = 'none';
-  portablePanel.classList.add('hidden');
 });
 document.getElementById('themeSelect').addEventListener('change', function(event) {
   state.settings.theme = event.target.value;
