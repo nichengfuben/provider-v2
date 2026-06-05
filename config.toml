@@ -29,7 +29,7 @@ enabled_platforms = ["qwen"]
 
 [platforms]
 platform_list_type = "blacklist"
-platform_list = ["caiyuesbk", "cerebras", "chutes", "codebuddy", "n1n", "nvidia", "openrouter", "perplexity", "deepseek", "cursor", "deepseek"]
+platform_list = ["caiyuesbk", "cerebras", "chutes", "codebuddy", "n1n", "nvidia", "openrouter", "perplexity", "deepseek", "cursor", "deepseek", "aitianhu2"]
 
 [fncall]
 protocol = "antml"

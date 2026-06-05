@@ -14,4 +14,4 @@
 ## 维护提示
 
 - 修改前先对照 `docs-src/src/platforms/guide.md`。
-- 如果平台依赖第三方 API，失败原因应记录到 `record.md`。
+- 如果平台依赖第三方 API，失败原因应记录到 `RECORD.md`。
