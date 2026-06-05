@@ -9,7 +9,13 @@ document.getElementById('fabThemeButton').addEventListener('click', function() {
   log('主题已切换为 ' + state.settings.theme + '。');
 });
 document.getElementById('portableButton').addEventListener('click', function() {
-  portablePanel.style.display = portablePanel.style.display === 'grid' ? 'none' : 'grid';
+  portablePanel.style.display = portablePanel.style.display === 'none' ? 'block' : 'none';
+});
+document.getElementById('portableCloseBtn').addEventListener('click', function() {
+  portablePanel.style.display = 'none';
+});
+document.getElementById('portableBackdrop').addEventListener('click', function() {
+  portablePanel.style.display = 'none';
 });
 document.getElementById('themeSelect').addEventListener('change', function(event) {
   state.settings.theme = event.target.value;
