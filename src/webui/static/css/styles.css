@@ -557,7 +557,7 @@ section.tab-panel > *:nth-child(6) { animation-delay: 0.3s; }
 
 .custom-dropdown-list {
   position: fixed;
-  z-index: 9999;
+  z-index: 100001;
   overflow-y: auto;
   border-radius: 12px;
   border: 1px solid var(--border);
