@@ -231,6 +231,10 @@ body { margin: 0; font-family: Arial, sans-serif;
   transition: opacity 0.15s ease;
 }
 
+.chat-msg-actions-user {
+  justify-content: flex-end;
+}
+
 .chat-msg-actions:hover {
   opacity: 1;
 }

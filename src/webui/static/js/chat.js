@@ -334,7 +334,7 @@ document.addEventListener("click", function(e) {
 // ========================= Message Actions Component =========================
 function appendMessageActions(role, msg) {
   var bar = document.createElement("div");
-  bar.className = "chat-msg-actions";
+  bar.className = "chat-msg-actions chat-msg-actions-" + role;
   var buttons = [
     { action: "copy", title: "复制", icon:
       '<rect x="9" y="9" width="13" height="13" rx="2"/>' +
