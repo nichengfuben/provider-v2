@@ -13,6 +13,10 @@
    * @param {Function} [options.onChange] - Called with (value, text, previousValue) when selection changes.
    * @param {boolean} [options.autoSelectFirst] - Auto-select first option on init (default: true).
    */
+  var SEARCH_THRESHOLD = 5;
+  var MAX_VISIBLE = 5;
+  var OPTION_HEIGHT = 36;
+
   function CustomDropdown(el, options) {
     options = options || {};
     this.el = typeof el === 'string' ? document.getElementById(el) : el;
@@ -25,6 +29,7 @@
     this._selectedValue = '';
     this._originalSelect = null;
     this._built = false;
+    this._searchInput = null;
 
     this._build();
     this._bindEvents();
@@ -123,6 +128,43 @@
       set: function(val) { self.setValue(val); },
       configurable: true
     });
+  };
+
+  CustomDropdown.prototype._createSearchInput = function() {
+    if (this._searchInput) return;
+    var input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'custom-dropdown-search';
+    input.placeholder = '搜索...';
+    input.setAttribute('autocomplete', 'off');
+    input.setAttribute('aria-label', '搜索选项');
+    this._searchInput = input;
+  };
+
+  CustomDropdown.prototype._applyFilter = function(keyword) {
+    var list = this._listEl;
+    if (!list) return;
+    var options = list.querySelectorAll('.custom-dropdown-option');
+    var lower = (keyword || '').toLowerCase();
+    for (var i = 0; i < options.length; i++) {
+      var text = (options[i].textContent || '').toLowerCase();
+      options[i].style.display = (!lower || text.indexOf(lower) !== -1) ? '' : 'none';
+    }
+    this._updateListHeight();
+  };
+
+  CustomDropdown.prototype._updateListHeight = function() {
+    var list = this._listEl;
+    if (!list) return;
+    var visibleCount = 0;
+    var options = list.querySelectorAll('.custom-dropdown-option');
+    for (var i = 0; i < options.length; i++) {
+      if (options[i].style.display !== 'none') visibleCount++;
+    }
+    var showSearch = this._options.length > SEARCH_THRESHOLD;
+    var searchHeight = showSearch ? 40 : 0;
+    var maxItems = Math.min(visibleCount, MAX_VISIBLE);
+    list.style.maxHeight = (maxItems * OPTION_HEIGHT + searchHeight + 8) + 'px';
   };
 
   CustomDropdown.prototype._triggerHTML = function() {
@@ -250,7 +292,12 @@
 
   CustomDropdown.prototype._highlightNext = function(delta) {
     var list = this._listEl;
-    var options = list.querySelectorAll('.custom-dropdown-option');
+    var allOptions = list.querySelectorAll('.custom-dropdown-option');
+    var options = [];
+    for (var k = 0; k < allOptions.length; k++) {
+      if (allOptions[k].style.display !== 'none') options.push(allOptions[k]);
+    }
+    if (!options.length) return;
     var currentIndex = -1;
     for (var i = 0; i < options.length; i++) {
       if (options[i].hasAttribute('data-highlighted')) {
@@ -278,6 +325,22 @@
     // Position the dropdown list using fixed positioning to escape ancestor clipping
     this._positionList(list, trigger);
 
+    // Conditionally show search input
+    var showSearch = this._options.length > SEARCH_THRESHOLD;
+    if (showSearch) {
+      this._createSearchInput();
+      if (this._searchInput.parentNode !== list) {
+        list.insertBefore(this._searchInput, list.firstChild);
+      }
+      this._searchInput.value = '';
+      this._searchInput.style.display = '';
+    } else if (this._searchInput) {
+      this._searchInput.style.display = 'none';
+    }
+
+    // Reset any previous filter
+    this._applyFilter('');
+
     list.classList.add('is-open');
     list.setAttribute('aria-hidden', 'false');
     trigger.setAttribute('aria-expanded', 'true');
@@ -291,6 +354,29 @@
       if (options[i].getAttribute('data-value') === this._selectedValue) {
         options[i].setAttribute('data-highlighted', 'true');
       }
+    }
+
+    // Focus search input if visible, for immediate typing
+    if (showSearch && this._searchInput) {
+      var self = this;
+      setTimeout(function() { self._searchInput.focus(); }, 50);
+    }
+
+    // Bind search input filtering
+    if (this._searchInput && !this._searchInput._bound) {
+      var self = this;
+      this._searchInput.addEventListener('input', function() {
+        self._applyFilter(this.value);
+      });
+      // Prevent dropdown close when pressing keys in search input
+      this._searchInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+          self.close();
+          trigger.focus();
+        }
+        e.stopPropagation();
+      });
+      this._searchInput._bound = true;
     }
 
     // Bind scroll/resize listeners to reposition
@@ -310,6 +396,12 @@
     var list = this._listEl;
     var trigger = this.el.querySelector('.custom-dropdown-trigger');
     if (!list || !trigger) return;
+
+    // Reset search
+    if (this._searchInput) {
+      this._searchInput.value = '';
+    }
+    this._applyFilter('');
 
     list.classList.remove('is-open');
     list.setAttribute('aria-hidden', 'true');
@@ -388,6 +480,12 @@
       if (!exists && this._options.length > 0) {
         this._selectedValue = this._options[0].value;
       }
+    }
+
+    // Detach search input before clearing list
+    if (this._searchInput && this._searchInput.parentNode) {
+      this._searchInput.parentNode.removeChild(this._searchInput);
+      this._searchInput._bound = false;
     }
 
     // Rebuild the list DOM

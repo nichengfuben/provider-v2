@@ -445,7 +445,6 @@ section.tab-panel > *:nth-child(6) { animation-delay: 0.3s; }
 .custom-dropdown-list {
   position: fixed;
   z-index: 9999;
-  max-height: 260px;
   overflow-y: auto;
   border-radius: 12px;
   border: 1px solid var(--border);
@@ -456,6 +455,32 @@ section.tab-panel > *:nth-child(6) { animation-delay: 0.3s; }
   transform: translateY(-8px);
   pointer-events: none;
   transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.custom-dropdown-search {
+  display: block;
+  width: calc(100% - 8px);
+  margin: 4px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--panel-alt);
+  color: var(--text);
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  box-sizing: border-box;
+}
+
+.custom-dropdown-search:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-soft);
+}
+
+.custom-dropdown-search::placeholder {
+  color: var(--muted);
+  opacity: 0.6;
 }
 
 .custom-dropdown-list.is-open {

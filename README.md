@@ -18,8 +18,8 @@
 
 <div align="center">
 
-![Status](https://img.shields.io/badge/status-v2.2.24-blue)
-![Version](https://img.shields.io/badge/version-2.2.24-blue)
+![Status](https://img.shields.io/badge/status-v2.2.25-blue)
+![Version](https://img.shields.io/badge/version-2.2.25-blue)
 ![Python](https://img.shields.io/badge/python-3.8+-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Platforms](https://img.shields.io/badge/platforms-11+-orange)
@@ -1256,7 +1256,10 @@ fix(gateway): 修复并发竞速时 token 计数错误
 
 ## 🗺️ 路线图
 
-### 当前版本：v2.2.24
+### 当前版本：v2.2.25
+
+✅ 已完成（v2.2.25）：
+- WebUI CustomDropdown 组件添加搜索筛选功能，选项超过5项时自动显示搜索框，列表最多显示5项
 
 ✅ 已完成（v2.2.24）：
 - 废除 `/docs` 端点与 `/webui` 页面路由，根路径 `/` 直接服务内置 WebUI
