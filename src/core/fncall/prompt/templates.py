@@ -116,13 +116,13 @@ _HISTORY_CLARIFY_EN = (
     "The following is a transcript of completed interactions. "
     "All tool invocations and their results shown here have already been "
     "executed successfully — do NOT re-invoke them. "
-    "Your current task follows below."
+    "The user's latest message follows below."
 )
 
 _HISTORY_CLARIFY_ZH = (
     "以下是已完成的交互记录。"
     "此处展示的所有工具调用及其结果均已执行完毕，请勿重复调用。"
-    "当前任务见下方。"
+    "用户发送的最新消息见下方。"
 )
 
 

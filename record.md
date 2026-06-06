@@ -911,3 +911,10 @@ pytest: 531 passed, 16 skipped, 3 warnings
 
 py_compile: all changed files compiled successfully
 pytest: 531 passed, 16 skipped, 3 warnings
+
+2026-06-07 00:15:00
+
+[src/core/fncall/prompt/templates.py] 澄清文本措辞修正："当前任务"→"用户发送的最新消息"，消除 LLM 将历史任务与当前指令混淆的歧义
+
+py_compile: templates.py compiled successfully
+pytest: 148 passed (fncall tests)
