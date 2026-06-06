@@ -18,8 +18,8 @@
 
 <div align="center">
 
-![Status](https://img.shields.io/badge/status-v2.2.42-blue)
-![Version](https://img.shields.io/badge/version-2.2.42-blue)
+![Status](https://img.shields.io/badge/status-v2.2.43-blue)
+![Version](https://img.shields.io/badge/version-2.2.43-blue)
 ![Python](https://img.shields.io/badge/python-3.8+-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Platforms](https://img.shields.io/badge/platforms-11+-orange)
@@ -1256,7 +1256,15 @@ fix(gateway): 修复并发竞速时 token 计数错误
 
 ## 🗺️ 路线图
 
-### 当前版本：v2.2.42
+### 当前版本：v2.2.43
+
+✅ 已完成（v2.2.43）：
+- aitianhu2 多账号重构：每个 Account → 独立 `aiohttp.ClientSession` + cookie jar + device_id + 持久化条目；N 账号暴露 N 个 Candidate，限速失败时自动切换账号
+- aitianhu2 动态 `chatgpt-account-id`：`fetch_account_id()` 从 `/backend-api/accounts/check/v4-2023-04-27` 按 plan 优先级（team/plus/pro/business/enterprise）挑选；每个账号独立缓存 22h
+- aitianhu2 持久化 schema 升级：`state.json` 形如 `{accounts: {...}, carids: {...}}`；旧扁平格式按 `api_key_hint` 透明迁移
+- aitianhu2 CRITICAL bug 修复：`/f/conversation` 500 / 连接异常回退到旧 `/conversation` 端点；SSE 解析增加旧格式 `data["message"]`；`resolve_image` URL 检查放宽为 `not startswith("http")`
+- aitianhu2 models fetch 移除多余 `chatgpt-account-id` header
+- 所有服务（sentinel/chat/upload）的 `chatgpt-account-id` 改为方法参数，由账号级 `account_id` 驱动
 
 ✅ 已完成（v2.2.42）：
 - `[gateway].group_list` 语义修正：名单决定"谁允许并发竞速"，不决定"谁能路由"；非名单内平台仍可路由但请求强制单发（n=1），竞速池需 ≥ 2 才启用并发

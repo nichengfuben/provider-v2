@@ -653,3 +653,9 @@ pytest: 495 passed, 33 skipped
 [template/template_config.toml] 版本 2.2.41 → 2.2.42；gateway 注释同步新语义
 [config.toml] 同步版本 2.2.42
 [README.md] 版本徽章和路线图更新为 2.2.42：gateway.group_list 竞速名单语义修正
+
+2026-06-06 13:05:00
+
+[template/template_config.toml] 版本 2.2.42 → 2.2.43
+[config.toml] 同步版本 2.2.43
+[README.md] 版本徽章和路线图更新为 2.2.43：aitianhu2 多账号重构 + 动态 account_id + CRITICAL bug 修复（aitianhu2 平台源码被 .gitignore 过滤，详见 src/platforms/aitianhu2/）
