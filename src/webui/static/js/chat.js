@@ -397,8 +397,8 @@ document.addEventListener("click", function(e) {
       area.innerHTML =
         '<textarea class="chat-msg-edit-input" rows="4" style="background:var(--panel-alt);color:var(--text);border-color:var(--border);">' + escapeHtml(rawText) + '</textarea>' +
         '<div class="chat-msg-edit-actions">' +
-        '<button class="chat-msg-edit-send" type="button">确定</button>' +
-        '<button class="chat-msg-edit-cancel" type="button">取消</button>' +
+        '<button class="chat-msg-edit-send" type="button" style="background:var(--accent);color:#fff;border-color:var(--accent);">确定</button>' +
+        '<button class="chat-msg-edit-cancel" type="button" style="background:var(--panel-alt);color:var(--text);border-color:var(--border);">取消</button>' +
         '</div>';
 
       bubble.textContent = "";

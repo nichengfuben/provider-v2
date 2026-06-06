@@ -1,5 +1,5 @@
 [server]
-version = "2.2.27"
+version = "2.2.28"
 host = "0.0.0.0"
 port = 1337
 debug = false
@@ -25,7 +25,7 @@ proxy_enabled = true
 proxy_urls = []
 
 [platforms_proxy]
-enabled_platforms = []
+enabled_platforms = ["qwen"]
 
 [platforms]
 platform_list_type = "blacklist"
