@@ -18,8 +18,8 @@
 
 <div align="center">
 
-![Status](https://img.shields.io/badge/status-v2.2.40-blue)
-![Version](https://img.shields.io/badge/version-2.2.40-blue)
+![Status](https://img.shields.io/badge/status-v2.2.41-blue)
+![Version](https://img.shields.io/badge/version-2.2.41-blue)
 ![Python](https://img.shields.io/badge/python-3.8+-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Platforms](https://img.shields.io/badge/platforms-11+-orange)
@@ -1256,7 +1256,13 @@ fix(gateway): 修复并发竞速时 token 计数错误
 
 ## 🗺️ 路线图
 
-### 当前版本：v2.2.40
+### 当前版本：v2.2.41
+
+✅ 已完成（v2.2.41）：
+- `[gateway]` 新增 `group_list_type`（whitelist/blacklist）+ `group_list`：并发竞速平台黑白名单；`concurrent_enabled=false` 时竞速关闭但名单仍过滤候选集
+- `[platforms_proxy]` 新增 `group_list_type`：让 `enabled_platforms` 在白名单（默认，向后兼容）与黑名单之间切换
+- Qwen / DeepSeek 代理切换统一走 `platforms_proxy.is_platform_enabled()`
+- runtime 摘要导出新字段
 
 ✅ 已完成（v2.2.40）：
 - `_auth_middleware` 移除 `/health` 与 `/v1/models` 的无条件放行：必须持有 `pv2_session` Cookie 或有效 Bearer/X-API-Key 才能访问；浏览器无凭证自动 302 到 `/login`，API 客户端 JSON 401

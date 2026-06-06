@@ -437,7 +437,7 @@ class QwenAdapter(PlatformAdapter):
         from src.core.config import get_config  # noqa: PLC0415
 
         cfg = get_config()
-        return self.name in cfg.platforms_proxy.enabled_platforms_set
+        return cfg.platforms_proxy.is_platform_enabled(self.name)
 
     def is_proxy_enabled(self) -> bool:
         """返回 Qwen 平台当前是否启用代理覆盖。"""

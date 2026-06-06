@@ -138,6 +138,20 @@ async def dispatch(
     if not cands:
         raise NoCandidateError("无候选项: {}".format(model))
 
+    # 按 [gateway].group_list_type / group_list 过滤并发候选集
+    # 仅当用户显式填写 group_list 时过滤才生效；列表为空时保持旧行为
+    # （避免默认配置阻断路由）。
+    gw = cfg.gateway
+    if gw.group_list_set:
+        filtered = [c for c in cands if gw.is_platform_enabled(c.platform)]
+        if not filtered:
+            raise NoCandidateError(
+                "无候选项: {} (被 [gateway].group_list 过滤：type={}, list={})".format(
+                    model, gw.group_list_type, sorted(gw.group_list_set),
+                )
+            )
+        cands = filtered
+
     n = 1
     if cfg.gateway.concurrent_enabled and len(cands) > 1:
         n = min(cfg.gateway.concurrent_count, len(cands))

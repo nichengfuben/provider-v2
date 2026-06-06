@@ -74,6 +74,8 @@ def build_config_summary() -> Dict[str, Any]:
             "concurrent_enabled": config.gateway.concurrent_enabled,
             "concurrent_count": config.gateway.concurrent_count,
             "min_tokens": config.gateway.min_tokens,
+            "group_list_type": config.gateway.group_list_type,
+            "group_count": len(config.gateway.group_list),
         },
         "proxy": {
             "proxy_enabled": config.proxy.proxy_enabled,
@@ -82,6 +84,7 @@ def build_config_summary() -> Dict[str, Any]:
         },
         "platforms_proxy": {
             "enabled_platforms": list(config.platforms_proxy.enabled_platforms),
+            "group_list_type": config.platforms_proxy.group_list_type,
         },
         "platforms": {
             "list_type": config.platforms_cfg.platform_list_type,

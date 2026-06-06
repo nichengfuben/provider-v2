@@ -159,7 +159,7 @@ class QwenClient:
         if self._proxy_override is True:
             from src.core.config import get_config
             cfg = get_config()
-            if "qwen" not in cfg.platforms_proxy.enabled_platforms_set:
+            if not cfg.platforms_proxy.is_platform_enabled("qwen"):
                 return None
             from src.core.proxy import get_proxy_server
             return get_proxy_server()
@@ -339,7 +339,7 @@ class QwenClient:
             if proxy_state:
                 from src.core.config import get_config
                 cfg = get_config()
-                if "qwen" in cfg.platforms_proxy.enabled_platforms_set:
+                if cfg.platforms_proxy.is_platform_enabled("qwen"):
                     self._proxy_override = proxy_state.get("enabled")
                     auto_at = proxy_state.get("auto_enabled_at")
                     if auto_at is not None:
@@ -1765,7 +1765,7 @@ class QwenClient:
                     # 检查是否被允许使用代理切换
                     from src.core.config import get_config
                     cfg = get_config()
-                    if "qwen" in cfg.platforms_proxy.enabled_platforms_set:
+                    if cfg.platforms_proxy.is_platform_enabled("qwen"):
                         logger.warning("Qwen: 检测到 WAF 拦截，自动启用代理 24 小时")
                         self.set_proxy_enabled(True, auto=True)
                         self._save_persist()

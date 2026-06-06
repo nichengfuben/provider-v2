@@ -115,6 +115,7 @@ src/platforms/deepseek/core/client.py
 src/platforms/deepseek/core/constants.py
 src/platforms/deepseek/core/headers.py
 src/platforms/deepseek/core/hif.py
+src/platforms/deepseek/core/impl.py
 src/platforms/deepseek/core/models_cache.py
 src/platforms/deepseek/core/pow.py
 src/platforms/deepseek/core/session_api.py
@@ -174,6 +175,7 @@ src/platforms/qwen/adapter.py
 src/platforms/qwen/core/__init__.py
 src/platforms/qwen/core/adapter_impl.py
 src/platforms/qwen/core/client.py
+src/platforms/qwen/core/impl.py
 src/platforms/qwen/core/constants.py
 src/platforms/qwen/core/shared.py
 src/platforms/qwen/util.py
@@ -628,3 +630,19 @@ pytest: 495 passed, 33 skipped
 [template/template_config.toml] 版本 2.2.39 → 2.2.40
 [config.toml] 同步版本 2.2.40
 [README.md] 版本徽章和路线图更新为 2.2.40：/health 与 /v1/models 强制鉴权
+
+
+2026-06-06 11:15:00
+
+[src/core/config/sections.py] GatewayCfg 新增 group_list_type (whitelist/blacklist) + group_list + is_platform_enabled helper，控制并发竞速平台黑白名单；PlatformsProxyCfg 新增 group_list_type + is_platform_enabled helper，控制 enabled_platforms 的白名单/黑名单语义
+[src/core/dispatch/gateway.py] 候选集按 [gateway].group_list_type + group_list 过滤；concurrent_enabled=false 时仅退化为 n=1，名单仍过滤候选集
+[src/core/dispatch/runtime_view.py] 摘要导出 gateway.group_list_type + group_count 与 platforms_proxy.group_list_type
+[src/platforms/base.py] is_proxy_allowed 文档更新：决策现经 platforms_proxy.is_platform_enabled
+[src/platforms/deepseek/core/adapter_impl.py] is_proxy_allowed 改用 platforms_proxy.is_platform_enabled(self.name)
+[src/platforms/deepseek/core/impl.py] 同上
+[src/platforms/qwen/core/adapter_impl.py] 同上
+[src/platforms/qwen/core/impl.py] 同上
+[src/platforms/qwen/core/client.py] 三处 enabled_platforms_set 直查改为 is_platform_enabled("qwen")
+[template/template_config.toml] 版本 2.2.40 → 2.2.41；[gateway] 新增 group_list_type/group_list；[platforms_proxy] 新增 group_list_type
+[config.toml] 同步版本 2.2.41 与新字段
+[README.md] 版本徽章和路线图更新为 2.2.41：gateway + platforms_proxy 黑白名单

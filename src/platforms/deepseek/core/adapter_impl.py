@@ -197,7 +197,7 @@ class DeepseekAdapter(PlatformAdapter):
         """返回 DeepSeek 平台是否被允许使用代理切换。"""
         from src.core.config import get_config
         cfg = get_config()
-        return self.name in cfg.platforms_proxy.enabled_platforms_set
+        return cfg.platforms_proxy.is_platform_enabled(self.name)
 
     def is_proxy_enabled(self) -> bool:
         """返回 DeepSeek 平台当前是否启用代理覆盖。

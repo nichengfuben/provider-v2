@@ -56,10 +56,31 @@ class AuthCfg(ConfigBase):
 
 @dataclass
 class GatewayCfg(ConfigBase):
-    """网关并发配置：并发开关、并发数和最小 Token 数。"""
+    """网关并发配置：并发开关、并发数、最小 Token 数和平台黑白名单。"""
     concurrent_enabled: bool = True
     concurrent_count: int = 3
     min_tokens: int = 10
+    # 并发竞速平台黑白名单。当 concurrent_enabled=False 时整段禁用，list 无效。
+    # "whitelist"：仅 group_list 中的平台参与竞速。
+    # "blacklist"：除 group_list 外的平台均参与竞速。
+    group_list_type: str = "whitelist"
+    group_list: List[str] = field(default_factory=list)
+    group_list_set: set = field(default_factory=set, repr=False, init=False)
+
+    def __post_init__(self) -> None:
+        self.group_list_set = set(self.group_list)
+
+    def is_platform_enabled(self, name: str) -> bool:
+        """根据 group_list_type 判断平台是否参与并发竞速。
+
+        当 ``group_list`` 为空时视为"未配置"，所有平台均参与竞速
+        （保持向后兼容，避免默认配置阻断路由）。
+        """
+        if not self.group_list_set:
+            return True
+        if self.group_list_type.strip().lower() == "blacklist":
+            return name not in self.group_list_set
+        return name in self.group_list_set
 
 
 @dataclass
@@ -114,12 +135,30 @@ class PlatformsCfg(ConfigBase):
 
 @dataclass
 class PlatformsProxyCfg(ConfigBase):
-    """允许使用代理切换的平台列表。"""
+    """允许使用代理切换的平台列表（支持黑白名单）。
+
+    enabled_platforms 的语义由 group_list_type 决定：
+    * "whitelist"（默认，向后兼容）：仅列表中的平台可使用代理切换。
+    * "blacklist"：列表外的平台均可使用代理切换。
+    """
     enabled_platforms: List[str] = field(default_factory=list)
     enabled_platforms_set: set = field(default_factory=set, repr=False, init=False)
+    group_list_type: str = "whitelist"
 
     def __post_init__(self) -> None:
         self.enabled_platforms_set = set(self.enabled_platforms)
+
+    def is_platform_enabled(self, name: str) -> bool:
+        """根据 group_list_type 判断平台是否允许代理切换。
+
+        当 ``enabled_platforms`` 为空时保持旧语义（无平台被允许代理切换）；
+        列表非空时按 ``group_list_type`` 走白名单或黑名单。
+        """
+        if not self.enabled_platforms_set:
+            return False
+        if self.group_list_type.strip().lower() == "blacklist":
+            return name not in self.enabled_platforms_set
+        return name in self.enabled_platforms_set
 
 
 @dataclass
