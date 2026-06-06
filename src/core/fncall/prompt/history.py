@@ -292,8 +292,18 @@ def _make_assistant_dedup_key(
     return (safe_content, tc_key)
 
 
-def _format_conversation_history(messages: List[Dict[str, Any]]) -> str:
-    """将历史消息列表格式化为对话历史文本块。"""
+def _format_conversation_history(
+    messages: List[Dict[str, Any]],
+    protocol: Optional[Any] = None,
+) -> str:
+    """将历史消息列表格式化为对话历史文本块。
+
+    Args:
+        messages: 消息列表。
+        protocol: 可选的 ToolProtocol 实例。提供时使用
+            protocol.format_assistant_tool_calls() 渲染工具调用，
+            确保历史中的工具调用格式与 LLM 指令中的格式一致。
+    """
     if not messages:
         return ""
 
@@ -320,7 +330,13 @@ def _format_conversation_history(messages: List[Dict[str, Any]]) -> str:
                 fn_name = (tc.get("function") or {}).get("name") or ""
                 if cid and fn_name:
                     call_id_to_name[cid] = fn_name
-                blocks.append(_render_tool_call(tc))
+
+            if tcs:
+                if protocol is not None:
+                    blocks.append(protocol.format_assistant_tool_calls(tcs))
+                else:
+                    for tc in tcs:
+                        blocks.append(_render_tool_call(tc))
 
             inner = "\n\n".join(blocks)
             rendered = f"<assistant>\n{inner}\n</assistant>"

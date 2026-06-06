@@ -18,8 +18,8 @@
 
 <div align="center">
 
-![Status](https://img.shields.io/badge/status-v2.2.31-blue)
-![Version](https://img.shields.io/badge/version-2.2.31-blue)
+![Status](https://img.shields.io/badge/status-v2.2.32-blue)
+![Version](https://img.shields.io/badge/version-2.2.32-blue)
 ![Python](https://img.shields.io/badge/python-3.8+-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Platforms](https://img.shields.io/badge/platforms-11+-orange)
@@ -1256,7 +1256,10 @@ fix(gateway): 修复并发竞速时 token 计数错误
 
 ## 🗺️ 路线图
 
-### 当前版本：v2.2.31
+### 当前版本：v2.2.32
+
+✅ 已完成（v2.2.32）：
+- 修复 LLM 工具调用死循环：历史中工具调用格式与协议指令格式不一致
 
 ✅ 已完成（v2.2.31）：
 - 修复自动更新检查 Path 未导入导致的 NameError

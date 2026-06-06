@@ -107,7 +107,7 @@ def inject_fncall(
         current_user_message = ""
 
     tool_descs = format_tool_descs(tools)
-    history_text = _format_conversation_history(history_messages).strip()
+    history_text = _format_conversation_history(history_messages, protocol=protocol).strip()
 
     prompt = protocol.render_prompt(
         tool_descs=tool_descs,
