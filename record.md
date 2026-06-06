@@ -704,3 +704,7 @@ pytest: 495 passed, 33 skipped
 [config.toml] 同步版本 2.2.48
 [README.md] 版本徽章和路线图更新为 2.2.48：fncall 全协议审计 + original loop_warning 修复
 [.agents/provider-guide/SKILL.md] 版本字段 2.2.47 → 2.2.48
+
+2026-06-06 16:15:00
+
+[_write_report.py] 删除审计子代理生成的在项目根目录的临时报告脚本（206 行），非项目结构一部分
