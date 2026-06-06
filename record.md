@@ -918,3 +918,13 @@ pytest: 531 passed, 16 skipped, 3 warnings
 
 py_compile: templates.py compiled successfully
 pytest: 148 passed (fncall tests)
+
+2026-06-07 00:22:00
+
+[src/webui/static/js/chat.js] 修复助手消息重试按钮导致用户消息重复的 bug：统一助手/用户重试路径，均从用户消息开始删除 DOM 和历史，由 sendChatMessage 统一重新添加
+[template/template_config.toml] 版本 2.2.50 → 2.2.51
+[config.toml] 版本跟随模板 2.2.50 → 2.2.51
+[README.md] 版本徽章和路线图更新为 2.2.51
+[.agents/provider-guide/SKILL.md] 版本字段 2.2.50 → 2.2.51
+
+pytest: 531 passed, 16 skipped, 3 warnings

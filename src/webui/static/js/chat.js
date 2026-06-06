@@ -478,7 +478,7 @@ document.addEventListener("click", function(e) {
     var histIdx = parseInt(targetUserMsg.getAttribute("data-hist-index"), 10);
     if (!rawText) return;
 
-    var removeFrom = (role === "assistant") ? bubble : targetUserMsg;
+    var removeFrom = targetUserMsg;
     var container = document.getElementById("chatMessagesContainer");
     var allMsgs = container.querySelectorAll(".chat-message, .chat-msg-actions");
     var found = false;
@@ -487,12 +487,8 @@ document.addEventListener("click", function(e) {
       if (found) allMsgs[i].remove();
     }
 
-    if (role === "assistant") {
-      chatConversationHistory = chatConversationHistory.slice(0, histIdx + 1);
-    } else {
-      chatConversationHistory = chatConversationHistory.slice(0, histIdx);
-      _userMsgCount = histIdx;
-    }
+    chatConversationHistory = chatConversationHistory.slice(0, histIdx);
+    _userMsgCount = histIdx;
 
     sendChatMessage(rawText);
     return;
