@@ -18,8 +18,8 @@
 
 <div align="center">
 
-![Status](https://img.shields.io/badge/status-v2.2.46-blue)
-![Version](https://img.shields.io/badge/version-2.2.46-blue)
+![Status](https://img.shields.io/badge/status-v2.2.47-blue)
+![Version](https://img.shields.io/badge/version-2.2.47-blue)
 ![Python](https://img.shields.io/badge/python-3.8+-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Platforms](https://img.shields.io/badge/platforms-11+-orange)
@@ -1256,7 +1256,10 @@ fix(gateway): 修复并发竞速时 token 计数错误
 
 ## 🗺️ 路线图
 
-### 当前版本：v2.2.46
+### 当前版本：v2.2.47
+
+✅ 已完成（v2.2.47）：
+- nous fncall 协议 `render_prompt` 修复：`'{tool_descs}\n\n'` 由普通字符串字面量改为拼接，工具定义（参数名/类型/必填/schema）现可正确注入 prompt；默认配置 `qwen = "nous"` 下所有工具调用请求此前均命中此 bug，模型只能靠报错摸索调用方式
 
 ✅ 已完成（v2.2.46）：
 - aitianhu2 SSE 解析重写：移植上游 `_V1DeltaAccumulator`（228 行状态机），支持短键/长键双向规范化、字段继承、多通道并行、完整 JSONPatch op 集（add/replace/append/patch/truncate/remove）。**根因修复**：gpt-5.5 上游使用长键或省略重复字段时，旧解析器静默丢弃整段 antml 标签导致工具调用失效

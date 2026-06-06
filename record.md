@@ -220,6 +220,7 @@ tests/src/core/dispatch/test_selector.py
 tests/src/core/errors/test_errors.py
 tests/src/core/fncall/shared/test_shared.py
 tests/src/core/fncall/test_base.py
+tests/src/core/fncall/test_nous_protocol.py
 tests/src/core/test_autoupdate.py
 tests/src/core/test_tools.py
 tests/src/core/test_webui.py
@@ -683,3 +684,12 @@ pytest: 495 passed, 33 skipped
 [template/template_config.toml] 版本 2.2.45 → 2.2.46
 [config.toml] 同步版本 2.2.46
 [README.md] 版本徽章和路线图更新为 2.2.46：aitianhu2 SSE v1 delta 状态机 + detect_start 兼容 + 路由守卫放宽
+
+2026-06-06 15:10:00
+
+[src/core/fncall/protocols/nous.py] NousProtocol.render_prompt 修复：'{tool_descs}\n\n' 由普通字符串字面量改为 + tool_descs + '\n\n' 拼接，使工具定义（参数名/类型/必填/schema）正确注入 prompt；默认配置 qwen = "nous" 下所有 fncall 请求此前均命中此 bug，模型只能靠报错摸索调用方式
+[tests/src/core/fncall/test_nous_protocol.py] 新增 test_render_prompt_interpolates_tool_descs 回归测试：断言 prompt 包含工具名与参数名且不含字面 '{tool_descs}'
+[template/template_config.toml] 版本 2.2.46 → 2.2.47
+[config.toml] 同步版本 2.2.47
+[README.md] 版本徽章和路线图更新为 2.2.47：nous fncall tool_descs 插值 bug 修复
+[.agents/provider-guide/SKILL.md] 版本字段 2.2.46 → 2.2.47

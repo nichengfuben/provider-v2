@@ -54,7 +54,7 @@ class NousProtocol(ToolProtocol):
         instruction = (
             '## Available Tools\n'
             'You can interact with the following tools:\n\n'
-            '{tool_descs}\n\n'
+            + tool_descs + '\n\n'
             'When calling a tool, respond with:\n\n'
             + _FC_S + "\n"
             + '  ' + _tag('invoke', 'name=' + _DQ + 'exact_tool_name' + _DQ) + "\n"
