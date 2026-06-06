@@ -9,6 +9,7 @@ import aiohttp.web
 from src.webui.routers import (
     autoupdate_check, autoupdate_get, autoupdate_put,
     config_get, config_put, config_reload, export_summary,
+    login_page, logout_page,
     logs_ws, reload_service, summary_api, webui_page,
 )
 
@@ -27,6 +28,8 @@ def setup_routes(app: aiohttp.web.Application) -> None:
     )
 
     app.router.add_get("/", webui_page)
+    app.router.add_route("*", "/login", login_page)
+    app.router.add_get("/logout", logout_page)
     app.router.add_get("/v1/webui/summary", summary_api)
     app.router.add_get("/v1/webui/export", export_summary)
     app.router.add_get("/v1/webui/ws/logs", logs_ws)

@@ -603,3 +603,14 @@ pytest: 495 passed, 33 skipped
 [template/template_config.toml] 版本 2.2.36 → 2.2.37
 [config.toml] 同步版本 2.2.37
 [README.md] 版本徽章和路线图更新为 2.2.37：aitianhu2 401 重认证强制刷新 carids + 落地页正则未匹配日志
+
+2026-06-06 10:35:00
+
+[src/core/server/server.py] _auth_middleware 放行 /login 与 /static/；接受 pv2_session Cookie 作为 Bearer 等价凭证；浏览器访问无凭证时 302 到 /login，API 客户端仍返回 JSON 401
+[src/webui/routers/__init__.py] 新增 login_page / logout_page 导出
+[src/webui/routers/pages.py] 新增 login_page（GET/POST）与 logout_page 处理器；登录页内联 CSS，light/dark 自适应；POST 校验 [auth].keys 命中则下发 pv2_session HttpOnly Cookie（30 天有效期）
+[src/webui/routes.py] 注册 /login（* 方法）与 /logout（GET）路由
+[docs-src/src/webui/routers/pages.md] 补充 login_page / logout_page 处理器的职责说明
+[template/template_config.toml] 版本 2.2.37 → 2.2.38
+[config.toml] 同步版本 2.2.38
+[README.md] 版本徽章和路线图更新为 2.2.38：WebUI 登录页 + Cookie 鉴权 + 静态资源放行

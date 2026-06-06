@@ -18,8 +18,8 @@
 
 <div align="center">
 
-![Status](https://img.shields.io/badge/status-v2.2.37-blue)
-![Version](https://img.shields.io/badge/version-2.2.37-blue)
+![Status](https://img.shields.io/badge/status-v2.2.38-blue)
+![Version](https://img.shields.io/badge/version-2.2.38-blue)
 ![Python](https://img.shields.io/badge/python-3.8+-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Platforms](https://img.shields.io/badge/platforms-11+-orange)
@@ -1256,7 +1256,14 @@ fix(gateway): 修复并发竞速时 token 计数错误
 
 ## 🗺️ 路线图
 
-### 当前版本：v2.2.37
+### 当前版本：v2.2.38
+
+✅ 已完成（v2.2.38）：
+- WebUI 新增 `/login` 表单页（自包含内联 CSS，light/dark 自适应）
+- `_auth_middleware` 接受 `pv2_session` Cookie 作为 Bearer 等价凭证
+- `_auth_middleware` 放行 `/login` 与 `/static/`，解决未登录时 CSS/JS 401 导致 UI 风格丢失
+- 浏览器访问受保护路由时无凭证自动 302 到 `/login`，API 客户端仍保持 JSON 401 协议
+- 新增 `/logout` 路由清除 `pv2_session` Cookie
 
 ✅ 已完成（v2.2.37）：
 - aitianhu2 认证失败 / 401 重认证时强制刷新 carids（清空模块缓存 + 绕过 48h 阈值）

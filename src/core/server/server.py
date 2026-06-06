@@ -87,8 +87,11 @@ async def _auth_middleware(
     request: aiohttp.web.Request,
     handler: _Handler,
 ) -> aiohttp.web.StreamResponse:
-    skip = {"/", "/health", "/v1/models"}
+    # /login + /static 必须放行，否则登录页与静态资源都会被 401 拦截
+    skip = {"/", "/health", "/v1/models", "/login"}
     if request.path in skip or request.method == "OPTIONS":
+        return await handler(request)
+    if request.path.startswith("/static/"):
         return await handler(request)
 
     cfg = get_config()
@@ -135,8 +138,17 @@ async def _auth_middleware(
         token = auth_header[7:].strip()
     elif api_key_header:
         token = api_key_header.strip()
+    else:
+        # 浏览器访问：接受 pv2_session cookie 作为等价凭证
+        cookie_token = request.cookies.get("pv2_session", "").strip()
+        if cookie_token:
+            token = cookie_token
 
     if token not in cfg.auth.keys:
+        # 浏览器导航 -> 跳转登录页；API 客户端 -> 维持 JSON 401 协议
+        accept = request.headers.get("Accept", "")
+        if "text/html" in accept:
+            raise aiohttp.web.HTTPFound("/login")
         return json_response(
             {
                 "error": {
