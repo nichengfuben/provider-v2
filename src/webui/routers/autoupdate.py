@@ -81,6 +81,7 @@ async def autoupdate_put(request: aiohttp.web.Request) -> aiohttp.web.Response:
 async def autoupdate_check(request: aiohttp.web.Request) -> aiohttp.web.Response:
     """POST /v1/admin/autoupdate/check — 触发一次立即检查。"""
     try:
+        from pathlib import Path
         from src.core.autoupdate import AutoUpdater, get_updater
 
         cfg = get_config()
