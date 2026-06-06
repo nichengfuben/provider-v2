@@ -894,3 +894,20 @@ pytest: 495 passed, 33 skipped
 
 py_compile: all platform files compiled successfully
 pytest: 531 passed, 16 skipped, 3 warnings
+
+2026-06-07 00:08:00
+
+[src/core/fncall/prompt/templates.py] 新增 _HISTORY_CLARIFY_EN/ZH 双语常量，用于在 conversation_history 开头注入澄清文本
+[src/core/fncall/prompt/history.py] 新增 _TOOL_CALL_MARKER_RE 正则；is_webui=True 时若 assistant content 已含工具调用标记则跳过重复渲染
+[src/core/fncall/protocols/antml.py] render_prompt 在 conversation_history 内前置历史澄清文本
+[src/core/fncall/protocols/bracket.py] render_prompt 在 conversation_history 内前置历史澄清文本
+[src/core/fncall/protocols/nous.py] render_prompt 在 conversation_history 内前置历史澄清文本
+[src/core/fncall/protocols/original.py] render_prompt 在历史段落前置澄清文本
+[src/core/fncall/protocols/xml.py] render_prompt 在 conversation_history 内前置历史澄清文本
+[template/template_config.toml] 版本 2.2.49 → 2.2.50
+[config.toml] 版本跟随模板 2.2.49 → 2.2.50
+[README.md] 版本徽章和路线图更新为 2.2.50
+[.agents/provider-guide/SKILL.md] 版本字段 2.2.49 → 2.2.50
+
+py_compile: all changed files compiled successfully
+pytest: 531 passed, 16 skipped, 3 warnings

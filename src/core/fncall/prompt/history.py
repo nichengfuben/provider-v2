@@ -31,6 +31,12 @@ _TOOL_RESULT_LINE_RE = re.compile(
     r"^Tool result \(([^)]+)\)\s*:\s*",
 )
 
+_TOOL_CALL_MARKER_RE = re.compile(
+    r"<function_calls|<antml:function_calls|\[function_calls\]"
+    r'|<\|PROVIDER\|tool_calls|"type"\s*:\s*"function_call"'
+    r"|<invoke\s+name=",
+)
+
 # ---------------------------------------------------------------------------
 # 渲染工具调用 / 工具结果
 # ---------------------------------------------------------------------------
@@ -343,11 +349,15 @@ def _format_conversation_history(
                     call_id_to_name[cid] = fn_name
 
             if tcs and is_webui:
-                if protocol is not None:
-                    blocks.append(protocol.format_assistant_tool_calls(tcs))
-                else:
-                    for tc in tcs:
-                        blocks.append(_render_tool_call(tc))
+                content_has_markers = bool(
+                    content_str and _TOOL_CALL_MARKER_RE.search(content_str)
+                )
+                if not content_has_markers:
+                    if protocol is not None:
+                        blocks.append(protocol.format_assistant_tool_calls(tcs))
+                    else:
+                        for tc in tcs:
+                            blocks.append(_render_tool_call(tc))
 
             inner = "\n\n".join(blocks)
             rendered = f"<assistant>\n{inner}\n</assistant>"

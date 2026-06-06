@@ -18,8 +18,8 @@
 
 <div align="center">
 
-![Status](https://img.shields.io/badge/status-v2.2.49-blue)
-![Version](https://img.shields.io/badge/version-2.2.49-blue)
+![Status](https://img.shields.io/badge/status-v2.2.50-blue)
+![Version](https://img.shields.io/badge/version-2.2.50-blue)
 ![Python](https://img.shields.io/badge/python-3.8+-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Platforms](https://img.shields.io/badge/platforms-11+-orange)
@@ -1256,9 +1256,9 @@ fix(gateway): 修复并发竞速时 token 计数错误
 
 ## 🗺️ 路线图
 
-### 当前版本：v2.2.49
+### 当前版本：v2.2.50
 
-✅ 已完成（v2.2.49）：
+✅ 已完成（v2.2.50）：
 - 全平台合规审计与修正：18 个平台逐一对照 platform-guide 规范检查并修复偏差
 - `core/constants.py` 补齐：apiairforce、caiyuesbk、cerebras、chatmoe 四个平台提取内联常量至标准 `constants.py`（BASE_URL、MODELS、CAPS 等）
 - n1n 门面重写：`adapter.py` 从 783 行实现改为 5 行纯门面 re-export，`util.py` 引入 `__getattr__` 懒加载，常量统一从 `core/constants.py` 导入

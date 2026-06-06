@@ -3,6 +3,10 @@ import re
 from typing import Any, Dict, List, Optional, Tuple
 
 from src.core.fncall.base import ToolProtocol
+from src.core.fncall.prompt.templates import (
+    _HISTORY_CLARIFY_EN,
+    _HISTORY_CLARIFY_ZH,
+)
 from src.core.fncall.shared.coercion import _build_param_schema_index, _coerce_param_value
 from src.core.fncall.shared.normalization import format_tool_descs
 
@@ -55,7 +59,8 @@ Tool results will be provided in a corresponding result block."""
         if user_system_prompt and user_system_prompt.strip():
             sections.append(f"<user_system_prompt>\n{user_system_prompt.strip()}\n</user_system_prompt>")
         if history_text:
-            sections.append(f"<conversation_history>\n{history_text}\n</conversation_history>")
+            clarify = _HISTORY_CLARIFY_ZH if lang == "zh" else _HISTORY_CLARIFY_EN
+            sections.append(f"<conversation_history>\n{clarify}\n\n{history_text}\n</conversation_history>")
         if loop_warning:
             sections.append(f"<loop_warning>\n{loop_warning}\n</loop_warning>")
         if current_user_message:

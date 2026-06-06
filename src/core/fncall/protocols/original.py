@@ -18,6 +18,10 @@ import re
 from typing import Any, Dict, List, Optional, Tuple
 
 from src.core.fncall.base import ToolProtocol
+from src.core.fncall.prompt.templates import (
+    _HISTORY_CLARIFY_EN,
+    _HISTORY_CLARIFY_ZH,
+)
 from src.core.fncall.shared.coercion import (
     _build_param_schema_index,
     _coerce_param_value,
@@ -74,7 +78,8 @@ class OriginalProtocol(ToolProtocol):
             parts.append(user_system_prompt)
 
         if history_text:
-            parts.append(history_text)
+            clarify = _HISTORY_CLARIFY_ZH if lang == "zh" else _HISTORY_CLARIFY_EN
+            parts.append(f"{clarify}\n\n{history_text}")
 
         if loop_warning:
             parts.append(f"<loop_warning>\n{loop_warning}\n</loop_warning>")
