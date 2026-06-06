@@ -101,7 +101,8 @@ def test_format_history_user_assistant():
     assert "run ls" in out
     assert "<assistant>" in out
     assert "ok" in out
-    assert "<function_calls>" in out
+    # Non-WebUI (has tool_calls) → tool_calls NOT rendered
+    assert "<function_calls>" not in out
 
 
 def test_dedup_adjacent_identical_assistant():
