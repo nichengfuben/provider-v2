@@ -247,6 +247,24 @@ docs-src/src/webui/server.md
 docs-src/src/webui/services/INDEX.md
 docs-src/template/INDEX.md
 .agents/provider-guide/SKILL.md
+docs-src/tests-guide.md
+docs-src/src/platforms/apiairforce/INDEX.md
+docs-src/src/platforms/caiyuesbk/INDEX.md
+docs-src/src/platforms/cerebras/INDEX.md
+docs-src/src/platforms/chatmoe/INDEX.md
+docs-src/src/platforms/chutes/INDEX.md
+docs-src/src/platforms/codebuddy/INDEX.md
+docs-src/src/platforms/cursor/INDEX.md
+docs-src/src/platforms/deepseek/INDEX.md
+docs-src/src/platforms/edgetts/INDEX.md
+docs-src/src/platforms/gtts/INDEX.md
+docs-src/src/platforms/n1n/INDEX.md
+docs-src/src/platforms/nvidia/INDEX.md
+docs-src/src/platforms/ollama/INDEX.md
+docs-src/src/platforms/openaifm/INDEX.md
+docs-src/src/platforms/openrouter/INDEX.md
+docs-src/src/platforms/perplexity/INDEX.md
+docs-src/src/platforms/qwen/INDEX.md
 
 2026-06-05 23:30:00
 
@@ -470,3 +488,106 @@ pytest: 495 passed, 33 skipped
 [src/platforms/deepseek/util.py] 修复 accounts 导入路径
 [src/platforms/ollama/core/client.py] 修复 accounts 导入路径
 [src/platforms/qwen/core/client.py] 修复 accounts 导入路径
+
+2026-06-06 06:45:00
+
+[.gitignore] record.md 改为 RECORD.md（大小写修正）
+[config.toml] 平台黑名单新增 aitianhu2
+[docs-src/tests-guide.md] record.md 引用统一改为 RECORD.md
+[docs-src/src/platforms/apiairforce/INDEX.md] record.md 引用统一改为 RECORD.md
+[docs-src/src/platforms/caiyuesbk/INDEX.md] record.md 引用统一改为 RECORD.md
+[docs-src/src/platforms/cerebras/INDEX.md] record.md 引用统一改为 RECORD.md
+[docs-src/src/platforms/chatmoe/INDEX.md] record.md 引用统一改为 RECORD.md
+[docs-src/src/platforms/chutes/INDEX.md] record.md 引用统一改为 RECORD.md
+[docs-src/src/platforms/codebuddy/INDEX.md] record.md 引用统一改为 RECORD.md
+[docs-src/src/platforms/cursor/INDEX.md] record.md 引用统一改为 RECORD.md
+[docs-src/src/platforms/deepseek/INDEX.md] record.md 引用统一改为 RECORD.md
+[docs-src/src/platforms/edgetts/INDEX.md] record.md 引用统一改为 RECORD.md
+[docs-src/src/platforms/gtts/INDEX.md] record.md 引用统一改为 RECORD.md
+[docs-src/src/platforms/n1n/INDEX.md] record.md 引用统一改为 RECORD.md
+[docs-src/src/platforms/nvidia/INDEX.md] record.md 引用统一改为 RECORD.md
+[docs-src/src/platforms/ollama/INDEX.md] record.md 引用统一改为 RECORD.md
+[docs-src/src/platforms/openaifm/INDEX.md] record.md 引用统一改为 RECORD.md
+[docs-src/src/platforms/openrouter/INDEX.md] record.md 引用统一改为 RECORD.md
+[docs-src/src/platforms/perplexity/INDEX.md] record.md 引用统一改为 RECORD.md
+[docs-src/src/platforms/qwen/INDEX.md] record.md 引用统一改为 RECORD.md
+
+2026-06-06 07:40:00
+
+[src/platforms/qwen/core/client.py] 修复 enabled_platforms=[] 时仍能使用代理：持久化加载和 _get_proxy_kwarg 增加 enabled_platforms_set 守卫
+[template/template_config.toml] 版本 2.2.25 → 2.2.26
+[config.toml] 同步版本 2.2.26
+[README.md] 版本徽章和路线图更新为 2.2.26
+[.agents/provider-guide/SKILL.md] 版本字段 2.2.26
+
+2026-06-06 07:50:00
+
+[src/webui/static/js/chat.js] 消息编辑对话框按钮统一为「确定」+「取消」，用户消息原「发送」和助手消息原「保存」均改为「确定」
+[template/template_config.toml] 版本 2.2.26 → 2.2.27
+[config.toml] 同步版本 2.2.27
+[README.md] 版本徽章和路线图更新为 2.2.27
+[.agents/provider-guide/SKILL.md] 版本字段 2.2.27
+
+2026-06-06 07:55:00
+
+[src/webui/static/js/chat.js] 助手消息编辑按钮添加 inline style 覆盖，使用 CSS 变量适配浅色背景，解决白色按钮不可见问题
+[template/template_config.toml] 版本 2.2.27 → 2.2.28
+[config.toml] 同步版本 2.2.28
+[README.md] 版本徽章和路线图更新为 2.2.28
+[.agents/provider-guide/SKILL.md] 版本字段 2.2.28
+
+2026-06-06 08:00:00
+
+[src/routes/anthropic.py] 流式路径从 _meta chunk 捕获 platform_id，用 get_protocol 做协议感知标签检测替代硬编码 _FNCALL_OPEN_TAG；_safe_flush 传入 platform_id；非流式路径同样捕获 platform_id 传给 _clean_fncall
+[template/template_config.toml] 版本 2.2.28 → 2.2.29
+[config.toml] 同步版本 2.2.29
+[README.md] 版本徽章和路线图更新为 2.2.29
+[.agents/provider-guide/SKILL.md] 版本字段 2.2.29
+
+2026-06-06 08:10:00
+
+[src/webui/static/index.html] Tailwind backgroundColor 配置添加 accent 颜色定义，修复 bg-accent 类无效导致聊天发送按钮背景透明不可见
+[template/template_config.toml] 版本 2.2.29 → 2.2.30
+[config.toml] 同步版本 2.2.30
+[README.md] 版本徽章和路线图更新为 2.2.30
+[.agents/provider-guide/SKILL.md] 版本字段 2.2.30
+
+2026-06-06 08:15:00
+
+[src/webui/routers/autoupdate.py] autoupdate_check 函数添加 from pathlib import Path，修复 Path 未导入导致的 NameError
+[template/template_config.toml] 版本 2.2.30 → 2.2.31
+[config.toml] 同步版本 2.2.31
+[README.md] 版本徽章和路线图更新为 2.2.31
+[.agents/provider-guide/SKILL.md] 版本字段 2.2.31
+
+2026-06-06 08:25:00
+
+[src/core/fncall/prompt/history.py] _format_conversation_history 新增 protocol 参数，使用 protocol.format_assistant_tool_calls() 渲染历史工具调用，确保格式与协议指令一致，修复 LLM 工具调用死循环
+[src/core/fncall/prompt/inject.py] inject_fncall 将 protocol 传递给 _format_conversation_history
+[template/template_config.toml] 版本 2.2.31 → 2.2.32
+[config.toml] 同步版本 2.2.32
+[README.md] 版本徽章和路线图更新为 2.2.32
+[.agents/provider-guide/SKILL.md] 版本字段 2.2.32
+
+2026-06-06 08:30:00
+
+[src/core/fncall/prompt/history.py] 检测 role=tool 消息判断 agent CLI，跳过渲染 assistant tool_calls 块避免双重渲染，仅 WebUI 无 tool 角色消息时才渲染
+[template/template_config.toml] 版本 2.2.32 → 2.2.33
+[config.toml] 同步版本 2.2.33
+[README.md] 版本徽章和路线图更新为 2.2.33
+[.agents/provider-guide/SKILL.md] 版本字段 2.2.33
+
+2026-06-06 08:35:00
+
+[src/core/fncall/prompt/history.py] 非 WebUI 检测条件扩大：检查 role=tool 或 assistant 带 tool_calls，仅纯文本消息（WebUI）才渲染工具调用历史
+[tests/src/core/test_tools.py] 更新 test_format_history_user_assistant 断言匹配新行为
+[template/template_config.toml] 版本 2.2.33 → 2.2.34
+[config.toml] 同步版本 2.2.34
+[README.md] 版本徽章和路线图更新为 2.2.34
+[.agents/provider-guide/SKILL.md] 版本字段 2.2.34
+
+2026-06-06 09:45:00
+
+[template/template_config.toml] 版本 2.2.34 → 2.2.35
+[config.toml] 同步版本 2.2.35
+[README.md] 版本徽章和路线图更新为 2.2.35：aitianhu2 平台对齐上游（动态 carids + 48h 刷新、system_hints 透传、Authorization 头补全、认证加固、22h 软刷新）

@@ -18,8 +18,8 @@
 
 <div align="center">
 
-![Status](https://img.shields.io/badge/status-v2.2.34-blue)
-![Version](https://img.shields.io/badge/version-2.2.34-blue)
+![Status](https://img.shields.io/badge/status-v2.2.35-blue)
+![Version](https://img.shields.io/badge/version-2.2.35-blue)
 ![Python](https://img.shields.io/badge/python-3.8+-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Platforms](https://img.shields.io/badge/platforms-11+-orange)
@@ -1256,7 +1256,14 @@ fix(gateway): 修复并发竞速时 token 计数错误
 
 ## 🗺️ 路线图
 
-### 当前版本：v2.2.34
+### 当前版本：v2.2.35
+
+✅ 已完成（v2.2.35）：
+- aitianhu2 平台对齐上游：动态 carids 抓取 + 48h 刷新 + 持久化
+- aitianhu2 图像生成透传 `system_hints=["picture_v2"]`
+- aitianhu2 补全 sentinel/upload 的 `Authorization: Bearer` 头
+- aitianhu2 认证加固：200 响应 `wrong-email-credentials` / 登录页检测
+- aitianhu2 会话 22h 软刷新 + 24h 硬过期双保险
 
 ✅ 已完成（v2.2.34）：
 - 非 WebUI 客户端一律不渲染工具调用历史

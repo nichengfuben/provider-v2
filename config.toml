@@ -1,5 +1,5 @@
 [server]
-version = "2.2.34"
+version = "2.2.35"
 host = "0.0.0.0"
 port = 1337
 debug = false
@@ -9,8 +9,8 @@ startup_force_kill_port = true
 api_version = "2023-06-01"
 
 [auth]
-enabled = false
-keys = []
+enabled = true
+keys = ["provider-v2"]
 group_list_type = "blacklist"
 group_list = []
 
@@ -52,4 +52,4 @@ claude-haiku-4-5-20251001 = "qwen3-coder-plus"
 claude-sonnet-4-6 = "qwen3-coder-plus"
 
 [fncall.fncall_mapping]
-qwen = "bracket"
+qwen = "nous"
