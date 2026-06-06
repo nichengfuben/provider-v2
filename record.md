@@ -614,3 +614,10 @@ pytest: 495 passed, 33 skipped
 [template/template_config.toml] 版本 2.2.37 → 2.2.38
 [config.toml] 同步版本 2.2.38
 [README.md] 版本徽章和路线图更新为 2.2.38：WebUI 登录页 + Cookie 鉴权 + 静态资源放行
+
+2026-06-06 10:45:00
+
+[src/core/server/server.py] _auth_middleware 的 skip 集合移除 /，管理面板现需鉴权：未登录浏览器访问 / 自动 302 到 /login，登录后由 pv2_session Cookie 驱动回到 /
+[template/template_config.toml] 版本 2.2.38 → 2.2.39
+[config.toml] 同步版本 2.2.39
+[README.md] 版本徽章和路线图更新为 2.2.39：管理面板强制鉴权

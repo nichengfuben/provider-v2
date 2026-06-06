@@ -18,8 +18,8 @@
 
 <div align="center">
 
-![Status](https://img.shields.io/badge/status-v2.2.38-blue)
-![Version](https://img.shields.io/badge/version-2.2.38-blue)
+![Status](https://img.shields.io/badge/status-v2.2.39-blue)
+![Version](https://img.shields.io/badge/version-2.2.39-blue)
 ![Python](https://img.shields.io/badge/python-3.8+-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Platforms](https://img.shields.io/badge/platforms-11+-orange)
@@ -1256,7 +1256,10 @@ fix(gateway): 修复并发竞速时 token 计数错误
 
 ## 🗺️ 路线图
 
-### 当前版本：v2.2.38
+### 当前版本：v2.2.39
+
+✅ 已完成（v2.2.39）：
+- `_auth_middleware` 不再放行 `/`：未登录浏览器访问管理面板自动 302 到 `/login`，登录后 Cookie 驱动回到 `/`
 
 ✅ 已完成（v2.2.38）：
 - WebUI 新增 `/login` 表单页（自包含内联 CSS，light/dark 自适应）

@@ -88,7 +88,9 @@ async def _auth_middleware(
     handler: _Handler,
 ) -> aiohttp.web.StreamResponse:
     # /login + /static 必须放行，否则登录页与静态资源都会被 401 拦截
-    skip = {"/", "/health", "/v1/models", "/login"}
+    # /health 与 /v1/models 保持公开（负载均衡探针 + OpenAI 兼容的模型发现）
+    # 管理面板 (/) 需要鉴权；未登录浏览器由下方 Accept: text/html 分支 302 到 /login
+    skip = {"/health", "/v1/models", "/login"}
     if request.path in skip or request.method == "OPTIONS":
         return await handler(request)
     if request.path.startswith("/static/"):
