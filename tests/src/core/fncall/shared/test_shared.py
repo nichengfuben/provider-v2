@@ -78,6 +78,259 @@ class TestFormatToolDescs:
         assert "tool" in result
 
 
+    def test_nested_object_properties(self):
+        """format_tool_descs should recursively render nested object properties."""
+        tools = [
+            {
+                "function": {
+                    "name": "deploy",
+                    "description": "Deploy a service",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "config": {
+                                "type": "object",
+                                "description": "Deployment config",
+                                "properties": {
+                                    "host": {"type": "string", "description": "Server host"},
+                                    "port": {"type": "integer", "description": "Server port", "default": 8080},
+                                },
+                                "required": ["host"],
+                            },
+                        },
+                        "required": ["config"],
+                    },
+                }
+            }
+        ]
+        result = format_tool_descs(tools)
+        # Nested properties should be rendered
+        assert "host" in result, "nested property 'host' should appear in output"
+        assert "port" in result, "nested property 'port' should appear in output"
+        assert "8080" in result, "default value '8080' should appear in output"
+        assert "Server host" in result, "nested property description should appear"
+
+    def test_array_of_objects(self):
+        """format_tool_descs should render array items when items is an object."""
+        tools = [
+            {
+                "function": {
+                    "name": "batch_insert",
+                    "description": "Insert multiple records",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "records": {
+                                "type": "array",
+                                "description": "List of records",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "id": {"type": "integer", "description": "Record ID"},
+                                        "data": {"type": "string", "description": "Record data"},
+                                    },
+                                    "required": ["id"],
+                                },
+                            },
+                        },
+                        "required": ["records"],
+                    },
+                }
+            }
+        ]
+        result = format_tool_descs(tools)
+        assert "records" in result
+        assert "items" in result, "array items should be rendered"
+        assert "Record ID" in result, "nested item property description should appear"
+        assert "Record data" in result, "nested item property description should appear"
+
+    def test_oneof_anyof_schema(self):
+        """format_tool_descs should render oneOf/anyOf union schemas."""
+        tools = [
+            {
+                "function": {
+                    "name": "search",
+                    "description": "Search with flexible query",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "query": {
+                                "oneOf": [
+                                    {"type": "string", "description": "text query"},
+                                    {"type": "integer", "description": "query ID"},
+                                ],
+                                "description": "Search query",
+                            },
+                        },
+                        "required": ["query"],
+                    },
+                }
+            }
+        ]
+        result = format_tool_descs(tools)
+        assert "oneOf" in result, "oneOf combiner should be rendered"
+        assert "text query" in result, "variant descriptions should be rendered"
+
+    def test_additional_properties(self):
+        """format_tool_descs should render additionalProperties metadata."""
+        tools = [
+            {
+                "function": {
+                    "name": "set_env",
+                    "description": "Set environment variables",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "vars": {
+                                "type": "object",
+                                "description": "Environment variables",
+                                "additionalProperties": {"type": "string"},
+                            },
+                        },
+                    },
+                }
+            }
+        ]
+        result = format_tool_descs(tools)
+        assert "additionalProperties" in result, "additionalProperties should be rendered"
+
+    def test_enum_in_parameter(self):
+        """format_tool_descs should render enum values."""
+        tools = [
+            {
+                "function": {
+                    "name": "set_mode",
+                    "description": "Set operation mode",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "mode": {
+                                "type": "string",
+                                "description": "Operation mode",
+                                "enum": ["fast", "safe", "debug"],
+                            },
+                        },
+                        "required": ["mode"],
+                    },
+                }
+            }
+        ]
+        result = format_tool_descs(tools)
+        assert "fast" in result, "enum value 'fast' should appear"
+        assert "safe" in result, "enum value 'safe' should appear"
+        assert "debug" in result, "enum value 'debug' should appear"
+
+
+    def test_deeply_nested_object_3_levels(self):
+        """format_tool_descs should recursively render 3+ levels of nested objects."""
+        tools = [
+            {
+                "function": {
+                    "name": "deep_tool",
+                    "description": "Tool with deep nesting",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "level1": {
+                                "type": "object",
+                                "description": "Level 1",
+                                "properties": {
+                                    "level2": {
+                                        "type": "object",
+                                        "description": "Level 2",
+                                        "properties": {
+                                            "level3_value": {
+                                                "type": "string",
+                                                "description": "Level 3 leaf",
+                                            },
+                                        },
+                                        "required": ["level3_value"],
+                                    },
+                                },
+                                "required": ["level2"],
+                            },
+                        },
+                        "required": ["level1"],
+                    },
+                }
+            }
+        ]
+        result = format_tool_descs(tools)
+        assert "level1" in result, "level1 property should appear"
+        assert "level2" in result, "level2 nested property should appear"
+        assert "level3_value" in result, "level3 deeply nested property should appear"
+        assert "Level 3 leaf" in result, "level3 description should appear"
+        assert "Level 2" in result, "level2 description should appear"
+
+    def test_array_items_with_nested_objects(self):
+        """format_tool_descs should render array items that are objects with sub-properties."""
+        tools = [
+            {
+                "function": {
+                    "name": "batch_deploy",
+                    "description": "Deploy multiple services",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "services": {
+                                "type": "array",
+                                "description": "Services to deploy",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "name": {"type": "string", "description": "Service name"},
+                                        "config": {
+                                            "type": "object",
+                                            "description": "Service config",
+                                            "properties": {
+                                                "replicas": {"type": "integer", "description": "Number of replicas"},
+                                            },
+                                        },
+                                    },
+                                    "required": ["name"],
+                                },
+                            },
+                        },
+                        "required": ["services"],
+                    },
+                }
+            }
+        ]
+        result = format_tool_descs(tools)
+        assert "services" in result
+        assert "items" in result
+        assert "Service name" in result, "array item property should appear"
+        assert "Service config" in result, "nested object in array item should appear"
+        assert "replicas" in result, "deeply nested property in array item should appear"
+        assert "Number of replicas" in result, "deeply nested description should appear"
+
+    def test_input_examples_rendered(self):
+        """format_tool_descs should render input_examples at the tool level."""
+        tools = [
+            {
+                "function": {
+                    "name": "calculate",
+                    "description": "Perform calculation",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "expression": {"type": "string", "description": "Math expression"},
+                        },
+                        "required": ["expression"],
+                    },
+                    "input_examples": [
+                        {"expression": "2 + 2"},
+                        {"expression": "sqrt(16)"},
+                    ],
+                }
+            }
+        ]
+        result = format_tool_descs(tools)
+        assert "input_examples" in result, "input_examples section should be rendered"
+        assert "2 + 2" in result, "example value should appear"
+        assert "sqrt(16)" in result, "example value should appear"
+
+
 class TestDetectToolLoop:
     def test_no_loop(self):
         messages = [

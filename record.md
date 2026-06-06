@@ -221,6 +221,7 @@ tests/src/core/errors/test_errors.py
 tests/src/core/fncall/shared/test_shared.py
 tests/src/core/fncall/test_base.py
 tests/src/core/fncall/test_nous_protocol.py
+tests/src/core/fncall/test_original_protocol.py
 tests/src/core/test_autoupdate.py
 tests/src/core/test_tools.py
 tests/src/core/test_webui.py
@@ -693,3 +694,13 @@ pytest: 495 passed, 33 skipped
 [config.toml] 同步版本 2.2.47
 [README.md] 版本徽章和路线图更新为 2.2.47：nous fncall tool_descs 插值 bug 修复
 [.agents/provider-guide/SKILL.md] 版本字段 2.2.46 → 2.2.47
+
+2026-06-06 16:00:00
+
+[src/core/fncall/protocols/original.py] OriginalProtocol.render_prompt 补全 loop_warning 章节：该参数此前被静默丢弃，现以 <loop_warning> XML 包装注入 prompt；工具调用死循环安全告警在所有协议中应无条件渲染
+[tests/src/core/fncall/test_original_protocol.py] 新增 test_render_prompt_renders_loop_warning / test_render_prompt_omits_empty_loop_warning 回归测试
+[tests/src/core/fncall/shared/test_shared.py] 新增 format_tool_descs 嵌套 schema 渲染测试：三层 object 嵌套、array items 含 object、input_examples
+[template/template_config.toml] 版本 2.2.47 → 2.2.48
+[config.toml] 同步版本 2.2.48
+[README.md] 版本徽章和路线图更新为 2.2.48：fncall 全协议审计 + original loop_warning 修复
+[.agents/provider-guide/SKILL.md] 版本字段 2.2.47 → 2.2.48

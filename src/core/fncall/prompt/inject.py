@@ -113,9 +113,9 @@ def inject_fncall(
         tool_descs=tool_descs,
         lang=lang,
         user_system_prompt=user_system_prompt,
-        history_text=f"<conversation_history>\n{history_text}\n</conversation_history>" if history_text else "",
-        loop_warning=f"<loop_warning>\n{loop_warning}\n</loop_warning>" if loop_warning else "",
-        current_user_message=f"<current_user_message>\n{current_user_message}\n</current_user_message>" if current_user_message else "<current_user_message>\n</current_user_message>",
+        history_text=history_text,
+        loop_warning=loop_warning,
+        current_user_message=current_user_message,
     )
 
     _maybe_dump_prompt(prompt)

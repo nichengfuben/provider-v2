@@ -18,8 +18,8 @@
 
 <div align="center">
 
-![Status](https://img.shields.io/badge/status-v2.2.47-blue)
-![Version](https://img.shields.io/badge/version-2.2.47-blue)
+![Status](https://img.shields.io/badge/status-v2.2.48-blue)
+![Version](https://img.shields.io/badge/version-2.2.48-blue)
 ![Python](https://img.shields.io/badge/python-3.8+-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Platforms](https://img.shields.io/badge/platforms-11+-orange)
@@ -1256,7 +1256,11 @@ fix(gateway): 修复并发竞速时 token 计数错误
 
 ## 🗺️ 路线图
 
-### 当前版本：v2.2.47
+### 当前版本：v2.2.48
+
+✅ 已完成（v2.2.48）：
+- fncall 全协议健康检查：6 个协议逐一审计插值完整性、参数一致性、schema 字段完整性、prompt 结构一致性、测试覆盖；`format_tool_descs` 已支持嵌套 object/array/oneOf/anyOf/allOf/additionalProperties 递归渲染（max_depth=4），无需改动；上游 tools 透传链路（openai/anthropic/gateway）完整无裁剪
+- original 协议 `render_prompt` 修复：`loop_warning` 参数此前被静默丢弃，现以 `<loop_warning>` XML 包装注入 prompt；该参数是工具调用死循环安全告警，所有协议都应无条件渲染
 
 ✅ 已完成（v2.2.47）：
 - nous fncall 协议 `render_prompt` 修复：`'{tool_descs}\n\n'` 由普通字符串字面量改为拼接，工具定义（参数名/类型/必填/schema）现可正确注入 prompt；默认配置 `qwen = "nous"` 下所有工具调用请求此前均命中此 bug，模型只能靠报错摸索调用方式

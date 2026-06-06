@@ -32,6 +32,12 @@ class TestCustomProtocol:
         prompt = protocol.render_prompt("我的工具", "zh")
         assert "使用工具: 我的工具" in prompt
 
+    def test_render_prompt_interpolates_tool_descs(self, protocol):
+        tool_descs = 'Tool: Bash - Executes a shell command. Parameter: command (string) - The command to run.'
+        prompt = protocol.render_prompt(tool_descs, "en")
+        assert "Bash" in prompt, "rendered prompt should contain the tool name from tool_descs"
+        assert "{tool_descs}" not in prompt, "rendered prompt must not contain the literal '{tool_descs}' placeholder"
+
     def test_render_prompt_empty(self, protocol):
         proto = CustomProtocol()
         assert proto.render_prompt("", "en") == ""

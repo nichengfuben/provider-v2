@@ -43,6 +43,26 @@ class TestXmlProtocol:
         assert "<|PROVIDER|parameter" in prompt
         assert "<![CDATA[" in prompt
 
+    def test_render_prompt_interpolates_tool_descs(self, protocol):
+        tool_descs = 'Tool: Bash - Executes a shell command. Parameter: command (string) - The command to run.'
+        prompt = protocol.render_prompt(tool_descs, "en")
+        assert "Bash" in prompt, "rendered prompt should contain the tool name from tool_descs"
+        assert "command" in prompt, "rendered prompt should contain the parameter name from tool_descs"
+        assert "{tool_descs}" not in prompt, "rendered prompt must not contain the literal '{tool_descs}' placeholder"
+
+    def test_render_prompt_no_double_wrapping(self, protocol):
+        """Verify render_prompt does not double-wrap sections when given raw values."""
+        prompt = protocol.render_prompt(
+            "tools", "en",
+            history_text="prev conversation",
+            loop_warning="avoid repeating",
+            current_user_message="user question",
+        )
+        # Each section tag should appear at most once (protocols wrap internally)
+        assert prompt.count("<conversation_history>") == 1, "conversation_history should appear exactly once"
+        assert prompt.count("<loop_warning>") == 1, "loop_warning should appear exactly once"
+        assert prompt.count("<current_user_message>") == 1, "current_user_message should appear exactly once"
+
     def test_format_assistant_tool_calls(self, protocol):
         tool_calls = [{
             "id": "call_123",

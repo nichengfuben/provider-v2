@@ -39,6 +39,31 @@ class TestOriginalProtocol:
         assert "sys" in prompt
         assert "hi" in prompt
 
+    def test_render_prompt_interpolates_tool_descs(self, protocol):
+        """Original protocol uses native JSON tool calls, so tool_descs is not injected.
+        Verify no literal '{tool_descs}' placeholder appears in the output."""
+        tool_descs = 'Tool: Bash - Executes a shell command.'
+        prompt = protocol.render_prompt(tool_descs, "en", user_system_prompt="sys", current_user_message="hi")
+        assert "{tool_descs}" not in prompt, "rendered prompt must not contain literal placeholder"
+        # Original protocol intentionally does not inject tool_descs
+        assert "sys" in prompt
+        assert "hi" in prompt
+
+    def test_render_prompt_renders_loop_warning(self, protocol):
+        """Original protocol should include loop_warning when provided (safety mechanism)."""
+        prompt = protocol.render_prompt(
+            "", "en",
+            loop_warning="avoid repeating the same tool call",
+            current_user_message="hi",
+        )
+        assert "<loop_warning>" in prompt, "loop_warning section should be rendered"
+        assert "avoid repeating" in prompt, "loop_warning content should appear"
+
+    def test_render_prompt_omits_empty_loop_warning(self, protocol):
+        """When loop_warning is empty, no section should appear."""
+        prompt = protocol.render_prompt("", "en", current_user_message="hi")
+        assert "<loop_warning>" not in prompt
+
     def test_format_assistant_tool_calls(self, protocol):
         tool_calls = [{
             "id": "call_123",

@@ -65,6 +65,8 @@ class OriginalProtocol(ToolProtocol):
         """该协议依赖平台原生工具调用，无需 prompt 注入。
 
         仅透传必要的上下文信息（如用户 system prompt、历史对话等）。
+        ``tool_descs`` 和 ``lang`` 在此协议中不使用（平台原生处理）。
+        ``loop_warning`` 是安全机制，始终注入。
         """
         parts: List[str] = []
 
@@ -73,6 +75,9 @@ class OriginalProtocol(ToolProtocol):
 
         if history_text:
             parts.append(history_text)
+
+        if loop_warning:
+            parts.append(f"<loop_warning>\n{loop_warning}\n</loop_warning>")
 
         if current_user_message:
             parts.append(current_user_message)
