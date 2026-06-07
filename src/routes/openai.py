@@ -871,8 +871,16 @@ async def create_embeddings(
     if body is None:
         return _err(400, "Invalid JSON", "invalid_json")
 
+    model = body.get("model", "")
     registry = request.app[REGISTRY_KEY]
-    cand = await registry.get_capable_candidate("embedding")
+    cands = await registry.get_candidates(model=model, capability="embedding")
+    if not cands:
+        cands = await registry.get_candidates(capability="embedding")
+    if not cands:
+        return _not_supported("Embeddings")
+
+    selected = await registry.selector.select(cands, 1)
+    cand = selected[0] if selected else None
     if cand is None:
         return _not_supported("Embeddings")
 

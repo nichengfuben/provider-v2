@@ -997,3 +997,11 @@ pytest: (pending)
 [config.toml] 版本跟随模板 2.2.56 → 2.2.57
 [README.md] 版本徽章更新为 2.2.57；路线图新增 v2.2.57 条目
 [.agents/provider-guide/SKILL.md] 版本字段 2.2.56 → 2.2.57
+
+2026-06-07 08:00:00
+
+[src/routes/openai.py] create_embeddings() 改用 get_candidates(model=, capability="embedding") 双重过滤，优先选择有请求模型的服务器；找不到时回退到仅 capability 过滤。此前只按 embedding 能力选择，导致请求路由到没有该模型的服务器返回 404 "model not found"
+[template/template_config.toml] 版本 2.2.57 → 2.2.58
+[config.toml] 版本跟随模板 2.2.57 → 2.2.58
+[README.md] 版本徽章更新为 2.2.58；路线图新增 v2.2.58 条目
+[.agents/provider-guide/SKILL.md] 版本字段 2.2.57 → 2.2.58
