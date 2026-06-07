@@ -968,3 +968,24 @@ pytest: 554 passed, 16 skipped, 3 warnings
 [config.toml] 版本跟随模板 2.2.53 → 2.2.54
 [README.md] 版本徽章更新为 2.2.54；路线图新增 v2.2.54 条目
 [.agents/provider-guide/SKILL.md] 版本字段 2.2.53 → 2.2.54
+
+2026-06-07 04:00:00
+
+[src/platforms/ollama/core/client.py] candidates() 添加运行时模型名关键词检测（bge/nomic/text2vec/e5-/gte-/sentence/embed），覆盖缓存中过期的 embedding=false；collect_servers() 添加 skip_network 参数跳过网络抓取仅验证 additional 列表；_do_refresh() 传递 skip_network 参数；background_setup() DYNAMIC_DISCOVERY=False 时仍验证 ACCOUNTS 本地服务器
+[template/template_config.toml] 版本 2.2.54 → 2.2.55
+[config.toml] 版本跟随模板 2.2.54 → 2.2.55
+[README.md] 版本徽章更新为 2.2.55；路线图新增 v2.2.55 条目
+[.agents/provider-guide/SKILL.md] 版本字段 2.2.54 → 2.2.55
+
+py_compile: src/platforms/ollama/core/client.py compiled successfully
+pytest: (pending)
+
+2026-06-07 05:00:00
+
+[src/platforms/ollama/core/client.py] background_setup() 在 DYNAMIC_DISCOVERY=False 时直接 return，不再调用 _do_refresh(force=True) 覆盖持久化缓存（此前 force=True + skip_network=True 会将缓存清空为 0 服务器）
+[src/platforms/ollama/core/constants.py] DYNAMIC_DISCOVERY 临时恢复为 True 以重建被清空的缓存
+[src/platforms/ollama/core/client.py] collect_servers() 的 skip_network 参数保留供未来使用
+[template/template_config.toml] 版本 2.2.55 → 2.2.56
+[config.toml] 版本跟随模板 2.2.55 → 2.2.56
+[README.md] 版本徽章更新为 2.2.56；路线图新增 v2.2.56 条目
+[.agents/provider-guide/SKILL.md] 版本字段 2.2.55 → 2.2.56

@@ -18,8 +18,8 @@
 
 <div align="center">
 
-![Status](https://img.shields.io/badge/status-v2.2.55-blue)
-![Version](https://img.shields.io/badge/version-2.2.55-blue)
+![Status](https://img.shields.io/badge/status-v2.2.56-blue)
+![Version](https://img.shields.io/badge/version-2.2.56-blue)
 ![Python](https://img.shields.io/badge/python-3.8+-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Platforms](https://img.shields.io/badge/platforms-11+-orange)
@@ -1256,7 +1256,12 @@ fix(gateway): 修复并发竞速时 token 计数错误
 
 ## 🗺️ 路线图
 
-### 当前版本：v2.2.55
+### 当前版本：v2.2.56
+
+✅ 已完成（v2.2.56）：
+- 修复 `background_setup()` 在 `DYNAMIC_DISCOVERY=False` 时直接 return，不再调用 `_do_refresh(force=True)` 覆盖持久化缓存（此 bug 导致 480 台服务器缓存被清空）
+- `DYNAMIC_DISCOVERY` 临时恢复为 `True` 以重建被清空的缓存
+- `collect_servers()` 的 `skip_network` 参数保留供未来使用
 
 ✅ 已完成（v2.2.55）：
 - Ollama candidates() 运行时 embedding 检测：添加模型名关键词检测覆盖缓存中过期的 `embedding: false`

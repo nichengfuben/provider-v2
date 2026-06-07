@@ -581,25 +581,8 @@ class OllamaClient:
     async def background_setup(self) -> None:
         """后台完善：执行服务器发现并启动定时刷新。"""
         if not DYNAMIC_DISCOVERY:
-            # 仅验证 ACCOUNTS 本地服务器，不执行网络发现，不启动定时刷新
-            additional = [acc.server_url for acc in ACCOUNTS if acc.server_url]
-            if additional:
-                try:
-                    loop = asyncio.get_running_loop()
-                    servers, registry = await loop.run_in_executor(
-                        None,
-                        lambda: _do_refresh(
-                            force=True,
-                            additional=additional,
-                            skip_network=True,
-                        ),
-                    )
-                    self._servers = servers
-                    self._registry = registry
-                except Exception as e:
-                    logger.warning("ollama本地服务器验证失败: %s", e)
             logger.info(
-                "ollama动态发现已禁用，仅验证本地账号（%d服务器, %d模型）",
+                "ollama动态发现已禁用，使用持久化缓存（%d服务器, %d模型）",
                 len(self._servers),
                 len(self._registry),
             )
