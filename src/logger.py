@@ -298,7 +298,7 @@ def _setup_handlers() -> None:
     控制台处理器：简洁格式 MM-DD HH:mm:ss | [I] | ModuleName | message
     文件处理器：详细格式 YYYY-MM-DD HH:mm:ss.SSS | [LEVEL] | ModuleName | name:function:line - message
     """
-    global _initialized, _console_handler_id
+    global _initialized, _console_handler_id, _color_override
     if _initialized:
         return
 
@@ -311,6 +311,20 @@ def _setup_handlers() -> None:
 
     # 确保日志目录存在
     _LOG_DIR.mkdir(parents=True, exist_ok=True)
+
+    # 尽早读取 config 中的颜色设置（在 ConfigManager 初始化之前）
+    _early_color = None
+    try:
+        import tomllib
+        _cfg = Path(__file__).parent.parent / "config.toml"
+        if _cfg.exists():
+            with open(_cfg, "rb") as _f:
+                _raw = tomllib.load(_f)
+            _early_color = _raw.get("debug", {}).get("color", True)
+    except Exception:
+        pass
+    if _early_color is not None:
+        _color_override = _early_color
 
     # 检测颜色支持
     use_color = _supports_color()

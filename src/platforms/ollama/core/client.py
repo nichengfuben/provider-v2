@@ -22,6 +22,7 @@ from src.platforms.ollama.accounts import ACCOUNTS
 from src.platforms.ollama.core.constants import (
     BASE_URL,
     CHAT_PATH,
+    DYNAMIC_DISCOVERY,
     EMBED_PATH,
     MAX_WORKERS,
     PAGE_SIZE,
@@ -575,6 +576,15 @@ class OllamaClient:
 
     async def background_setup(self) -> None:
         """后台完善：执行服务器发现并启动定时刷新。"""
+        if not DYNAMIC_DISCOVERY:
+            # 仅使用持久化缓存，不执行网络发现，不启动定时刷新
+            logger.info(
+                "ollama动态发现已禁用，仅使用缓存（%d服务器, %d模型）",
+                len(self._servers),
+                len(self._registry),
+            )
+            return
+
         additional = [acc.server_url for acc in ACCOUNTS if acc.server_url]
         force = needs_refresh()
         try:
@@ -597,6 +607,8 @@ class OllamaClient:
 
     async def _bg_refresh(self) -> None:
         """后台定时刷新服务器列表。"""
+        if not DYNAMIC_DISCOVERY:
+            return
         while True:
             await asyncio.sleep(BG_REFRESH_INTERVAL)
             try:

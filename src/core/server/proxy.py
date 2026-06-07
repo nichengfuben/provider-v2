@@ -36,6 +36,7 @@ logger = get_logger(__name__)
 __all__ = ["activate", "deactivate", "is_active", "get_proxy_server", "get_proxy_dict"]
 
 _IP_RE = re.compile(r"^(https?://)?(\d{1,3}\.){3}\d{1,3}(:\d+)?(/|$)")
+_LOCAL_HOSTS = re.compile(r"^(https?://)?(localhost|.*\.localhost)(:\d+)?(/|$)", re.IGNORECASE)
 _PROTOCOL_RE = re.compile(r"^[a-zA-Z][a-zA-Z0-9+.-]*://")
 _active = False
 
@@ -176,6 +177,9 @@ def _should_proxy_url(url: str) -> bool:
         return False
 
     if _is_ip(url):
+        return False
+
+    if _LOCAL_HOSTS.match(url):
         return False
 
     # proxy_urls 为空时，所有非 IP URL 都走代理

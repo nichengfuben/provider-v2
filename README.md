@@ -18,8 +18,8 @@
 
 <div align="center">
 
-![Status](https://img.shields.io/badge/status-v2.2.52-blue)
-![Version](https://img.shields.io/badge/version-2.2.52-blue)
+![Status](https://img.shields.io/badge/status-v2.2.53-blue)
+![Version](https://img.shields.io/badge/version-2.2.53-blue)
 ![Python](https://img.shields.io/badge/python-3.8+-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Platforms](https://img.shields.io/badge/platforms-11+-orange)
@@ -1256,7 +1256,12 @@ fix(gateway): 修复并发竞速时 token 计数错误
 
 ## 🗺️ 路线图
 
-### 当前版本：v2.2.52
+### 当前版本：v2.2.53
+
+✅ 已完成（v2.2.53）：
+- 代理 localhost 直连修复：`_should_proxy_url()` 新增 `_LOCAL_HOSTS` 正则匹配 `localhost` 和 `*.localhost`，启用全局代理时本地地址不再被误判为需要代理，修复 Ollama 等本地服务连接失败问题
+- 日志颜色初始化修复：`_setup_handlers()` 尽早通过 tomllib 读取 `config.toml` 的 `debug.color`，确保首行日志就尊重 `color=false` 设置
+- Ollama 动态发现开关：新增 `DYNAMIC_DISCOVERY` 常量，为 False 时跳过网络服务器发现和定时刷新，仅使用持久化缓存
 
 ✅ 已完成（v2.2.52）：
 - Ollama embedding 支持：OllamaAdapter/OllamaClient 新增 `create_embedding()` 调用 `/api/embed`；增强 `detect_capabilities()` embedding 模型名称关键词检测；修复 `_verify_server()` URL 格式 bug；添加 `EMBED_PATH` 常量和 CAPS embedding 声明
