@@ -46,15 +46,15 @@ def get_protocol(
         if not default_protocol:
             default_protocol = "xml"
 
-    if not protocol_id:
-        if platform_id and mapping:
-            mapped = mapping.get(platform_id)
-            if mapped:
-                protocol_id = mapped
-                key = f"{platform_id}:{protocol_id}"
-                if key not in _mapping_logged:
-                    logger.debug("平台 %s -> 协议 %s", platform_id, protocol_id)
-                    _mapping_logged.add(key)
+    # 优先级：fncall_mapping（管理员配置）> protocol_id（API 请求）> default_protocol（全局默认）
+    if platform_id and mapping:
+        mapped = mapping.get(platform_id)
+        if mapped:
+            key = f"{platform_id}:{mapped}"
+            if key not in _mapping_logged:
+                logger.debug("平台 %s -> 协议 %s（管理员映射优先）", platform_id, mapped)
+                _mapping_logged.add(key)
+            protocol_id = mapped
     if not protocol_id:
         protocol_id = default_protocol
     if protocol_id == "custom":
