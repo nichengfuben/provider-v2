@@ -402,7 +402,9 @@ async def _race(
                 protocol = get_protocol(protocol_id=protocol_id)
             else:
                 protocol = get_protocol(platform_id=c.platform)
-            worker_msgs = inject_fncall(msgs, tools, protocol, lang=fncall_lang)
+            worker_msgs = inject_fncall(
+                msgs, tools, protocol, lang=fncall_lang, dump_prompt=False
+            )
         try:
             async for ch in a.complete(
                 c, worker_msgs, model, stream,
@@ -422,6 +424,15 @@ async def _race(
                 await q.put(("err", idx, str(e)))
             except Exception as e2:
                 logger.debug("竞速 worker[%d] 发送错误消息失败: %s", idx, e2)
+
+    # 并发竞速：worker 启动前统一转储一次 prompt，避免 N 个 worker 各写一份
+    if tools and cands:
+        _dump_protocol = (
+            get_protocol(protocol_id=protocol_id)
+            if protocol_id
+            else get_protocol(platform_id=cands[0].platform)
+        )
+        inject_fncall(msgs, tools, _dump_protocol, lang=fncall_lang, dump_prompt=True)
 
     for i, c in enumerate(cands):
         q: asyncio.Queue = asyncio.Queue()
