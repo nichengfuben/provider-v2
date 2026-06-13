@@ -67,11 +67,16 @@ def inject_fncall(
     lang: str = "en",
     user_system_prompt: str = "",
     loop_detection_threshold: int = 3,
+    dump_prompt: bool = True,
 ) -> List[Dict[str, Any]]:
     """将工具定义注入消息列表，构建为单条 user 消息送给 LLM。
 
     与原始 inject_fncall 不同，此版本接受一个 protocol 参数，
     将 prompt 渲染委托给 protocol.render_prompt()。
+
+    Args:
+        dump_prompt: 是否将 prompt 转储到 logs/prompts/ 目录。
+            并发竞速模式下应在 worker 启动前转储一次，worker 内部传 False。
     """
     if not tools:
         return list(messages)
@@ -118,6 +123,7 @@ def inject_fncall(
         current_user_message=current_user_message,
     )
 
-    _maybe_dump_prompt(prompt)
+    if dump_prompt:
+        _maybe_dump_prompt(prompt)
 
     return [{"role": "user", "content": prompt}]

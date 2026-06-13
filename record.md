@@ -1058,3 +1058,13 @@ pytest: (pending)
 [README.md] 版本徽章更新为 2.2.61；路线图新增 v2.2.61 条目
 [.agents/provider-guide/SKILL.md] 版本字段 2.2.60 → 2.2.61
 验证: py_compile 全部通过; pytest 560 passed, 16 skipped, 3 warnings
+
+2026-06-13
+
+[src/core/fncall/prompt/inject.py] inject_fncall() 新增 dump_prompt: bool = True 参数，为 False 时跳过 _maybe_dump_prompt()，避免并发竞速模式下重复写入 prompt 文件
+[src/core/dispatch/gateway.py] _race() 在 worker 启动前统一调用一次 inject_fncall(dump_prompt=True) 转储 prompt，worker 内部 _w() 传 dump_prompt=False 抑制重复写入
+[template/template_config.toml] 版本 2.2.61 → 2.2.62
+[config.toml] 同步版本 2.2.62
+[README.md] 版本徽章和路线图更新为 2.2.62
+[.agents/provider-guide/SKILL.md] 版本字段 2.2.61 → 2.2.62
+验证: py_compile 全部通过; pytest 560 passed, 16 skipped, 3 warnings

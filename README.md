@@ -18,8 +18,8 @@
 
 <div align="center">
 
-![Status](https://img.shields.io/badge/status-v2.2.61-blue)
-![Version](https://img.shields.io/badge/version-2.2.61-blue)
+![Status](https://img.shields.io/badge/status-v2.2.62-blue)
+![Version](https://img.shields.io/badge/version-2.2.62-blue)
 ![Python](https://img.shields.io/badge/python-3.8+-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Platforms](https://img.shields.io/badge/platforms-11+-orange)
@@ -1256,7 +1256,10 @@ fix(gateway): 修复并发竞速时 token 计数错误
 
 ## 🗺️ 路线图
 
-### 当前版本：v2.2.61
+### 当前版本：v2.2.62
+
+✅ 已完成（v2.2.62）：
+- 修复并发竞速模式下 `inject_fncall()` 重复写入 prompt 文件：`_race()` 中 worker 启动前统一转储一次，worker 内部传 `dump_prompt=False` 抑制重复
 
 ✅ 已完成（v2.2.61）：
 - TAS 候选项自动调优重构：基于 4 个核心变量（错误时间、调用时间、token 速度、首包延迟）的自适应评分系统，持久化到 persist/gateway/，权重自动学习
