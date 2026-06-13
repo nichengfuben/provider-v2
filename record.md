@@ -1266,3 +1266,13 @@ pytest: (pending)
 [README.md] 版本徽章和路线图更新为 2.2.66
 [.agents/provider-guide/SKILL.md] 版本字段 2.2.65 -> 2.2.66
 验证: py_compile 35 文件全部通过; pytest 结果与上版一致（pre-existing echotools 重构导致）
+
+2026-06-14 01:18:54
+
+[src/core/fncall/registry.py] get_protocol() 自动从 [fncall] 配置读取 default_protocol、fncall_mapping、custom_prompt，修复协议选择未生效 bug
+[src/core/dispatch/gateway.py] 导入改为项目薄包装版 get_protocol（自动读 config），不再直接用 echotools 版本
+[template/template_config.toml] 版本 2.2.66 -> 2.2.67
+[config.toml] 版本 2.2.66 -> 2.2.67
+[README.md] 版本徽章和路线图更新为 2.2.67
+[.agents/provider-guide/SKILL.md] 版本字段 2.2.66 -> 2.2.67
+验证: py_compile 通过

@@ -23,21 +23,28 @@ logger = get_logger(__name__)
 def get_protocol(
     protocol_id: str = "",
     *,
-    default_protocol: str = "xml",
+    default_protocol: str = "",
     custom_prompt_en: str = "",
     custom_prompt_zh: str = "",
     platform_id: str = "",
     mapping: Optional[Dict[str, str]] = None,
 ) -> ToolProtocol:
-    """获取协议（自动从项目配置读取平台映射）。"""
-    # 从项目配置自动补充映射
-    if not mapping and platform_id:
-        try:
-            from src.core.config import get_config
-            cfg = get_config()
-            mapping = cfg.fncall.fncall_mapping
-        except Exception:
-            pass
+    """获取协议（自动从项目配置读取默认协议和平台映射）。"""
+    # 从项目配置自动补充缺省值
+    try:
+        from src.core.config import get_config
+        _fc = get_config().fncall
+        if not default_protocol:
+            default_protocol = _fc.protocol
+        if not mapping and platform_id:
+            mapping = _fc.fncall_mapping
+        if not custom_prompt_en:
+            custom_prompt_en = getattr(_fc, "custom_prompt_en", "") or ""
+        if not custom_prompt_zh:
+            custom_prompt_zh = getattr(_fc, "custom_prompt_zh", "") or ""
+    except Exception:
+        if not default_protocol:
+            default_protocol = "xml"
 
     if not protocol_id:
         if platform_id and mapping:

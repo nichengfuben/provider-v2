@@ -18,8 +18,8 @@
 
 <div align="center">
 
-![Status](https://img.shields.io/badge/status-v2.2.66-blue)
-![Version](https://img.shields.io/badge/version-2.2.66-blue)
+![Status](https://img.shields.io/badge/status-v2.2.67-blue)
+![Version](https://img.shields.io/badge/version-2.2.67-blue)
 ![Python](https://img.shields.io/badge/python-3.8+-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Platforms](https://img.shields.io/badge/platforms-12+-orange)
@@ -1257,7 +1257,11 @@ fix(gateway): 修复并发竞速时 token 计数错误
 
 ## 🗺️ 路线图
 
-### 当前版本：v2.2.66
+### 当前版本：v2.2.67
+
+✅ 已完成（v2.2.67）：
+- 修复工具协议选择未生效 bug：`get_protocol()` 现在自动从 `[fncall]` 配置读取默认协议和平台映射
+- `gateway.py` 改用项目薄包装版 `get_protocol`（自动读 config），不再直接用 echotools 版本
 
 ✅ 已完成（v2.2.66）：
 - WebUI 新增「统计」Tab：请求量、错误率、延迟分位数、Token 用量、请求趋势 sparkline、状态码分布、Top 平台/模型排行、系统资源
