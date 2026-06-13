@@ -46,11 +46,11 @@ body { margin: 0; font-family: Arial, sans-serif;
 .webui-sidebar { display: grid; gap: 4px; padding: 14px; border-right: 1px solid var(--border);
   background: var(--panel-soft); position: sticky; top: 0; max-height: 80vh; overflow-y: auto; }
 .sidebar-nav-item { text-align: left; border-radius: 10px; padding: 10px 14px; font-size: 14px;
-  border: 1px solid transparent; background: var(--panel); color: var(--text);
-  cursor: pointer; transition: all 0.15s; font-weight: 500; }
+  border: 1px solid transparent; border-left: 3px solid transparent; background: var(--panel); color: var(--text);
+  cursor: pointer; transition: background 0.15s, color 0.15s, border-color 0.15s; font-weight: 500; }
 .sidebar-nav-item:hover { background: var(--panel-alt); }
 .sidebar-nav-item.active { background: var(--accent-soft); color: var(--accent);
-  border-color: var(--accent); font-weight: 600; border-left: 3px solid var(--accent); }
+  border-color: transparent; border-left-color: var(--accent); font-weight: 600; }
 .webui-content { padding: 14px; min-width: 0; }
 /* Chat input container */
 #chatInputViewport {
@@ -385,8 +385,7 @@ section.tab-panel {
 
 /* Button transitions */
 button,
-.tab-button,
-.sidebar-nav-item {
+.tab-button {
   transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
   will-change: transform, opacity;
 }
@@ -402,10 +401,7 @@ textarea:focus {
 
 /* Sidebar item transitions */
 .sidebar-nav-item {
-  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
-}
-.sidebar-nav-item:hover {
-  transform: translateX(2px);
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
 
 /* Badge pulse animation */
