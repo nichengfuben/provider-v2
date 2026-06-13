@@ -41,7 +41,7 @@ print_prompt = false
 
 [debug]
 level = "DEBUG"
-color = true
+color = false
 log_name = "provider-v2"
 
 [autoupdate]

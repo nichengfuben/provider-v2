@@ -50,7 +50,7 @@ body { margin: 0; font-family: Arial, sans-serif;
   cursor: pointer; transition: background 0.15s, color 0.15s, border-color 0.15s; font-weight: 500; }
 .sidebar-nav-item:hover { background: var(--panel-alt); }
 .sidebar-nav-item.active { background: var(--accent-soft); color: var(--accent);
-  border-color: transparent; border-left-color: var(--accent); font-weight: 600; }
+  border-color: transparent; border-left-color: var(--accent); }
 .webui-content { padding: 14px; min-width: 0; }
 /* Chat input container */
 #chatInputViewport {
@@ -384,10 +384,12 @@ section.tab-panel {
 }
 
 /* Button transitions */
-button,
-.tab-button {
-  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
-  will-change: transform, opacity;
+button:not(.sidebar-nav-item),
+.tab-button:not(.sidebar-nav-item) {
+  transition: background-color 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+              color 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+              border-color 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Input focus effect */
