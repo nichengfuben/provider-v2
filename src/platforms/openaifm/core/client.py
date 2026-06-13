@@ -49,7 +49,7 @@ class OpenaiFmClient:
 
         return [
             Candidate(
-                id=make_id("openaifm"),
+                id=make_id("openaifm", (key or "openaifm")[:12]),
                 platform="openaifm",
                 resource_id=(key or "openaifm")[:12],
                 models=MODELS,

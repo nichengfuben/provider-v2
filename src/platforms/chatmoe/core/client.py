@@ -60,7 +60,7 @@ class ChatmoeClient:
 
         self._candidates = [
             Candidate(
-                id=make_id("chatmoe"),
+                id=make_id("chatmoe", key[:12]),
                 platform="chatmoe",
                 resource_id=key[:12],
                 models=list(self._models),

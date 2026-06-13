@@ -53,7 +53,7 @@ class Client:
         models = self._models_cache if self._models_cache else MODELS
         self._candidates = [
             Candidate(
-                id=make_id("apiairforce"),
+                id=make_id("apiairforce", (key or "public")[:12]),
                 platform="apiairforce",
                 resource_id=(key or "public")[:12],
                 models=list(models),

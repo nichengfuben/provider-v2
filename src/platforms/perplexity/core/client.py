@@ -45,7 +45,7 @@ class PerplexityClient:
         """
         return [
             Candidate(
-                id=make_id("perplexity"),
+                id=make_id("perplexity", "public"),
                 platform="perplexity",
                 resource_id="public",
                 models=MODELS,

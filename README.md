@@ -18,8 +18,8 @@
 
 <div align="center">
 
-![Status](https://img.shields.io/badge/status-v2.2.60-blue)
-![Version](https://img.shields.io/badge/version-2.2.60-blue)
+![Status](https://img.shields.io/badge/status-v2.2.61-blue)
+![Version](https://img.shields.io/badge/version-2.2.61-blue)
 ![Python](https://img.shields.io/badge/python-3.8+-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Platforms](https://img.shields.io/badge/platforms-11+-orange)
@@ -1256,7 +1256,10 @@ fix(gateway): 修复并发竞速时 token 计数错误
 
 ## 🗺️ 路线图
 
-### 当前版本：v2.2.60
+### 当前版本：v2.2.61
+
+✅ 已完成（v2.2.61）：
+- TAS 候选项自动调优重构：基于 4 个核心变量（错误时间、调用时间、token 速度、首包延迟）的自适应评分系统，持久化到 persist/gateway/，权重自动学习
 
 ✅ 已完成（v2.2.60）：
 - 移除 `_format_conversation_history()` 中的 `is_webui` 检测逻辑，始终渲染 assistant tool_calls 和 tool results，所有协议所有客户端统一处理；跳过无内容的空 assistant 块

@@ -66,18 +66,35 @@ class TestCandidate:
 
 
 class TestMakeId:
-    def test_format(self):
+    def test_format_with_resource_id(self):
+        mid = make_id("qwen", "user123")
+        assert mid.startswith("qwen_")
+        parts = mid.split("_", 1)
+        assert len(parts[1]) == 12  # hash12
+
+    def test_deterministic(self):
+        id1 = make_id("qwen", "user123")
+        id2 = make_id("qwen", "user123")
+        assert id1 == id2
+
+    def test_different_resource_ids(self):
+        id1 = make_id("qwen", "user1")
+        id2 = make_id("qwen", "user2")
+        assert id1 != id2
+
+    def test_fallback_without_resource_id(self):
         mid = make_id("qwen")
         assert mid.startswith("qwen_")
         parts = mid.split("_", 1)
         assert len(parts[1]) == 12  # hex12
 
-    def test_uniqueness(self):
+    def test_uniqueness_fallback(self):
         ids = {make_id("qwen") for _ in range(100)}
-        assert len(ids) == 100  # All unique
+        assert len(ids) == 100  # All unique (random UUID)
 
     def test_different_platforms(self):
-        id1 = make_id("qwen")
-        id2 = make_id("ollama")
+        id1 = make_id("qwen", "user1")
+        id2 = make_id("ollama", "user1")
         assert id1.startswith("qwen_")
         assert id2.startswith("ollama_")
+        assert id1 != id2

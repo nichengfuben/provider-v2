@@ -157,7 +157,7 @@ class ChutesClient:
         """
         self._candidates = [
             Candidate(
-                id=make_id("chutes"),
+                id=make_id("chutes", ks.key[:16]),
                 platform="chutes",
                 resource_id=ks.key[:16],
                 models=list(self._models),

@@ -7,6 +7,7 @@ import importlib
 import pkgutil
 import sys
 import time
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Set
 
 import aiohttp
@@ -19,6 +20,8 @@ from src.platforms.base import PlatformAdapter
 
 __all__ = ["Registry"]
 logger = get_logger(__name__)
+
+_PERSIST_ROOT = Path(__file__).parent.parent.parent / "persist"
 
 
 class Registry:
@@ -34,7 +37,9 @@ class Registry:
     def __init__(self) -> None:
         """初始化注册表。"""
         self._adapters: Dict[str, Any] = {}
-        self.selector = Selector()
+        self.selector = Selector(
+            persist_dir=str(_PERSIST_ROOT / "gateway")
+        )
 
     def _is_adapter_class(self, attr: Any) -> bool:
         """判断一个对象是否像平台适配器类。

@@ -331,8 +331,14 @@ async def _single(
     finally:
         dur = time.monotonic() - start
         lat = (ft - start) if ft else dur
+        gen_dur = (time.monotonic() - ft) if ft else dur
+        comp_tok = (
+            int(p_usage.get("completion_tokens", 0)) if p_usage else 0
+        )
         await reg.selector.record(
-            cand.id, ok, latency=lat, tokens=tc, duration=dur
+            cand.id, ok, latency=lat, tokens=tc, duration=dur,
+            generation_dur=gen_dur, completion_tokens=comp_tok,
+            platform=cand.platform,
         )
 
 
@@ -586,12 +592,18 @@ async def _rec(
     try:
         dur = time.monotonic() - info["start"]
         lat = (info["ft"] - info["start"]) if info["ft"] else dur
+        gen_dur = (time.monotonic() - info["ft"]) if info["ft"] else dur
+        usage = info.get("usage")
+        comp_tok = int(usage.get("completion_tokens", 0)) if usage else 0
         await reg.selector.record(
             info["cand"].id,
             ok,
             latency=lat,
             tokens=info["tok"],
             duration=dur,
+            generation_dur=gen_dur,
+            completion_tokens=comp_tok,
+            platform=info["cand"].platform,
         )
     except Exception as e:
         logger.warning("记录候选项 [%s] 指标失败: %s", info["cand"].id, e)

@@ -133,7 +133,7 @@ class NvidiaClient:
 
         self._candidates = [
             Candidate(
-                id=make_id("nvidia"),
+                id=make_id("nvidia", ks.key[:16]),
                 platform="nvidia",
                 resource_id=ks.key[:16],
                 models=self._models,
@@ -170,7 +170,7 @@ class NvidiaClient:
 
         return [
             Candidate(
-                id=make_id("nvidia"),
+                id=make_id("nvidia", ks.key[:16]),
                 platform="nvidia",
                 resource_id=ks.key[:16],
                 models=list(self._models),

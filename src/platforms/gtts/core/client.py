@@ -66,7 +66,7 @@ class Client:
         """根据当前账号状态重建候选项列表。"""
         self._candidates = [
             Candidate(
-                id=make_id("gtts"),
+                id=make_id("gtts", (key or "gtts")[:12]),
                 platform="gtts",
                 resource_id=(key or "gtts")[:12],
                 models=list(MODELS),

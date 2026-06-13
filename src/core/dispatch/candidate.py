@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import time
 import uuid
 from dataclasses import dataclass, field
@@ -41,15 +42,24 @@ ALL_CAPABILITIES: tuple = (
 )
 
 
-def make_id(platform: str) -> str:
-    """生成全局唯一候选项ID，格式 {platform}_{hex12}。
+def make_id(platform: str, resource_id: str = "") -> str:
+    """生成候选项 ID。
+
+    提供 resource_id 时生成确定性 ID（重启后不变），
+    否则回退到随机 UUID。
 
     Args:
         platform: 平台标识名。
+        resource_id: 平台资源标识（可选）。
 
     Returns:
-        唯一ID字符串。
+        ID 字符串，格式 {platform}_{hash12}。
     """
+    if resource_id:
+        h = hashlib.sha256(
+            "{}:{}".format(platform, resource_id).encode()
+        ).hexdigest()[:12]
+        return "{}_{}".format(platform, h)
     return "{}_{}".format(platform, uuid.uuid4().hex[:12])
 
 

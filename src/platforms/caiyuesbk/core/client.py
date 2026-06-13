@@ -140,7 +140,7 @@ class CaiyuesbkClient:
 
         self._candidates = [
             Candidate(
-                id=make_id("caiyuesbk"),
+                id=make_id("caiyuesbk", key[:12]),
                 platform="caiyuesbk",
                 resource_id=key[:12],
                 models=list(self._models),

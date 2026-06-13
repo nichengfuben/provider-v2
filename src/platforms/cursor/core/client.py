@@ -234,7 +234,7 @@ class CursorClient:
         from .constants import CAPS
 
         return Candidate(
-            id=make_id("cursor"),
+            id=make_id("cursor", "cursor_browser"),
             platform="cursor",
             resource_id="cursor_browser",
             models=list(self._models),

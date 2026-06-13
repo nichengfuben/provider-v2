@@ -95,7 +95,7 @@ class N1nClient:
 
         self._candidates = [
             Candidate(
-                id=make_id("n1n"),
+                id=make_id("n1n", key[:12]),
                 platform="n1n",
                 resource_id=key[:12],
                 models=self._models,

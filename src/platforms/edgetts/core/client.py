@@ -347,7 +347,7 @@ class Client:
         """根据账号列表重建候选项。"""
         self._candidates = [
             Candidate(
-                id=make_id("edgetts"),
+                id=make_id("edgetts", (acc.key or "edge")[:12]),
                 platform="edgetts",
                 resource_id=(acc.key or "edge")[:12],
                 models=list(acc.models),

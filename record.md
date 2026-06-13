@@ -1005,3 +1005,56 @@ pytest: (pending)
 [config.toml] 版本跟随模板 2.2.57 → 2.2.58
 [README.md] 版本徽章更新为 2.2.58；路线图新增 v2.2.58 条目
 [.agents/provider-guide/SKILL.md] 版本字段 2.2.57 → 2.2.58
+
+2026-06-07 09:00:00
+
+[src/core/dispatch/gateway.py] dispatch() 无 tools 时统一处理 system 消息：将所有 role=system 消息内容折叠到第一条 user 消息中，确保所有平台（包括不原生支持 system role 的平台如 Qwen）都能收到系统指令。有 tools 时由 inject_fncall 处理（现有逻辑不变）
+[template/template_config.toml] 版本 2.2.58 → 2.2.59
+[config.toml] 版本跟随模板 2.2.58 → 2.2.59
+[README.md] 版本徽章更新为 2.2.59；路线图新增 v2.2.59 条目
+[.agents/provider-guide/SKILL.md] 版本字段 2.2.58 → 2.2.59
+
+2026-06-07 10:00:00
+
+[src/core/fncall/prompt/history.py] _format_conversation_history() 修复：role="tool" 消息现在仅在 is_webui=True 时渲染（此前始终渲染），非 WebUI 客户端（API/CLI）不再在 prompt 中注入工具调用历史；非 WebUI 时 assistant 消息若只有 tool_calls 无文本内容则跳过整个空 <assistant> 块
+[template/template_config.toml] 版本 2.2.59 → 2.2.60
+[config.toml] 版本跟随模板 2.2.59 → 2.2.60
+[README.md] 版本徽章更新为 2.2.60；路线图新增 v2.2.60 条目
+[.agents/provider-guide/SKILL.md] 版本字段 2.2.59 → 2.2.60
+
+2026-06-07 11:00:00
+
+[src/core/fncall/prompt/history.py] _format_conversation_history() 修正：移除 is_webui 检测逻辑，始终渲染 assistant tool_calls 和 tool results，所有协议所有客户端统一处理；跳过无内容的空 assistant 块（此前版本错误地添加了 is_webui 条件，现回退并统一渲染）
+[tests/src/core/test_tools.py] 修正测试断言：tool_calls 和 tool results 现在始终渲染，移除 "Non-WebUI → NOT rendered" 相关断言
+[README.md] 修正 v2.2.60 路线图描述，准确反映 is_webui 移除而非添加
+
+2026-06-13 08:00:00
+
+[src/core/dispatch/selector.py] TAS 候选项自动调优重构：替换 CandidateStats+Beta 分布为 TASRecord（5 个核心变量：error_time/last_call/ema_speed/ema_latency/n_fails），新增 TASWeights 自适应权重（5 维，乘法更新+归一化），持久化到 persist/gateway/ JSON 文件，评分公式改为 5 维自适应 sigmoid 归一化，连续失败次数 n_fails 纳入评分维度（越多惩罚越重，上限 10）
+[src/core/dispatch/candidate.py] make_id() 改为确定性 SHA-256 哈希（传入 resource_id 时），重启后 ID 不变
+[src/core/dispatch/gateway.py] _single()/_rec() 新增 generation_dur（排除 TTFT 的纯生成时长）和 completion_tokens（上游实际 token 数）传递
+[src/core/dispatch/registry.py] Selector 初始化传入 persist_dir 路径
+[src/platforms/apiairforce/core/client.py] make_id() 补充 resource_id 参数
+[src/platforms/caiyuesbk/core/client.py] make_id() 补充 resource_id 参数
+[src/platforms/cerebras/core/client.py] make_id() 补充 resource_id 参数
+[src/platforms/chatmoe/core/client.py] make_id() 补充 resource_id 参数
+[src/platforms/chutes/core/client.py] make_id() 补充 resource_id 参数
+[src/platforms/codebuddy/core/client.py] make_id() 补充 resource_id 参数
+[src/platforms/cursor/core/client.py] make_id() 补充 resource_id 参数
+[src/platforms/deepseek/core/client.py] make_id() 补充 resource_id 参数
+[src/platforms/edgetts/core/client.py] make_id() 补充 resource_id 参数
+[src/platforms/gtts/core/client.py] make_id() 补充 resource_id 参数
+[src/platforms/n1n/core/client.py] make_id() 补充 resource_id 参数
+[src/platforms/nvidia/core/client.py] make_id() 补充 resource_id 参数（2 处）
+[src/platforms/ollama/core/client.py] make_id() 补充 resource_id 参数
+[src/platforms/openaifm/core/client.py] make_id() 补充 resource_id 参数
+[src/platforms/openrouter/core/client.py] make_id() 补充 resource_id 参数
+[src/platforms/perplexity/core/client.py] make_id() 补充 resource_id 参数
+[src/platforms/qwen/core/client.py] make_id() 补充 resource_id 参数
+[tests/src/core/dispatch/test_selector.py] 重写测试：TASRecord/TASWeights 替代 CandidateStats，新增 n_fails 评分测试、持久化测试、5 维权重归一化测试
+[tests/src/core/dispatch/test_candidate.py] 新增 make_id 确定性哈希测试（deterministic/different_resource_ids/fallback）
+[config.toml] 版本 2.2.60 → 2.2.61
+[template/template_config.toml] 版本 2.2.60 → 2.2.61
+[README.md] 版本徽章更新为 2.2.61；路线图新增 v2.2.61 条目
+[.agents/provider-guide/SKILL.md] 版本字段 2.2.60 → 2.2.61
+验证: py_compile 全部通过; pytest 560 passed, 16 skipped, 3 warnings

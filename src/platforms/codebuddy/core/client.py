@@ -87,7 +87,7 @@ class CodebuddyClient:
         from ..adapter import CAPS
 
         return Candidate(
-            id=make_id("codebuddy"),
+            id=make_id("codebuddy", account.token[:12]),
             platform="codebuddy",
             resource_id=account.token[:12],
             models=list(self._models),

@@ -81,7 +81,7 @@ class CerebrasClient:
 
         self._candidates = [
             Candidate(
-                id=make_id("cerebras"),
+                id=make_id("cerebras", key[:12]),
                 platform="cerebras",
                 resource_id=key[:12],
                 models=list(self._models),

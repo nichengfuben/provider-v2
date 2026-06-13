@@ -259,7 +259,7 @@ class QwenClient:
         """根据当前账号状态重建候选项列表（无锁）。"""
         self._candidates = [
             Candidate(
-                id=make_id("qwen"),
+                id=make_id("qwen", acc.username[:12]),
                 platform="qwen",
                 resource_id=acc.username[:12],
                 models=list(self._models),

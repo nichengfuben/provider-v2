@@ -182,7 +182,7 @@ class OpenRouterClient:
         models = self._models
         return [
             Candidate(
-                id=make_id("openrouter"),
+                id=make_id("openrouter", ks.key[:20]),
                 platform="openrouter",
                 resource_id=ks.key[:20],
                 models=list(models),

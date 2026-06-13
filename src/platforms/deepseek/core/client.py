@@ -251,7 +251,7 @@ class DeepseekClient:
         """根据当前账号状态重建候选项列表。"""
         self._candidates = [
             Candidate(
-                id=make_id("deepseek"),
+                id=make_id("deepseek", account.username[:20]),
                 platform="deepseek",
                 resource_id=account.username[:20],
                 models=list(self._models),

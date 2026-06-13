@@ -667,7 +667,7 @@ class OllamaClient:
                     caps["embedding"] = True
             out.append(
                 Candidate(
-                    id=make_id("ollama"),
+                    id=make_id("ollama", ip),
                     platform="ollama",
                     resource_id=ip,
                     models=models,
