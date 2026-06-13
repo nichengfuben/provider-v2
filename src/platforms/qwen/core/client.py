@@ -553,7 +553,6 @@ class QwenClient:
                     acc.user_id = data.get("id", "")
                     acc.password_hash = pwd_hash
                     acc.token_expires = float(data.get("expires_at", 0))
-                    acc.memory_disabled = False
                     acc.is_login = True
 
                     asyncio.ensure_future(self._update_settings(acc))
