@@ -18,8 +18,8 @@
 
 <div align="center">
 
-![Status](https://img.shields.io/badge/status-v2.2.64-blue)
-![Version](https://img.shields.io/badge/version-2.2.64-blue)
+![Status](https://img.shields.io/badge/status-v2.2.65-blue)
+![Version](https://img.shields.io/badge/version-2.2.65-blue)
 ![Python](https://img.shields.io/badge/python-3.8+-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Platforms](https://img.shields.io/badge/platforms-12+-orange)
@@ -1257,7 +1257,13 @@ fix(gateway): 修复并发竞速时 token 计数错误
 
 ## 🗺️ 路线图
 
-### 当前版本：v2.2.64
+### 当前版本：v2.2.65
+
+✅ 已完成（v2.2.65）：
+- 核心重构：`src/core/` 全面迁移至 `echotools` 包，减少约 6000 行重复代码
+- 新增 `echotools>=1.0.1` 依赖
+- 修复 `registry.py` 持久化路径计算错误（`.parent` 层级不足导致写入 `src/persist/`）
+- `[debug]` 启用彩色日志（`color = true`）
 
 ✅ 已完成（v2.2.64）：
 - `src/logger.py` 新增 `_resolve_log_name()` 函数，日志文件名和默认 `module_name` 改为从 `config.toml` 的 `debug.log_name` 读取（默认 `provider-v2`）

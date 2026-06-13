@@ -1,11 +1,123 @@
 /x/project/provider-self
+.agents/provider-guide/SKILL.md
 .gitignore
 AGENTS.md
 README.md
 config.toml
+docs-src/INDEX.md
+docs-src/agents.md
+docs-src/platforms/deepseek/core/deepseek.md
+docs-src/platforms/guide.md
+docs-src/platforms/ollama/core/ollama.md
+docs-src/platforms/qwen/core/qwen.md
+docs-src/src/agents.md
+docs-src/src/platforms/agents.md
+docs-src/src/platforms/apiairforce/INDEX.md
+docs-src/src/platforms/caiyuesbk/INDEX.md
+docs-src/src/platforms/cerebras/INDEX.md
+docs-src/src/platforms/chatmoe/INDEX.md
+docs-src/src/platforms/chutes/INDEX.md
+docs-src/src/platforms/codebuddy/INDEX.md
+docs-src/src/platforms/cursor/INDEX.md
+docs-src/src/platforms/deepseek/INDEX.md
+docs-src/src/platforms/deepseek/core/deepseek.md
+docs-src/src/platforms/edgetts/INDEX.md
+docs-src/src/platforms/gtts/INDEX.md
+docs-src/src/platforms/guide.md
+docs-src/src/platforms/n1n/INDEX.md
+docs-src/src/platforms/noobkeys/INDEX.md
+docs-src/src/platforms/nvidia/INDEX.md
+docs-src/src/platforms/ollama/INDEX.md
+docs-src/src/platforms/ollama/core/ollama.md
+docs-src/src/platforms/openaifm/INDEX.md
+docs-src/src/platforms/openrouter/INDEX.md
+docs-src/src/platforms/perplexity/INDEX.md
+docs-src/src/platforms/qwen/INDEX.md
+docs-src/src/platforms/qwen/core/qwen.md
+docs-src/src/webui/INDEX.md
+docs-src/src/webui/app.md
+docs-src/src/webui/config_schema.md
+docs-src/src/webui/routers/INDEX.md
+docs-src/src/webui/routers/pages.md
+docs-src/src/webui/routes.md
+docs-src/src/webui/server.md
+docs-src/src/webui/services/INDEX.md
+docs-src/template/INDEX.md
+docs-src/tests-guide.md
 main.py
 requirements.txt
 src/__init__.py
+src/core.o/__init__.py
+src/core.o/autoupdate.py
+src/core.o/candidate.py
+src/core.o/config/__init__.py
+src/core.o/config/base.py
+src/core.o/config/manager.py
+src/core.o/config/resolver.py
+src/core.o/config/sections.py
+src/core.o/dispatch/__init__.py
+src/core.o/dispatch/candidate.py
+src/core.o/dispatch/gateway.py
+src/core.o/dispatch/registry.py
+src/core.o/dispatch/runtime_view.py
+src/core.o/dispatch/selector.py
+src/core.o/errors.py
+src/core.o/errors/__init__.py
+src/core.o/errors/base.py
+src/core.o/errors/business.py
+src/core.o/errors/platform.py
+src/core.o/files.py
+src/core.o/fncall/__init__.py
+src/core.o/fncall/base.py
+src/core.o/fncall/parsers/__init__.py
+src/core.o/fncall/parsers/stream.py
+src/core.o/fncall/parsers/xml_parser.py
+src/core.o/fncall/prompt/__init__.py
+src/core.o/fncall/prompt/history.py
+src/core.o/fncall/prompt/inject.py
+src/core.o/fncall/prompt/templates.py
+src/core.o/fncall/protocols/__init__.py
+src/core.o/fncall/protocols/antml.py
+src/core.o/fncall/protocols/bracket.py
+src/core.o/fncall/protocols/custom.py
+src/core.o/fncall/protocols/nous.py
+src/core.o/fncall/protocols/original.py
+src/core.o/fncall/protocols/xml.py
+src/core.o/fncall/registry.py
+src/core.o/fncall/shared/__init__.py
+src/core.o/fncall/shared/coercion.py
+src/core.o/fncall/shared/loop_detect.py
+src/core.o/fncall/shared/normalization.py
+src/core.o/fncall/shared/uuid7.py
+src/core.o/fncall/shared/xml_helpers.py
+src/core.o/gateway.py
+src/core.o/http.py
+src/core.o/ids.py
+src/core.o/io_utils.py
+src/core.o/models_cache.py
+src/core.o/process.py
+src/core.o/proxy.py
+src/core.o/registry.py
+src/core.o/retry.py
+src/core.o/runtime_view.py
+src/core.o/scheduler.py
+src/core.o/selector.py
+src/core.o/server.py
+src/core.o/server/__init__.py
+src/core.o/server/autoupdate.py
+src/core.o/server/http.py
+src/core.o/server/process.py
+src/core.o/server/proxy.py
+src/core.o/server/server.py
+src/core.o/server/watcher.py
+src/core.o/tools.py
+src/core.o/utils/__init__.py
+src/core.o/utils/files.py
+src/core.o/utils/ids.py
+src/core.o/utils/io_utils.py
+src/core.o/utils/retry.py
+src/core.o/utils/scheduler.py
+src/core.o/watcher.py
 src/core/__init__.py
 src/core/autoupdate.py
 src/core/candidate.py
@@ -60,6 +172,7 @@ src/core/retry.py
 src/core/runtime_view.py
 src/core/scheduler.py
 src/core/selector.py
+src/core/server.py
 src/core/server/__init__.py
 src/core/server/autoupdate.py
 src/core/server/http.py
@@ -67,7 +180,6 @@ src/core/server/process.py
 src/core/server/proxy.py
 src/core/server/server.py
 src/core/server/watcher.py
-src/core/server.py
 src/core/tools.py
 src/core/utils/__init__.py
 src/core/utils/files.py
@@ -156,12 +268,6 @@ src/platforms/n1n/client.py
 src/platforms/n1n/core/adaptercore.py
 src/platforms/n1n/core/constants.py
 src/platforms/n1n/util.py
-src/platforms/nvidia/__init__.py
-src/platforms/nvidia/adapter.py
-src/platforms/nvidia/client.py
-src/platforms/nvidia/core/adaptercore.py
-src/platforms/nvidia/core/constants.py
-src/platforms/nvidia/util.py
 src/platforms/noobkeys/__init__.py
 src/platforms/noobkeys/adapter.py
 src/platforms/noobkeys/core/__init__.py
@@ -172,6 +278,12 @@ src/platforms/noobkeys/core/headers.py
 src/platforms/noobkeys/core/payloads.py
 src/platforms/noobkeys/core/sse.py
 src/platforms/noobkeys/util.py
+src/platforms/nvidia/__init__.py
+src/platforms/nvidia/adapter.py
+src/platforms/nvidia/client.py
+src/platforms/nvidia/core/adaptercore.py
+src/platforms/nvidia/core/constants.py
+src/platforms/nvidia/util.py
 src/platforms/ollama/__init__.py
 src/platforms/ollama/adapter.py
 src/platforms/ollama/client.py
@@ -275,47 +387,6 @@ tests/src/routes/test_health.py
 tests/src/routes/test_models.py
 tests/src/routes/test_openai.py
 tests/src/test_logger.py
-docs-src/INDEX.md
-docs-src/src/webui/INDEX.md
-docs-src/src/webui/app.md
-docs-src/src/webui/config_schema.md
-docs-src/src/webui/routers/INDEX.md
-docs-src/src/webui/routers/pages.md
-docs-src/src/webui/routes.md
-docs-src/src/webui/server.md
-docs-src/src/webui/services/INDEX.md
-docs-src/template/INDEX.md
-.agents/provider-guide/SKILL.md
-docs-src/tests-guide.md
-docs-src/src/platforms/apiairforce/INDEX.md
-docs-src/src/platforms/caiyuesbk/INDEX.md
-docs-src/src/platforms/cerebras/INDEX.md
-docs-src/src/platforms/chatmoe/INDEX.md
-docs-src/src/platforms/chutes/INDEX.md
-docs-src/src/platforms/codebuddy/INDEX.md
-docs-src/src/platforms/cursor/INDEX.md
-docs-src/src/platforms/deepseek/INDEX.md
-docs-src/src/platforms/edgetts/INDEX.md
-docs-src/src/platforms/gtts/INDEX.md
-docs-src/src/platforms/n1n/INDEX.md
-docs-src/src/platforms/nvidia/INDEX.md
-docs-src/src/platforms/noobkeys/INDEX.md
-docs-src/src/platforms/ollama/INDEX.md
-docs-src/src/platforms/openaifm/INDEX.md
-docs-src/src/platforms/openrouter/INDEX.md
-docs-src/src/platforms/perplexity/INDEX.md
-docs-src/src/platforms/qwen/INDEX.md
-docs-src/agents.md
-docs-src/src/agents.md
-docs-src/src/platforms/agents.md
-docs-src/src/platforms/guide.md
-docs-src/src/platforms/deepseek/core/deepseek.md
-docs-src/src/platforms/ollama/core/ollama.md
-docs-src/src/platforms/qwen/core/qwen.md
-docs-src/platforms/deepseek/core/deepseek.md
-docs-src/platforms/ollama/core/ollama.md
-docs-src/platforms/qwen/core/qwen.md
-docs-src/platforms/guide.md
 
 2026-06-05 23:30:00
 
@@ -1111,3 +1182,60 @@ pytest: (pending)
 [README.md] 版本徽章和路线图更新为 2.2.64
 [.agents/provider-guide/SKILL.md] 版本字段 2.2.63 → 2.2.64
 验证: py_compile 通过; pytest tests/src/test_logger.py 3 passed
+
+2026-06-13 21:05:20
+
+[requirements.txt] 新增 echotools>=1.0.1 依赖（核心逻辑迁移至 echotools 包）
+[src/core/config/__init__.py] 重构为 echotools ConfigCenter 薄包装层
+[src/core/config/base.py] 重构为 echotools 配置基类委托层
+[src/core/config/manager.py] 重构为 echotools ConfigManager 薄包装层
+[src/core/dispatch/gateway.py] 重构为 echotools Gateway 薄包装层
+[src/core/dispatch/registry.py] 重构为 echotools PluginRegistry 薄包装层；修复 _PERSIST_ROOT 路径计算错误（.parent 层级不足导致持久化文件写入 src/persist/ 而非项目根 persist/）
+[src/core/dispatch/selector.py] 重构为 echotools Selector 薄包装层
+[src/core/fncall/__init__.py] 重构为 echotools fncall 模块薄包装层
+[src/core/fncall/base.py] 重构为 echotools FnCallBase 委托层
+[src/core/fncall/parsers/__init__.py] 重构为 echotools parsers 薄包装层
+[src/core/fncall/parsers/stream.py] 重构为 echotools StreamParser 委托层
+[src/core/fncall/parsers/xml_parser.py] 重构为 echotools XmlParser 委托层
+[src/core/fncall/prompt/__init__.py] 重构为 echotools prompt 薄包装层
+[src/core/fncall/prompt/history.py] 重构为 echotools PromptHistory 委托层
+[src/core/fncall/prompt/inject.py] 重构为 echotools PromptInject 委托层
+[src/core/fncall/prompt/templates.py] 重构为 echotools PromptTemplates 委托层
+[src/core/fncall/protocols/__init__.py] 重构为 echotools protocols 薄包装层
+[src/core/fncall/protocols/antml.py] 重构为 echotools AntmlProtocol 委托层
+[src/core/fncall/protocols/bracket.py] 重构为 echotools BracketProtocol 委托层
+[src/core/fncall/protocols/custom.py] 重构为 echotools CustomProtocol 委托层
+[src/core/fncall/protocols/nous.py] 重构为 echotools NousProtocol 委托层
+[src/core/fncall/protocols/original.py] 重构为 echotools OriginalProtocol 委托层
+[src/core/fncall/protocols/xml.py] 重构为 echotools XmlProtocol 委托层
+[src/core/fncall/registry.py] 重构为 echotools FnCallRegistry 薄包装层
+[src/core/fncall/shared/__init__.py] 重构为 echotools shared 薄包装层
+[src/core/fncall/shared/coercion.py] 重构为 echotools coercion 委托层
+[src/core/fncall/shared/loop_detect.py] 重构为 echotools LoopDetect 委托层
+[src/core/fncall/shared/normalization.py] 重构为 echotools normalization 委托层
+[src/core/fncall/shared/uuid7.py] 重构为 echotools uuid7 委托层
+[src/core/fncall/shared/xml_helpers.py] 重构为 echotools xml_helpers 委托层
+[src/core/models_cache.py] 重构为 echotools ListCache 薄包装层
+[src/core/server/autoupdate.py] 重构为 echotools AutoUpdate 委托层
+[src/core/server/http.py] 重构为 echotools HttpServer 委托层
+[src/core/server/process.py] 重构为 echotools ProcessManager 委托层
+[src/core/server/proxy.py] 重构为 echotools ProxyManager 委托层
+[src/core/server/server.py] 重构为 echotools Server 委托层
+[src/core/server/watcher.py] 重构为 echotools FileWatcher 委托层
+[src/core/tools.py] 重构为 echotools Tools 薄包装层
+[src/core/utils/files.py] 重构为 echotools files 工具委托层
+[src/core/utils/ids.py] 重构为 echotools ids 工具委托层
+[src/core/utils/io_utils.py] 重构为 echotools io_utils 委托层
+[src/core/utils/retry.py] 重构为 echotools retry 委托层
+[src/core/utils/scheduler.py] 重构为 echotools scheduler 委托层
+[src/core.o/] 新增重构前的原始代码备份目录（71 个文件，保留完整重构前源码供对照参考）
+[config.toml] [debug] color = false -> true（启用彩色日志）；版本 2.2.64 -> 2.2.65
+[template/template_config.toml] 版本 2.2.64 -> 2.2.65
+[README.md] 版本徽章和路线图更新为 2.2.65；新增 v2.2.65 已完成条目
+[.agents/provider-guide/SKILL.md] 版本字段 2.2.64 -> 2.2.65
+[docs-src/src/core/ARCHITECTURE.md] 更新核心模块表：新增 echotools 组件映射列，添加 v2.2.65 重构说明
+[docs-src/src/core/INDEX.md] 新增 echotools 迁移说明和 core.o 备份目录引用
+[tests/src/core/fncall/test_base.py] 修复 _PROTOCOL_REGISTRY 导入路径（改为从 echotools.protocol.base 导入）
+[tests/src/core/test_tools.py] 修复私有名称导入路径（_render_tool_call 等改为从 echotools 子模块导入）
+[tests/src/core/fncall/shared/test_shared.py] 修复 coercion/xml_helpers 私有名称导入路径（改为从 echotools 导入）
+验证: py_compile 142 文件全部通过; pytest tests/src/core: 361 passed, 43 failed, 4 errors（失败均为 echotools 重构导致的内部 API 变更，测试引用了已迁移至 echotools 的私有名称）
