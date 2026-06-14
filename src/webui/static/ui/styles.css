@@ -919,6 +919,13 @@ section.tab-panel > * {
 .config-list-remove:hover { background: rgba(238,85,85,0.1); }
 .config-list-add { background: none; border: 1px dashed var(--border); color: var(--accent); cursor: pointer; font-size: 12px; padding: 4px 10px; border-radius: 6px; margin-top: 4px; }
 .config-list-add:hover { border-color: var(--accent); background: var(--accent-soft); }
+.config-mapping { width: 100%; max-width: 100%; }
+.config-mapping-row { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+.config-mapping-key { flex: 2; min-width: 0; }
+.config-mapping-arrow { color: var(--muted); font-size: 14px; flex-shrink: 0; }
+.config-mapping-val { flex: 3; min-width: 0; }
+.config-mapping-remove { background: none; border: none; color: var(--err); cursor: pointer; font-size: 16px; padding: 2px 6px; border-radius: 4px; flex-shrink: 0; }
+.config-mapping-remove:hover { background: rgba(238,85,85,0.1); }
 
 /* ========== Request Inspector ========== */
 .req-item { display: flex; align-items: center; gap: 8px; padding: 6px 10px; cursor: pointer; border-bottom: 1px solid var(--border); font-size: 13px; }

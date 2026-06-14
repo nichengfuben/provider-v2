@@ -73,9 +73,9 @@ function _renderStringList(section, key, val) {
 }
 
 /**
- * Render a JSON object/map editor component.
+ * Render a raw JSON textarea for unknown/complex fields.
  */
-function _renderJsonEditor(section, key, val) {
+function _renderRawJson(section, key, val) {
   var id = 'cfg-' + section + '-' + key;
   var text = '';
   try { text = JSON.stringify(val, null, 2); } catch(e) { text = '{}'; }
@@ -83,6 +83,34 @@ function _renderJsonEditor(section, key, val) {
     + '" data-section="' + section + '" data-key="' + key + '" data-type="json"'
     + ' rows="' + Math.max(2, Math.min(8, text.split('\n').length)) + '">'
     + escapeHtml(text) + '</textarea>';
+}
+
+/**
+ * Render a key-value mapping editor component.
+ * Each entry is a row: [key input] → [value input] [× remove]
+ * Plus an "add" button at the bottom.
+ */
+function _renderMappingEditor(section, key, val) {
+  var id = 'cfg-' + section + '-' + key;
+  var entries = [];
+  if (val && typeof val === 'object' && !Array.isArray(val)) {
+    var keys = Object.keys(val);
+    for (var i = 0; i < keys.length; i++) {
+      entries.push({ k: keys[i], v: String(val[keys[i]]) });
+    }
+  }
+  var html = '<div class="config-mapping" id="' + id + '" data-section="' + section + '" data-key="' + key + '" data-type="mapping">';
+  for (var j = 0; j < entries.length; j++) {
+    html += '<div class="config-mapping-row">'
+      + '<input type="text" class="config-input config-mapping-key" value="' + escapeHtml(entries[j].k) + '" placeholder="key">'
+      + '<span class="config-mapping-arrow">→</span>'
+      + '<input type="text" class="config-input config-mapping-val" value="' + escapeHtml(entries[j].v) + '" placeholder="value">'
+      + '<button type="button" class="config-mapping-remove" data-index="' + j + '">&times;</button>'
+      + '</div>';
+  }
+  html += '<button type="button" class="config-list-add config-mapping-add" data-section="' + section + '" data-key="' + key + '">+ 添加映射</button>';
+  html += '</div>';
+  return html;
 }
 
 /**
@@ -178,7 +206,7 @@ function _renderFncallSection(cfg) {
       ['xml', 'antml', 'nous', 'bracket', 'original', 'custom']))
     + _field('record_prompt', _renderToggle('fncall', 'record_prompt', !!s.record_prompt))
     + _field('print_prompt', _renderToggle('fncall', 'print_prompt', !!s.print_prompt))
-    + _fieldBlock('fncall_mapping', _renderJsonEditor('fncall', 'fncall_mapping', s.fncall_mapping || {}))
+    + _fieldBlock('fncall_mapping', _renderMappingEditor('fncall', 'fncall_mapping', s.fncall_mapping || {}))
   );
 }
 
@@ -208,7 +236,7 @@ function _renderAnthropicSection(cfg) {
   var s = cfg.anthropic || {};
   return _sectionCard('anthropic',
     _field('api_version', _renderText('anthropic', 'api_version', s.api_version || ''))
-    + _fieldBlock('model_mapping', _renderJsonEditor('anthropic', 'model_mapping', s.model_mapping || {}))
+    + _fieldBlock('model_mapping', _renderMappingEditor('anthropic', 'model_mapping', s.model_mapping || {}))
   );
 }
 
@@ -249,7 +277,7 @@ function _renderConfigData(config) {
   var knownSections = ['server','auth','gateway','proxy','platforms_proxy','platforms','fncall','debug','autoupdate','anthropic'];
   Object.keys(config).forEach(function(section) {
     if (knownSections.indexOf(section) === -1 && typeof config[section] === 'object' && config[section] !== null) {
-      html += _sectionCard(section, _field('(raw)', _renderJsonEditor(section, '_raw', config[section])));
+      html += _sectionCard(section, _fieldBlock('(raw)', _renderRawJson(section, '_raw', config[section])));
     }
   });
 
@@ -293,7 +321,64 @@ function _renderConfigData(config) {
     });
   });
 
+  // Bind mapping add buttons
+  configGrid.querySelectorAll('.config-mapping-add').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var section = this.dataset.section;
+      var key = this.dataset.key;
+      var mapping = _collectMapping(this.closest('.config-mapping'));
+      mapping[''] = '';  // add empty entry
+      if (!window._currentConfig[section]) window._currentConfig[section] = {};
+      window._currentConfig[section][key] = mapping;
+      _renderConfigData(window._currentConfig);
+    });
+  });
+  // Bind mapping remove buttons
+  configGrid.querySelectorAll('.config-mapping-remove').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var container = this.closest('.config-mapping');
+      var section = container.dataset.section;
+      var key = container.dataset.key;
+      var idx = parseInt(this.dataset.index);
+      var mapping = _collectMapping(container);
+      var keys = Object.keys(mapping);
+      delete mapping[keys[idx]];
+      window._currentConfig[section][key] = mapping;
+      _renderConfigData(window._currentConfig);
+    });
+  });
+  // Bind mapping input changes (live update on input/change)
+  configGrid.querySelectorAll('.config-mapping-key, .config-mapping-val').forEach(function(inp) {
+    inp.addEventListener('change', function() {
+      var container = this.closest('.config-mapping');
+      var section = container.dataset.section;
+      var key = container.dataset.key;
+      var mapping = _collectMapping(container);
+      if (!window._currentConfig[section]) window._currentConfig[section] = {};
+      window._currentConfig[section][key] = mapping;
+      configJsonBox.textContent = JSON.stringify(window._currentConfig, null, 2);
+      if (configEditArea && !configEditArea.classList.contains('hidden')) {
+        configEditArea.value = configJsonBox.textContent;
+      }
+      scheduleConfigSave();
+    });
+  });
+
   updateConfigSaveStatus();
+}
+
+/**
+ * Collect key-value pairs from a mapping editor container.
+ */
+function _collectMapping(container) {
+  var mapping = {};
+  var rows = container.querySelectorAll('.config-mapping-row');
+  rows.forEach(function(row) {
+    var k = row.querySelector('.config-mapping-key');
+    var v = row.querySelector('.config-mapping-val');
+    if (k && k.value) mapping[k.value] = v ? v.value : '';
+  });
+  return mapping;
 }
 
 function _onConfigChange(e) {
