@@ -208,7 +208,7 @@ function onConfigFieldChange(e) {
   var el = e.target;
   var section = el.getAttribute('data-section');
   var key = el.getAttribute('data-key');
-  if (!section || !key || !state.summary || !state.summary.config) return;
+  if (!section || !key) return;
 
   var val;
   if (el.type === 'checkbox') {
@@ -225,11 +225,18 @@ function onConfigFieldChange(e) {
     val = el.value;
   }
 
-  if (!state.summary.config[section]) state.summary.config[section] = {};
-  state.summary.config[section][key] = val;
+  // Parse current real config from JSON preview box
+  var config;
+  try {
+    config = JSON.parse(configJsonBox.textContent || '{}');
+  } catch (err) {
+    return;
+  }
+  if (!config[section]) config[section] = {};
+  config[section][key] = val;
 
-  // Update JSON preview
-  configJsonBox.textContent = JSON.stringify(state.summary.config, null, 2);
+  // Update JSON preview with real config
+  configJsonBox.textContent = JSON.stringify(config, null, 2);
   scheduleConfigSave();
 }
 

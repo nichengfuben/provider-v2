@@ -1,30 +1,30 @@
 function renderConfig(summary) {
+  // Fetch real config from /v1/config (matches config.toml structure)
+  fetchJson('/v1/config').then(function(config) {
+    _renderConfigData(config);
+  }).catch(function() {
+    // Fallback to summary if fetch fails
+    _renderConfigData(summary.config || {});
+  });
+}
 
-  var config = summary.config || {};
+function _renderConfigData(config) {
   var configText = JSON.stringify(config, null, 2);
   configJsonBox.textContent = configText;
   if (configEditArea && !configEditArea.classList.contains('hidden')) {
     configEditArea.value = configText;
   }
 
-  // Sections to render (skip internal/complex ones)
-  var sections = [
-    ['server', config.server || {}],
-    ['auth', config.auth || {}],
-    ['gateway', config.gateway || {}],
-    ['proxy', config.proxy || {}],
-    ['fncall', config.fncall || {}],
-    ['debug', config.debug || {}],
-    ['autoupdate', config.autoupdate || {}],
-    ['platforms', config.platforms || {}]
-  ];
-
   // Internal fields to skip
   var skipFields = ['group_list_set', 'platform_list_set', 'enabled_platforms_set', 'proxy_url_patterns', 'templates'];
 
-  configGrid.innerHTML = sections.map(function(entry) {
-    var section = entry[0];
-    var payload = entry[1];
+  // Render all top-level sections from the real config
+  var sectionNames = Object.keys(config).filter(function(s) {
+    return typeof config[s] === 'object' && config[s] !== null && !Array.isArray(config[s]);
+  });
+
+  configGrid.innerHTML = sectionNames.map(function(section) {
+    var payload = config[section] || {};
     var fields = Object.keys(payload).filter(function(key) {
       return skipFields.indexOf(key) === -1;
     }).map(function(key) {
@@ -57,4 +57,3 @@ function renderConfig(summary) {
 
   updateConfigSaveStatus();
 }
-
