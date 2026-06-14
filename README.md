@@ -18,8 +18,8 @@
 
 <div align="center">
 
-![Status](https://img.shields.io/badge/status-v2.2.74-blue)
-![Version](https://img.shields.io/badge/version-2.2.74-blue)
+![Status](https://img.shields.io/badge/status-v2.2.75-blue)
+![Version](https://img.shields.io/badge/version-2.2.75-blue)
 ![Python](https://img.shields.io/badge/python-3.8+-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Platforms](https://img.shields.io/badge/platforms-12+-orange)
@@ -1257,7 +1257,12 @@ fix(gateway): 修复并发竞速时 token 计数错误
 
 ## 🗺️ 路线图
 
-### 当前版本：v2.2.74
+### 当前版本：v2.2.75
+
+✅ 已完成（v2.2.75）：
+- WebUI 批量测试重设计为 OpenAI Batch 风格：参数表单（Temperature/MaxTokens/SystemPrompt）+ 实时流式结果展示
+- 每个 prompt 独立卡片，流式内容实时更新
+- 工具调用检测 + 最终汇总
 
 ✅ 已完成（v2.2.74）：
 - 通用逻辑下沉到 echotools：RequestStats、RequestBroker、stats_middleware 迁移到 echotools.web
