@@ -1,5 +1,21 @@
 // Chat input handled by InputBox component (input-box.js)
 
+// ========================= Tool Parameter Toggle (Global Delegate) =========================
+document.addEventListener("click", function(e) {
+  var trigger = e.target.closest(".chat-tool-dropdown-trigger");
+  if (!trigger) return;
+  var targetId = trigger.getAttribute("data-target");
+  var argsEl = document.getElementById(targetId);
+  var chevron = trigger.querySelector(".chat-tool-chevron");
+  var label = trigger.querySelector(".chat-tool-dropdown-label");
+  if (argsEl) {
+    var isHidden = argsEl.style.display === "none";
+    argsEl.style.display = isHidden ? "block" : "none";
+    trigger.setAttribute("aria-expanded", isHidden ? "true" : "false");
+    if (label) label.textContent = isHidden ? "收起参数" : "查看参数";
+    if (chevron) chevron.style.transform = isHidden ? "rotate(180deg)" : "rotate(0deg)";
+  }
+});
 
 // ========================= Code Block Rendering =========================
 /**
@@ -129,23 +145,6 @@ function finalizeStreamingMessage(toolCalls) {
     }
     toolHtml += '</div>';
     msg.innerHTML = toolHtml + '<div class="chat-assistant-text">' + renderWithCodeBlocks(content) + '</div>';
-
-    // 使用事件委托绑定下拉框事件（更可靠）
-    msg.addEventListener('click', function(e) {
-      var trigger = e.target.closest('.chat-tool-dropdown-trigger');
-      if (!trigger) return;
-      var targetId = trigger.getAttribute('data-target');
-      var argsEl = document.getElementById(targetId);
-      var chevron = trigger.querySelector('.chat-tool-chevron');
-      var label = trigger.querySelector('.chat-tool-dropdown-label');
-      if (argsEl) {
-        var isHidden = argsEl.style.display === 'none';
-        argsEl.style.display = isHidden ? 'block' : 'none';
-        trigger.setAttribute('aria-expanded', isHidden ? 'true' : 'false');
-        if (label) label.textContent = isHidden ? '收起参数' : '查看参数';
-        if (chevron) chevron.style.transform = isHidden ? 'rotate(180deg)' : 'rotate(0deg)';
-      }
-    });
   }
 
   appendMessageActions("assistant", msg);
