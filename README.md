@@ -18,8 +18,8 @@
 
 <div align="center">
 
-![Status](https://img.shields.io/badge/status-v2.2.79-blue)
-![Version](https://img.shields.io/badge/version-2.2.79-blue)
+![Status](https://img.shields.io/badge/status-v2.2.80-blue)
+![Version](https://img.shields.io/badge/version-2.2.80-blue)
 ![Python](https://img.shields.io/badge/python-3.8+-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Platforms](https://img.shields.io/badge/platforms-12+-orange)
@@ -1257,7 +1257,10 @@ fix(gateway): 修复并发竞速时 token 计数错误
 
 ## 🗺️ 路线图
 
-### 当前版本：v2.2.79
+### 当前版本：v2.2.80
+
+✅ 已完成（v2.2.80）：
+- 语音输入录音时按钮替换为波形 GIF 动画，录音结束后恢复原按钮内容
 
 ✅ 已完成（v2.2.79）：
 - 批量测试统计：首包延迟、总耗时、Tokens、TPS 实时显示

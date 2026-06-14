@@ -214,7 +214,12 @@
     }
     this._isRecording = true;
     this._audioChunks = [];
-    if (voiceBtn) voiceBtn.classList.add('ib-recording');
+    // Save original button content
+    if (voiceBtn) this._originalVoiceBtnHtml = voiceBtn.innerHTML;
+    // Replace with wave GIF
+    if (voiceBtn) {
+      voiceBtn.innerHTML = '<img src="/static/waveform_64x64.gif" alt="recording" style="width:19px;height:19px;display:block;pointer-events:none;">';
+    }
     if (this._opts.onVoiceStart) this._opts.onVoiceStart();
 
     navigator.mediaDevices.getUserMedia({ audio: true }).then(function(stream) {
@@ -228,14 +233,15 @@
       self._mediaRecorder.start();
     }).catch(function(err) {
       self._isRecording = false;
-      if (voiceBtn) voiceBtn.classList.remove('ib-recording');
+      if (voiceBtn) voiceBtn.innerHTML = self._originalVoiceBtnHtml || '';
     });
   };
 
   InputBox.prototype._stopVoice = function() {
     this._isRecording = false;
     var voiceBtn = this._el('voiceBtn');
-    if (voiceBtn) voiceBtn.classList.remove('ib-recording');
+    // Restore original button content
+    if (voiceBtn) voiceBtn.innerHTML = this._originalVoiceBtnHtml || '';
     if (this._mediaRecorder && this._mediaRecorder.state !== 'inactive') {
       this._mediaRecorder.stop();
     }
