@@ -263,7 +263,7 @@
           </div>
           <div class="flex flex-wrap gap-2">
             <button class="tab-button cursor-pointer font-bold rounded-lg px-4 py-2.5 border border-border bg-panel text-text hover:bg-panel-alt transition" id="chatClearBtn" type="button">清空对话</button>
-            <button class="tab-button cursor-pointer font-bold rounded-lg px-4 py-2.5 border border-border bg-panel text-text hover:bg-panel-alt transition" id="chatRunTestsBtn" type="button">批量测试</button>
+            <button class="tab-button cursor-pointer font-bold rounded-lg px-4 py-2.5 border border-border bg-panel text-text hover:bg-panel-alt transition" id="chatBatchToggleBtn" type="button">批量测试</button>
           </div>
         </div>
         <div class="grid gap-3 grid-cols-[repeat(auto-fit,minmax(200px,1fr))]">
@@ -281,26 +281,29 @@
             </select>
           </label>
         </div>
-        <div class="border border-border rounded-xl p-3.5 bg-panel-alt card-hover-lift">
-          <div class="text-[13px] text-muted m-0 mb-2">批量测试参数设置</div>
-          <div class="grid gap-3 grid-cols-[repeat(auto-fit,minmax(150px,1fr))]">
-            <label>
-              <div class="text-[11px] text-muted mb-1">Temperature</div>
-              <input id="batchTemperature" type="number" min="0" max="2" step="0.1" value="0.7" class="w-full rounded-lg border border-border bg-panel text-text px-2 py-1.5 text-[13px]">
-            </label>
-            <label>
-              <div class="text-[11px] text-muted mb-1">Max Tokens</div>
-              <input id="batchMaxTokens" type="number" min="1" max="8192" step="128" value="1024" class="w-full rounded-lg border border-border bg-panel text-text px-2 py-1.5 text-[13px]">
+        <div id="batchTestSection" class="hidden">
+          <div class="border border-border rounded-xl p-3.5 bg-panel-alt card-hover-lift">
+            <div class="text-[13px] text-muted m-0 mb-2">批量测试参数设置</div>
+            <div class="grid gap-3 grid-cols-[repeat(auto-fit,minmax(150px,1fr))]">
+              <label>
+                <div class="text-[11px] text-muted mb-1">Temperature</div>
+                <input id="batchTemperature" type="number" min="0" max="2" step="0.1" value="0.7" class="w-full rounded-lg border border-border bg-panel text-text px-2 py-1.5 text-[13px]">
+              </label>
+              <label>
+                <div class="text-[11px] text-muted mb-1">Max Tokens</div>
+                <input id="batchMaxTokens" type="number" min="1" max="8192" step="128" value="1024" class="w-full rounded-lg border border-border bg-panel text-text px-2 py-1.5 text-[13px]">
+              </label>
+            </div>
+            <label class="block mt-2">
+              <div class="text-[11px] text-muted mb-1">System Prompt（可选）</div>
+              <textarea id="batchSystemPrompt" rows="2" placeholder="你是一个有帮助的 AI 助手..." class="w-full rounded-lg border border-border bg-panel text-text px-2 py-1.5 text-[13px]" style="resize:vertical;font-family:inherit;"></textarea>
             </label>
           </div>
-          <label class="block mt-2">
-            <div class="text-[11px] text-muted mb-1">System Prompt（可选）</div>
-            <textarea id="batchSystemPrompt" rows="2" placeholder="你是一个有帮助的 AI 助手..." class="w-full rounded-lg border border-border bg-panel text-text px-2 py-1.5 text-[13px]" style="resize:vertical;font-family:inherit;"></textarea>
-          </label>
-        </div>
-        <div class="border border-border rounded-xl p-3.5 bg-panel-alt card-hover-lift">
-          <div class="text-[13px] text-muted m-0 mb-2">批量测试 Prompts（每行一个，留空则使用输入框内容）</div>
-          <textarea id="chatBatchPrompts" rows="3" placeholder="你好，请介绍一下你自己&#10;今天北京天气怎么样？&#10;请调用 echo 工具测试" class="w-full rounded-xl border border-border bg-panel text-text px-3 py-2.5 text-[14px]" style="resize:vertical;font-family:inherit;"></textarea>
+          <div class="border border-border rounded-xl p-3.5 bg-panel-alt card-hover-lift mt-3">
+            <div class="text-[13px] text-muted m-0 mb-2">批量测试 Prompts（每行一个，留空则使用输入框内容）</div>
+            <textarea id="chatBatchPrompts" rows="3" placeholder="你好，请介绍一下你自己&#10;今天北京天气怎么样？&#10;请调用 echo 工具测试" class="w-full rounded-xl border border-border bg-panel text-text px-3 py-2.5 text-[14px]" style="resize:vertical;font-family:inherit;"></textarea>
+            <button class="mt-2 cursor-pointer font-bold rounded-lg px-4 py-2.5 border border-accent text-accent bg-panel hover:bg-accent hover:text-white transition" id="chatRunTestsBtn" type="button">开始测试</button>
+          </div>
         </div>
         <div class="border border-border rounded-xl p-3.5 bg-panel-alt card-hover-lift" id="chatToolDefSection">
           <div class="flex flex-wrap justify-between items-center gap-2 mb-2">

@@ -133,6 +133,18 @@ if (document.getElementById('autoupdateAddMirrorBtn')) {
 // Chat InputBox initialization
 var chatClearBtn = document.getElementById('chatClearBtn');
 var chatRunTestsBtn = document.getElementById('chatRunTestsBtn');
+var chatBatchToggleBtn = document.getElementById('chatBatchToggleBtn');
+
+// Batch test section toggle
+if (chatBatchToggleBtn) {
+  chatBatchToggleBtn.addEventListener('click', function() {
+    var section = document.getElementById('batchTestSection');
+    if (section) {
+      section.classList.toggle('hidden');
+      chatBatchToggleBtn.textContent = section.classList.contains('hidden') ? '批量测试' : '收起批量测试';
+    }
+  });
+}
 
 if (typeof InputBox !== 'undefined' && document.getElementById('chatInputBox')) {
   var voiceSettings = {};
@@ -218,37 +230,29 @@ if (typeof loadChatState === 'function') {
   loadChatState();
 }
 
-// Override switchTab to add animation when switching tabs
+// Override switchTab to scroll to bottom of content container
 var originalSwitchTab = window.switchTab;
 if (typeof switchTab === 'function') {
   window.switchTab = function(tabName) {
-    var scrollTarget = document.scrollingElement || document.documentElement;
-    var startY = scrollTarget.scrollTop;
-    var startMaxScroll = Math.max(0, scrollTarget.scrollHeight - scrollTarget.clientHeight);
-
     originalSwitchTab(tabName);
 
-    // After tab switch, check if current scroll position is valid
-    var newMaxScroll = Math.max(0, scrollTarget.scrollHeight - scrollTarget.clientHeight);
-    var targetY = startY;
-
-    // If current position exceeds new content height, scroll to max valid position
-    if (startY > newMaxScroll + 10) {
-      targetY = newMaxScroll;
-    }
-
-    // Only animate if we need to scroll
-    if (Math.abs(startY - targetY) > 10) {
-      var startTime = null;
-      var duration = 300;
-      function step(ts) {
-        if (!startTime) startTime = ts;
-        var progress = Math.min((ts - startTime) / duration, 1);
-        var ease = 1 - Math.pow(1 - progress, 3); // easeOutCubic
-        scrollTarget.scrollTop = startY + (targetY - startY) * ease;
-        if (progress < 1) requestAnimationFrame(step);
+    // Scroll to bottom of the right-side content container
+    var contentContainer = document.querySelector('.webui-content');
+    if (contentContainer) {
+      var maxScroll = Math.max(0, contentContainer.scrollHeight - contentContainer.clientHeight);
+      if (maxScroll > 0) {
+        var startY = contentContainer.scrollTop;
+        var startTime = null;
+        var duration = 300;
+        function step(ts) {
+          if (!startTime) startTime = ts;
+          var progress = Math.min((ts - startTime) / duration, 1);
+          var ease = 1 - Math.pow(1 - progress, 3); // easeOutCubic
+          contentContainer.scrollTop = startY + (maxScroll - startY) * ease;
+          if (progress < 1) requestAnimationFrame(step);
+        }
+        requestAnimationFrame(step);
       }
-      requestAnimationFrame(step);
     }
 
     // Animate the newly shown tab panel

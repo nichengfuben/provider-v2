@@ -18,8 +18,8 @@
 
 <div align="center">
 
-![Status](https://img.shields.io/badge/status-v2.2.75-blue)
-![Version](https://img.shields.io/badge/version-2.2.75-blue)
+![Status](https://img.shields.io/badge/status-v2.2.76-blue)
+![Version](https://img.shields.io/badge/version-2.2.76-blue)
 ![Python](https://img.shields.io/badge/python-3.8+-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Platforms](https://img.shields.io/badge/platforms-12+-orange)
@@ -1257,7 +1257,11 @@ fix(gateway): 修复并发竞速时 token 计数错误
 
 ## 🗺️ 路线图
 
-### 当前版本：v2.2.75
+### 当前版本：v2.2.76
+
+✅ 已完成（v2.2.76）：
+- WebUI 批量测试改为点击展开模式（默认隐藏参数表单）
+- Tab 切换滚动位置修复：滚动到右侧内容容器底部而非页面顶部
 
 ✅ 已完成（v2.2.75）：
 - WebUI 批量测试重设计为 OpenAI Batch 风格：参数表单（Temperature/MaxTokens/SystemPrompt）+ 实时流式结果展示
