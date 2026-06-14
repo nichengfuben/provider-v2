@@ -8,7 +8,6 @@ import aiohttp
 
 from src.core.candidate import Candidate, make_id
 from src.core.errors import NotSupportedError
-from ..accounts import API_KEYS
 from .constants import BASE_URL, CAPS, GENERATE_PATH, MODELS, VOICES
 from .headers import build_headers
 from .tts import (
@@ -36,7 +35,7 @@ class OpenaiFmClient:
         logger.info("openaifm 初始化完成，候选项: %d 个", len(self._candidates))
 
     def _rebuild_candidates(self) -> None:
-        """构建候选项（单候选项，无需认证）。"""
+        """构建候选项（单候选项，无需认证，不依赖 accounts.py）。"""
         self._candidates = [
             Candidate(
                 id=make_id("openaifm", "openaifm"),
@@ -46,8 +45,6 @@ class OpenaiFmClient:
                 meta={},
                 **CAPS,
             )
-            for _ in API_KEYS
-            if _
         ]
 
     async def candidates(self) -> List[Candidate]:

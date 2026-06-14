@@ -18,8 +18,8 @@
 
 <div align="center">
 
-![Status](https://img.shields.io/badge/status-v2.2.92-blue)
-![Version](https://img.shields.io/badge/version-2.2.92-blue)
+![Status](https://img.shields.io/badge/status-v2.2.93-blue)
+![Version](https://img.shields.io/badge/version-2.2.93-blue)
 ![Python](https://img.shields.io/badge/python-3.8+-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Platforms](https://img.shields.io/badge/platforms-12+-orange)
@@ -1257,7 +1257,10 @@ fix(gateway): 修复并发竞速时 token 计数错误
 
 ## 🗺️ 路线图
 
-### 当前版本：v2.2.92
+### 当前版本：v2.2.93
+
+✅ 已完成（v2.2.93）：
+- openaifm 候选项构建移除对 accounts.py（gitignored）的依赖，始终生成 1 个候选项
 
 ✅ 已完成（v2.2.92）：
 - openaifm 平台修复：无需认证（单占位候选项）、表单字段修正（input/prompt/voice/vibe）、multipart/form-data、移除无效 auth
