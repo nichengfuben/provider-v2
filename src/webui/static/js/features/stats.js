@@ -11,24 +11,23 @@
 var StatsFeature = (function () {
   var _container = null;
   var _timer = null;
-  var _interval = 5000;
+  var _interval = 3000;
 
   function init() {
     _container = document.getElementById('statsGrid');
     if (!_container) return;
-    Router.register('stats', {
-      activate: function () { refresh(); startAutoRefresh(); },
-      deactivate: stopAutoRefresh,
-    });
-  }
-
-  function startAutoRefresh() {
-    stopAutoRefresh();
-    _timer = setInterval(refresh, _interval);
-  }
-
-  function stopAutoRefresh() {
-    if (_timer) { clearInterval(_timer); _timer = null; }
+    // Poll: refresh when stats tab is visible
+    _timer = setInterval(function () {
+      var panel = document.getElementById('tab-stats');
+      if (panel && panel.classList.contains('active')) {
+        refresh();
+      }
+    }, _interval);
+    // Initial refresh if already visible
+    var panel = document.getElementById('tab-stats');
+    if (panel && panel.classList.contains('active')) {
+      refresh();
+    }
   }
 
   async function refresh() {
