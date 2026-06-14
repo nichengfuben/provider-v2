@@ -18,8 +18,8 @@
 
 <div align="center">
 
-![Status](https://img.shields.io/badge/status-v2.2.73-blue)
-![Version](https://img.shields.io/badge/version-2.2.73-blue)
+![Status](https://img.shields.io/badge/status-v2.2.74-blue)
+![Version](https://img.shields.io/badge/version-2.2.74-blue)
 ![Python](https://img.shields.io/badge/python-3.8+-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Platforms](https://img.shields.io/badge/platforms-12+-orange)
@@ -1257,7 +1257,12 @@ fix(gateway): 修复并发竞速时 token 计数错误
 
 ## 🗺️ 路线图
 
-### 当前版本：v2.2.73
+### 当前版本：v2.2.74
+
+✅ 已完成（v2.2.74）：
+- 通用逻辑下沉到 echotools：RequestStats、RequestBroker、stats_middleware 迁移到 echotools.web
+- provider-self 改为 echotools 薄包装（re-export），减少约 400 行重复代码
+- echotools 升级至 1.0.17
 
 ✅ 已完成（v2.2.73）：
 - WebUI 批量测试：多行文本框输入多个 prompt，顺序提交并展示每个结果
