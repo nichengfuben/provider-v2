@@ -18,8 +18,8 @@
 
 <div align="center">
 
-![Status](https://img.shields.io/badge/status-v2.2.77-blue)
-![Version](https://img.shields.io/badge/version-2.2.77-blue)
+![Status](https://img.shields.io/badge/status-v2.2.78-blue)
+![Version](https://img.shields.io/badge/version-2.2.78-blue)
 ![Python](https://img.shields.io/badge/python-3.8+-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Platforms](https://img.shields.io/badge/platforms-12+-orange)
@@ -1257,7 +1257,11 @@ fix(gateway): 修复并发竞速时 token 计数错误
 
 ## 🗺️ 路线图
 
-### 当前版本：v2.2.77
+### 当前版本：v2.2.78
+
+✅ 已完成（v2.2.78）：
+- 配置 Tab 补全：新增 fncall 和 autoupdate 段，debug 段补充 color/access_log
+- WebUI 自动滑动修复：.webui-content 改为滚动容器，切换 Tab 时滚动到顶部
 
 ✅ 已完成（v2.2.77）：
 - 批量测试工具定义生效：自动收集工具定义并注入请求

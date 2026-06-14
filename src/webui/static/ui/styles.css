@@ -53,7 +53,7 @@ body { margin: 0; font-family: Arial, sans-serif;
 .sidebar-nav-item:hover { background: var(--panel-alt); }
 .sidebar-nav-item.active { background: var(--accent-soft); color: var(--accent);
   border-color: transparent; border-left-color: var(--accent); }
-.webui-content { padding: 14px; min-width: 0; contain: layout style; }
+.webui-content { padding: 14px; min-width: 0; overflow-y: auto; max-height: calc(100vh - 200px); }
 #mainTabSection { contain: layout style; overflow: hidden; }
 /* Chat input container */
 #chatInputViewport {

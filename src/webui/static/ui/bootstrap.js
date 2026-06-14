@@ -230,29 +230,16 @@ if (typeof loadChatState === 'function') {
   loadChatState();
 }
 
-// Override switchTab to scroll to bottom of content container
+// Override switchTab to scroll to top of content container
 var originalSwitchTab = window.switchTab;
 if (typeof switchTab === 'function') {
   window.switchTab = function(tabName) {
     originalSwitchTab(tabName);
 
-    // Scroll to bottom of the right-side content container
+    // Scroll to top of the right-side content container
     var contentContainer = document.querySelector('.webui-content');
     if (contentContainer) {
-      var maxScroll = Math.max(0, contentContainer.scrollHeight - contentContainer.clientHeight);
-      if (maxScroll > 0) {
-        var startY = contentContainer.scrollTop;
-        var startTime = null;
-        var duration = 300;
-        function step(ts) {
-          if (!startTime) startTime = ts;
-          var progress = Math.min((ts - startTime) / duration, 1);
-          var ease = 1 - Math.pow(1 - progress, 3); // easeOutCubic
-          contentContainer.scrollTop = startY + (maxScroll - startY) * ease;
-          if (progress < 1) requestAnimationFrame(step);
-        }
-        requestAnimationFrame(step);
-      }
+      contentContainer.scrollTop = 0;
     }
 
     // Animate the newly shown tab panel
