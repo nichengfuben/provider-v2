@@ -275,47 +275,29 @@ async function loadAutoupdateSettings() {
   }
 }
 
+var _mirrorList = null;
+
 function _renderMirrors(mirrors) {
   var list = document.getElementById('autoupdateMirrorsList');
   if (!list) return;
-  if (!mirrors.length) {
-    list.innerHTML = '<div class="text-[12px] text-muted">No mirrors configured</div>';
-    return;
+  if (!_mirrorList) {
+    _mirrorList = new SortableList(list, {
+      renderItem: function(value, index) {
+        return '<input type="text" class="config-input mirror-url" value="' + escapeHtml(value) + '" style="width:100%;">';
+      },
+      getItemValue: function(el, index) {
+        var inp = el.querySelector('.mirror-url');
+        return inp ? inp.value.trim() : '';
+      },
+      onChange: function() { /* items changed, will be collected on save */ },
+      placeholder: 'No mirrors configured',
+    });
   }
-  list.innerHTML = mirrors.map(function(m, i) {
-    return '<div class="mirror-item" style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">'
-      + '<input type="number" class="config-input mirror-priority" value="' + (i+1) + '" min="1" max="' + mirrors.length + '" step="1" style="width:50px;text-align:center;" data-index="' + i + '">'
-      + '<input type="text" class="config-input mirror-url" value="' + escapeHtml(m) + '" style="flex:1;">'
-      + '<button type="button" class="text-[12px] text-err hover:underline mirror-remove" data-index="' + i + '">remove</button>'
-      + '</div>';
-  }).join('');
-  // Bind priority change
-  list.querySelectorAll('.mirror-priority').forEach(function(inp) {
-    inp.addEventListener('change', function() {
-      var inputs = list.querySelectorAll('.mirror-url');
-      var arr = [];
-      inputs.forEach(function(inp) { if (inp.value.trim()) arr.push(inp.value.trim()); });
-      var oldIndex = parseInt(inp.dataset.index);
-      var newIndex = Math.max(0, Math.min(arr.length - 1, parseInt(inp.value) - 1));
-      if (oldIndex !== newIndex && newIndex >= 0 && newIndex < arr.length) {
-        var item = arr.splice(oldIndex, 1)[0];
-        arr.splice(newIndex, 0, item);
-        _renderMirrors(arr);
-      }
-    });
-  });
-  // Bind remove buttons
-  list.querySelectorAll('.mirror-remove').forEach(function(btn) {
-    btn.addEventListener('click', function() {
-      var inputs = list.querySelectorAll('.mirror-url');
-      var arr = [];
-      inputs.forEach(function(inp, idx) { if (idx !== parseInt(btn.dataset.index)) arr.push(inp.value); });
-      _renderMirrors(arr);
-    });
-  });
+  _mirrorList.setItems(mirrors);
 }
 
 function _getMirrorsFromUI() {
+  if (_mirrorList) return _mirrorList.getItems().filter(function(v) { return v; });
   var inputs = document.querySelectorAll('#autoupdateMirrorsList .mirror-url');
   var arr = [];
   inputs.forEach(function(inp) { if (inp.value.trim()) arr.push(inp.value.trim()); });
