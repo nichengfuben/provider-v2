@@ -152,6 +152,8 @@ async function saveConfig() {
       updateConfigSaveStatus();
       toast('配置已保存并重新加载', 'ok');
       log('配置已保存并重新加载。');
+      // Prevent renderConfig from re-fetching and overwriting the form
+      if (typeof _skipNextConfigRender !== 'undefined') _skipNextConfigRender = true;
       await refreshAll();
     } else {
       toast('保存失败：' + (result.error || '未知错误'), 'error');

@@ -242,7 +242,15 @@ function _renderAnthropicSection(cfg) {
 
 // ========================= Main Render =========================
 
+// Track whether config has been freshly loaded (avoid re-render loop after save)
+var _skipNextConfigRender = false;
+
 function renderConfig(summary) {
+  // Don't re-render if user has unsaved edits
+  if (state.configDirty) return;
+  // Skip re-render triggered by refreshAll after saveConfig (data already correct)
+  if (_skipNextConfigRender) { _skipNextConfigRender = false; return; }
+
   fetchJson('/v1/config').then(function(config) {
     _renderConfigData(config);
   }).catch(function() {

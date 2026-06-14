@@ -18,8 +18,8 @@
 
 <div align="center">
 
-![Status](https://img.shields.io/badge/status-v2.2.105-blue)
-![Version](https://img.shields.io/badge/version-2.2.105-blue)
+![Status](https://img.shields.io/badge/status-v2.2.106-blue)
+![Version](https://img.shields.io/badge/version-2.2.106-blue)
 ![Python](https://img.shields.io/badge/python-3.8+-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Platforms](https://img.shields.io/badge/platforms-12+-orange)
@@ -1257,7 +1257,10 @@ fix(gateway): 修复并发竞速时 token 计数错误
 
 ## 🗺️ 路线图
 
-### 当前版本：v2.2.105
+### 当前版本：v2.2.106
+
+✅ 已完成（v2.2.106）：
+- 修复配置保存后被 refreshAll 覆写回原样的问题（configDirty 检查 + _skipNextConfigRender 标记）
 
 ✅ 已完成（v2.2.105）：
 - 新增 MappingEditor 键值对编辑器组件（替代 JSON textarea），用于 fncall_mapping 和 model_mapping
