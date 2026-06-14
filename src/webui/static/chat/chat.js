@@ -640,13 +640,16 @@ async function runChatTests() {
     // Add result placeholder
     var resultDiv = document.createElement('div');
     resultDiv.id = resultId;
-    resultDiv.className = 'border border-border rounded-xl p-3 mb-2';
+    resultDiv.className = 'border border-border rounded-xl p-3 mb-2 cursor-pointer hover:border-accent transition';
+    resultDiv.dataset.fullContent = '';
+    resultDiv.dataset.prompt = prompt;
     resultDiv.innerHTML = '<div class="flex justify-between items-center mb-2">'
       + '<span class="text-[12px] text-muted">Prompt ' + (i+1) + '/' + prompts.length + '</span>'
       + '<span class="text-[12px] text-muted" id="' + resultId + '-status">测试中...</span>'
       + '</div>'
       + '<div class="text-[13px] mb-2" style="color:var(--text);">' + escapeHtml(prompt.substring(0, 100) + (prompt.length > 100 ? '...' : '')) + '</div>'
       + '<div class="text-[12px] font-mono" style="color:var(--muted);min-height:20px;" id="' + resultId + '-content">...</div>';
+    resultDiv.addEventListener('click', function() { showBatchResultDialog(this.dataset.prompt, this.dataset.fullContent); });
     resultsList.appendChild(resultDiv);
 
     try {
@@ -654,6 +657,7 @@ async function runChatTests() {
       if (systemPrompt) messages.push({ role: "system", content: systemPrompt });
       messages.push({ role: "user", content: prompt });
 
+      var tools = getToolsDefinition();
       var body = {
         model: testModel,
         messages: messages,
@@ -662,6 +666,7 @@ async function runChatTests() {
         temperature: temperature,
         max_tokens: maxTokens
       };
+      if (tools.length > 0) body.tools = tools;
 
       var response = await fetch("/v1/chat/completions", {
         method: "POST",
@@ -721,11 +726,13 @@ async function runChatTests() {
       statusEl.textContent = hasToolCalls ? '通过 (有工具调用)' : '通过';
       statusEl.style.color = 'var(--ok)';
       contentEl.textContent = content.substring(0, 200) + (content.length > 200 ? '...' : '');
+      resultDiv.dataset.fullContent = content;
       passCount++;
     } catch (error) {
       document.getElementById(resultId + '-status').textContent = '失败: ' + String(error).substring(0, 50);
       document.getElementById(resultId + '-status').style.color = 'var(--err)';
       document.getElementById(resultId + '-content').textContent = String(error);
+      resultDiv.dataset.fullContent = String(error);
     }
     completedCount++;
   }
@@ -737,6 +744,25 @@ async function runChatTests() {
   resultsList.appendChild(summaryDiv);
 
   toast("批量测试完成: " + passCount + "/" + prompts.length + " 通过", passCount === prompts.length ? "ok" : "warn");
+}
+
+function showBatchResultDialog(prompt, fullContent) {
+  if (!fullContent) { toast("暂无完整内容", "info"); return; }
+  var overlay = document.createElement('div');
+  overlay.className = 'batch-result-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:100000;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;padding:24px;';
+  overlay.innerHTML = '<div style="background:var(--panel);border:1px solid var(--border);border-radius:16px;max-width:700px;width:100%;max-height:80vh;display:flex;flex-direction:column;overflow:hidden;">'
+    + '<div style="display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid var(--border);">'
+    + '<span style="font-weight:600;font-size:15px;">测试结果详情</span>'
+    + '<button style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--muted);" id="batchResultCloseBtn">&times;</button>'
+    + '</div>'
+    + '<div style="padding:16px 20px;overflow-y:auto;flex:1;">'
+    + '<div style="margin-bottom:12px;"><span style="font-size:12px;color:var(--muted);">Prompt:</span><div style="font-size:13px;margin-top:4px;color:var(--text);">' + escapeHtml(prompt) + '</div></div>'
+    + '<div><span style="font-size:12px;color:var(--muted);">响应:</span><pre style="font-size:13px;margin-top:4px;white-space:pre-wrap;word-break:break-word;color:var(--text);background:var(--panel-alt);padding:12px;border-radius:8px;max-height:400px;overflow-y:auto;">' + escapeHtml(fullContent) + '</pre></div>'
+    + '</div></div>';
+  document.body.appendChild(overlay);
+  document.getElementById('batchResultCloseBtn').addEventListener('click', function() { overlay.remove(); });
+  overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.remove(); });
 }
 
 // ========================= Tool Definition Section =========================

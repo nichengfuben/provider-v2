@@ -304,6 +304,7 @@
             <textarea id="chatBatchPrompts" rows="3" placeholder="你好，请介绍一下你自己&#10;今天北京天气怎么样？&#10;请调用 echo 工具测试" class="w-full rounded-xl border border-border bg-panel text-text px-3 py-2.5 text-[14px]" style="resize:vertical;font-family:inherit;"></textarea>
             <button class="mt-2 cursor-pointer font-bold rounded-lg px-4 py-2.5 border border-accent text-accent bg-panel hover:bg-accent hover:text-white transition" id="chatRunTestsBtn" type="button">开始测试</button>
           </div>
+          <div id="chatTestReport" class="hidden mt-3"></div>
         </div>
         <div class="border border-border rounded-xl p-3.5 bg-panel-alt card-hover-lift" id="chatToolDefSection">
           <div class="flex flex-wrap justify-between items-center gap-2 mb-2">
@@ -333,7 +334,6 @@
           </template>
         </div>
         <div class="border border-border rounded-xl p-3.5 bg-panel-alt min-h-[300px] max-h-[500px] overflow-auto card-hover-lift" id="chatMessagesContainer"></div>
-        <div id="chatTestReport" class="hidden"></div>
         <section class="w-full" id="chatInputSection">
           <div id="chatInputBox"></div>
         </section>

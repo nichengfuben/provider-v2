@@ -18,8 +18,8 @@
 
 <div align="center">
 
-![Status](https://img.shields.io/badge/status-v2.2.76-blue)
-![Version](https://img.shields.io/badge/version-2.2.76-blue)
+![Status](https://img.shields.io/badge/status-v2.2.77-blue)
+![Version](https://img.shields.io/badge/version-2.2.77-blue)
 ![Python](https://img.shields.io/badge/python-3.8+-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Platforms](https://img.shields.io/badge/platforms-12+-orange)
@@ -1257,7 +1257,12 @@ fix(gateway): 修复并发竞速时 token 计数错误
 
 ## 🗺️ 路线图
 
-### 当前版本：v2.2.76
+### 当前版本：v2.2.77
+
+✅ 已完成（v2.2.77）：
+- 批量测试工具定义生效：自动收集工具定义并注入请求
+- 批量测试结果卡片可点击展开详情对话框（显示完整 Prompt + 响应）
+- chatTestReport 移入 batchTestSection 内部，收起时一并隐藏
 
 ✅ 已完成（v2.2.76）：
 - WebUI 批量测试改为点击展开模式（默认隐藏参数表单）
