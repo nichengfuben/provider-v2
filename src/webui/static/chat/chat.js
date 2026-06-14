@@ -428,15 +428,20 @@ async function sendChatMessage(text, files) {
 
   try {
     var tools = getToolsDefinition();
+    var historySlice = chatConversationHistory.slice(-20);
     var body = {
       model: model,
-      messages: chatConversationHistory.slice(-20),
+      messages: historySlice,
       stream: true,
       protocol: protocol
     };
     if (tools.length > 0) {
       body.tools = tools;
     }
+
+    // Debug: log conversation history state
+    var roleSummary = historySlice.map(function(m) { return m.role; }).join(', ');
+    log('发送 ' + historySlice.length + ' 条消息 [' + roleSummary + ']');
 
     // 创建超时控制器（默认 120 秒）
     var timeoutMs = 120000;
@@ -480,6 +485,7 @@ async function sendChatMessage(text, files) {
     var decoder = new TextDecoder();
     var buffer = "";
     var assistantContent = "";
+    var reasoningContent = "";
     var toolCalls = [];
     var currentToolCall = null;
     var assistantAdded = false; // 标记助手消息是否已添加到历史
@@ -521,6 +527,10 @@ async function sendChatMessage(text, files) {
               updateStreamingMessage(assistantContent);
             }
 
+            if (delta.reasoning_content) {
+              reasoningContent += delta.reasoning_content;
+            }
+
             if (delta.tool_calls && delta.tool_calls.length > 0) {
               for (var k = 0; k < delta.tool_calls.length; k++) {
                 var tc = delta.tool_calls[k];
@@ -536,8 +546,11 @@ async function sendChatMessage(text, files) {
 
             if (choice.finish_reason) {
               finalizeStreamingMessage(toolCalls);
+              var assistantMsg = { role: "assistant", content: assistantContent };
+              if (reasoningContent) assistantMsg.reasoning_content = reasoningContent;
               if (toolCalls.length > 0) {
-                chatConversationHistory.push({ role: "assistant", content: assistantContent, tool_calls: toolCalls });
+                assistantMsg.tool_calls = toolCalls;
+                chatConversationHistory.push(assistantMsg);
                 // Inject synthetic tool results (WebUI doesn't execute tools)
                 for (var ti = 0; ti < toolCalls.length; ti++) {
                   chatConversationHistory.push({
@@ -547,9 +560,10 @@ async function sendChatMessage(text, files) {
                   });
                 }
               } else {
-                chatConversationHistory.push({ role: "assistant", content: assistantContent });
+                chatConversationHistory.push(assistantMsg);
               }
               assistantAdded = true;
+              log('助手回复已保存 (' + assistantContent.length + ' chars' + (reasoningContent ? ', ' + reasoningContent.length + ' thinking' : '') + ')');
             }
           }
         } catch (parseError) {
@@ -561,9 +575,11 @@ async function sendChatMessage(text, files) {
     // 如果流结束但助手消息未添加到历史（某些服务器不发送 finish_reason），手动添加
     if (!assistantAdded && (assistantContent || toolCalls.length > 0)) {
       finalizeStreamingMessage(toolCalls);
+      var fallbackMsg = { role: "assistant", content: assistantContent };
+      if (reasoningContent) fallbackMsg.reasoning_content = reasoningContent;
       if (toolCalls.length > 0) {
-        chatConversationHistory.push({ role: "assistant", content: assistantContent, tool_calls: toolCalls });
-        // Inject synthetic tool results (WebUI doesn't execute tools)
+        fallbackMsg.tool_calls = toolCalls;
+        chatConversationHistory.push(fallbackMsg);
         for (var ti = 0; ti < toolCalls.length; ti++) {
           chatConversationHistory.push({
             role: "tool",
@@ -572,7 +588,7 @@ async function sendChatMessage(text, files) {
           });
         }
       } else {
-        chatConversationHistory.push({ role: "assistant", content: assistantContent });
+        chatConversationHistory.push(fallbackMsg);
       }
     }
 
