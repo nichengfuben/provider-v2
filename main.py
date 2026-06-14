@@ -75,6 +75,16 @@ async def _run() -> None:
     app = await create_app(registry, session)
     import logging as _logging
     _access_log = _logging.getLogger("aiohttp.access") if cfg.debug.access_log else None
+
+    # 启动前检查端口占用，按配置强制释放
+    from src.core.process import ensure_port_available
+    port_result = ensure_port_available(port, cfg.server.startup_force_kill_port)
+    if port_result.occupied and not port_result.released:
+        logger.error(
+            "端口 %d 被占用 (PIDs: %s)，startup_force_kill_port=false 未强制释放",
+            port, port_result.pids,
+        )
+
     runner = aiohttp.web.AppRunner(app, access_log=_access_log)
     await runner.setup()
     site = aiohttp.web.TCPSite(runner, host, port)
