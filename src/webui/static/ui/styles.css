@@ -910,6 +910,14 @@ section.tab-panel > * {
 .toggle-slider::before { content: ""; position: absolute; height: 14px; width: 14px; left: 3px; bottom: 3px; background: #fff; border-radius: 50%; transition: transform 0.2s; }
 .config-toggle input:checked + .toggle-slider { background: var(--accent); }
 .config-toggle input:checked + .toggle-slider::before { transform: translateX(16px); }
+.config-readonly { font-size: 13px; color: var(--muted); font-family: monospace; }
+.config-list { width: 100%; }
+.config-list-item { display: flex; align-items: center; gap: 4px; margin-bottom: 4px; }
+.config-list-input { flex: 1; width: auto; }
+.config-list-remove { background: none; border: none; color: var(--err); cursor: pointer; font-size: 16px; padding: 2px 6px; border-radius: 4px; }
+.config-list-remove:hover { background: rgba(238,85,85,0.1); }
+.config-list-add { background: none; border: 1px dashed var(--border); color: var(--accent); cursor: pointer; font-size: 12px; padding: 4px 10px; border-radius: 6px; margin-top: 4px; }
+.config-list-add:hover { border-color: var(--accent); background: var(--accent-soft); }
 
 /* ========== Request Inspector ========== */
 .req-item { display: flex; align-items: center; gap: 8px; padding: 6px 10px; cursor: pointer; border-bottom: 1px solid var(--border); font-size: 13px; }

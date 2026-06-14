@@ -136,6 +136,8 @@ async function saveConfig() {
     let configData;
     if (configEditArea && !configEditArea.classList.contains('hidden')) {
       configData = JSON.parse(configEditArea.value);
+    } else if (window._currentConfig) {
+      configData = window._currentConfig;
     } else {
       configData = JSON.parse(configJsonBox.textContent || '{}');
     }
@@ -205,39 +207,8 @@ async function reloadConfigFromFile() {
 }
 
 function onConfigFieldChange(e) {
-  var el = e.target;
-  var section = el.getAttribute('data-section');
-  var key = el.getAttribute('data-key');
-  if (!section || !key) return;
-
-  var val;
-  if (el.type === 'checkbox') {
-    val = el.checked;
-  } else if (el.type === 'number') {
-    val = parseInt(el.value, 10) || 0;
-  } else if (el.tagName === 'TEXTAREA') {
-    try {
-      val = JSON.parse(el.value);
-    } catch (err) {
-      return; // invalid JSON, skip update
-    }
-  } else {
-    val = el.value;
-  }
-
-  // Parse current real config from JSON preview box
-  var config;
-  try {
-    config = JSON.parse(configJsonBox.textContent || '{}');
-  } catch (err) {
-    return;
-  }
-  if (!config[section]) config[section] = {};
-  config[section][key] = val;
-
-  // Update JSON preview with real config
-  configJsonBox.textContent = JSON.stringify(config, null, 2);
-  scheduleConfigSave();
+  // Config field changes are now handled by _onConfigChange in render.js
+  // This function is kept for backward compatibility but is a no-op
 }
 
 function toggleConfigEdit() {

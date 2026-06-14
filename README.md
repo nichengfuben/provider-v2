@@ -18,8 +18,8 @@
 
 <div align="center">
 
-![Status](https://img.shields.io/badge/status-v2.2.101-blue)
-![Version](https://img.shields.io/badge/version-2.2.101-blue)
+![Status](https://img.shields.io/badge/status-v2.2.102-blue)
+![Version](https://img.shields.io/badge/version-2.2.102-blue)
 ![Python](https://img.shields.io/badge/python-3.8+-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Platforms](https://img.shields.io/badge/platforms-12+-orange)
@@ -1257,7 +1257,10 @@ fix(gateway): 修复并发竞速时 token 计数错误
 
 ## 🗺️ 路线图
 
-### 当前版本：v2.2.101
+### 当前版本：v2.2.102
+
+✅ 已完成（v2.2.102）：
+- 配置标签页重写为组件化架构：Toggle/Number/Text/Select/StringList/JsonEditor 六种组件，每个配置段独立渲染器
 
 ✅ 已完成（v2.2.101）：
 - config_get 添加 tomli 回退兼容 Python < 3.11
