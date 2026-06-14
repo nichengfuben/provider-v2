@@ -576,6 +576,9 @@ async def _stream_messages(
         if tag_idx != -1:
             safe_part = text_buffer[:tag_idx]
             if safe_part:
+                _log_chunks = request.get("_req_log_chunks")
+                if _log_chunks is not None:
+                    _log_chunks.append(safe_part)
                 await _write_event(
                     resp,
                     "content_block_delta",
@@ -596,6 +599,9 @@ async def _stream_messages(
         # 提取安全可输出部分
         safe_part, text_buffer = _safe_flush(text_buffer, platform_id=platform_id)
         if safe_part:
+            _log_chunks = request.get("_req_log_chunks")
+            if _log_chunks is not None:
+                _log_chunks.append(safe_part)
             await _write_event(
                 resp,
                 "content_block_delta",

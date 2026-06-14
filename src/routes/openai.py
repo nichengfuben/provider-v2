@@ -487,6 +487,9 @@ async def _stream_chat(
 
                 safe_part, buffer = _safe_flush(buffer, platform_id=platform_id, protocol_id=proto_override)
                 if safe_part:
+                    _log_chunks = request.get("_req_log_chunks")
+                    if _log_chunks is not None:
+                        _log_chunks.append(safe_part)
                     await _send_init()
                     chunk_data = {
                         "id": cid,

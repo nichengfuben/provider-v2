@@ -1,5 +1,5 @@
 [server]
-version = "2.2.82"
+version = "2.2.83"
 host = "0.0.0.0"
 port = 1337
 debug = false
@@ -48,7 +48,7 @@ access_log = false
 enabled = false
 branch = "dev"
 interval = 300
-diff_update = true
+diff_update = false
 mirrors = ["https://github.com/"]
 
 [anthropic.model_mapping]
