@@ -2,6 +2,7 @@ from __future__ import annotations
 
 """请求统计中间件 — 自动记录每次 API 请求的指标 + 请求日志广播。"""
 
+import json
 import time
 import uuid
 from typing import Callable
@@ -65,6 +66,39 @@ async def stats_middleware(
         status = response.status
         if hasattr(response, "_platform"):
             platform = response._platform
+
+        # Wrap response.write to capture streaming chunks
+        if hasattr(response, 'write') and body_info.get("stream"):
+            original_write = response.write
+
+            async def wrapped_write(data: bytes) -> None:
+                await original_write(data)
+                # Broadcast chunk (decode bytes to string, extract content from SSE)
+                try:
+                    text = data.decode("utf-8", errors="replace")
+                    # Extract content from SSE data lines
+                    for line in text.split("\n"):
+                        line = line.strip()
+                        if line.startswith("data: ") and line != "data: [DONE]":
+                            try:
+                                chunk = json.loads(line[6:])
+                                choices = chunk.get("choices", [])
+                                for choice in choices:
+                                    delta = choice.get("delta", {})
+                                    content = delta.get("content", "")
+                                    if content:
+                                        request_broker.push_event({
+                                            "type": "request_chunk",
+                                            "id": req_id,
+                                            "delta": content,
+                                        })
+                            except Exception:
+                                pass
+                except Exception:
+                    pass
+
+            response.write = wrapped_write
+
         return response
     except aiohttp.web.HTTPException as exc:
         status = exc.status

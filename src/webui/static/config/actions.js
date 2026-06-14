@@ -378,9 +378,33 @@ function _showCheckResults(d) {
   statusEl.textContent = d.changed_count + ' file(s) changed';
   statusEl.style.color = 'var(--warn)';
   metaEl.textContent = (d.local_hash || '?') + ' -> ' + (d.remote_hash || '?') + ' (mirror: ' + (d.mirror || '') + ')';
-  filesEl.innerHTML = (d.changed_files || []).map(function(f) {
-    return '<div style="padding:1px 0;">' + escapeHtml(f) + '</div>';
+
+  var files = d.changed_files || [];
+  var filesHtml = '<div class="flex gap-2 mb-2">';
+  filesHtml += '<button type="button" class="text-[12px] text-accent hover:underline cursor-pointer" id="autoupdateSelectAllBtn">全选</button>';
+  filesHtml += '<button type="button" class="text-[12px] text-muted hover:underline cursor-pointer" id="autoupdateSelectNoneBtn">取消全选</button>';
+  filesHtml += '</div>';
+  filesHtml += files.map(function(f) {
+    return '<label class="flex items-center gap-2" style="padding:2px 0;cursor:pointer;">'
+      + '<input type="checkbox" class="autoupdate-file-check" value="' + escapeHtml(f) + '" checked>'
+      + '<span class="text-[12px] font-mono">' + escapeHtml(f) + '</span>'
+      + '</label>';
   }).join('');
+  filesEl.innerHTML = filesHtml;
+
+  // Bind select all/none
+  var selectAllBtn = document.getElementById('autoupdateSelectAllBtn');
+  var selectNoneBtn = document.getElementById('autoupdateSelectNoneBtn');
+  if (selectAllBtn) {
+    selectAllBtn.addEventListener('click', function() {
+      filesEl.querySelectorAll('.autoupdate-file-check').forEach(function(cb) { cb.checked = true; });
+    });
+  }
+  if (selectNoneBtn) {
+    selectNoneBtn.addEventListener('click', function() {
+      filesEl.querySelectorAll('.autoupdate-file-check').forEach(function(cb) { cb.checked = false; });
+    });
+  }
   if (applyBtn) applyBtn.classList.remove('hidden');
 }
 
@@ -407,13 +431,27 @@ async function triggerAutoupdateCheck() {
 
 async function applyAutoupdate() {
   try {
-    var confirmed = await showConfirmDialog('确定要应用更新吗？更新后需要重启服务才能生效。');
+    // Collect selected files
+    var checkboxes = document.querySelectorAll('.autoupdate-file-check:checked');
+    var selectedFiles = [];
+    checkboxes.forEach(function(cb) { selectedFiles.push(cb.value); });
+
+    if (selectedFiles.length === 0) {
+      toast('请至少选择一个要更新的文件', 'warn');
+      return;
+    }
+
+    var confirmed = await showConfirmDialog('确定要应用 ' + selectedFiles.length + ' 个文件的更新吗？更新后需要重启服务才能生效。');
     if (!confirmed) return;
-    toast('正在应用更新...', 'info');
-    var resp = await fetch('/v1/admin/autoupdate/apply', { method: 'POST' });
+    toast('正在应用 ' + selectedFiles.length + ' 个文件的更新...', 'info');
+    var resp = await fetch('/v1/admin/autoupdate/apply', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ files: selectedFiles })
+    });
     var data = await resp.json();
     if (data.success) {
-      toast('更新已应用，请重启服务', 'ok');
+      toast('更新已应用 ' + selectedFiles.length + ' 个文件，请重启服务', 'ok');
       var applyBtn = document.getElementById('autoupdateApplyBtn');
       if (applyBtn) applyBtn.classList.add('hidden');
     } else {

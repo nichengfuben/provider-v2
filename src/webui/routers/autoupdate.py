@@ -198,14 +198,26 @@ async def autoupdate_check(request: aiohttp.web.Request) -> aiohttp.web.Response
 
 
 async def autoupdate_apply(request: aiohttp.web.Request) -> aiohttp.web.Response:
-    """POST /v1/admin/autoupdate/apply — 应用更新（差异或全量）。"""
+    """POST /v1/admin/autoupdate/apply — 应用更新（差异或全量）。
+
+    可选 body: {"files": ["file1.py", "file2.py"]} 仅更新指定文件。
+    """
     try:
+        body = {}
+        try:
+            body = await request.json()
+        except Exception:
+            pass
+
         cfg = get_config().autoupdate
         branch = cfg.branch
+        selected_files = body.get("files")  # None = all files
 
         if cfg.diff_update and _last_check.get("changed_files"):
-            # 差异更新：仅 checkout 变更文件
-            files = _last_check["changed_files"]
+            # 差异更新：仅 checkout 选中的变更文件
+            files = selected_files if selected_files is not None else _last_check["changed_files"]
+            if not files:
+                return aiohttp.web.json_response({"success": False, "error": "No files selected"})
             ok, out, err = await _run_git(
                 "checkout", "origin/{}".format(branch), "--", *files, timeout=60
             )

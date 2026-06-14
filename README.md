@@ -18,8 +18,8 @@
 
 <div align="center">
 
-![Status](https://img.shields.io/badge/status-v2.2.72-blue)
-![Version](https://img.shields.io/badge/version-2.2.72-blue)
+![Status](https://img.shields.io/badge/status-v2.2.73-blue)
+![Version](https://img.shields.io/badge/version-2.2.73-blue)
 ![Python](https://img.shields.io/badge/python-3.8+-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Platforms](https://img.shields.io/badge/platforms-12+-orange)
@@ -1257,7 +1257,13 @@ fix(gateway): 修复并发竞速时 token 计数错误
 
 ## 🗺️ 路线图
 
-### 当前版本：v2.2.72
+### 当前版本：v2.2.73
+
+✅ 已完成（v2.2.73）：
+- WebUI 批量测试：多行文本框输入多个 prompt，顺序提交并展示每个结果
+- 配置 Tab：过滤内部字段（group_list_set 等），界面更简洁
+- 自动更新差异文件选择：每个变更文件显示勾选框 + 全选/取消全选 + 选择性覆盖
+- 请求检查器流式捕获：中间件包装 response.write 捕获流式 chunks 并广播
 
 ✅ 已完成（v2.2.72）：
 - 自动更新镜像源改进：默认使用基础 URL（如 `https://github.com/`），后端自动拼接仓库路径

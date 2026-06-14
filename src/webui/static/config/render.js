@@ -19,10 +19,15 @@ function renderConfig(summary) {
     ['platforms', config.platforms || {}]
   ];
 
+  // Internal fields to skip
+  var skipFields = ['group_list_set', 'platform_list_set', 'enabled_platforms_set', 'proxy_url_patterns', 'templates'];
+
   configGrid.innerHTML = sections.map(function(entry) {
     var section = entry[0];
     var payload = entry[1];
-    var fields = Object.keys(payload).map(function(key) {
+    var fields = Object.keys(payload).filter(function(key) {
+      return skipFields.indexOf(key) === -1;
+    }).map(function(key) {
       var val = payload[key];
       var fieldId = 'cfg-' + section + '-' + key;
       var label = '<span class="config-field-label">' + key + '</span>';

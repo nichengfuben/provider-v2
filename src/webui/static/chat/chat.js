@@ -596,33 +596,44 @@ async function sendChatMessage(text, files) {
   }
 }
 
-// ========================= Batch Test (qwen3.7-max + all protocols) =========================
+// ========================= Batch Test (multiple prompts) =========================
 async function runChatTests() {
   var modelSelect = document.getElementById("chatModelSelect");
   var protocolSelect = document.getElementById("chatProtocolSelect");
+  var batchTextarea = document.getElementById("chatBatchPrompts");
   var testModel = modelSelect ? modelSelect.value : "qwen3.7-max";
-  var protocols = protocolSelect && protocolSelect.value ? [protocolSelect.value] : ["xml", "antml", "nous", "bracket"];
-  var inputText = (window._chatInputBox && window._chatInputBox.getText()) || '';
-  var testMessage = inputText.trim() || "请用工具调用测试一下当前协议是否正常工作。调用一个名为 echo 的工具，参数为 {\"text\": \"hello\"}。";
+  var protocol = protocolSelect ? protocolSelect.value : "xml";
+
+  // Get prompts from textarea (one per line) or fallback to single input
+  var prompts = [];
+  if (batchTextarea && batchTextarea.value.trim()) {
+    prompts = batchTextarea.value.split('\n').map(function(l) { return l.trim(); }).filter(function(l) { return l.length > 0; });
+  } else {
+    var inputText = (window._chatInputBox && window._chatInputBox.getText()) || '';
+    var single = inputText.trim() || "请用工具调用测试一下当前协议是否正常工作。调用一个名为 echo 的工具，参数为 {\"text\": \"hello\"}。";
+    prompts = [single];
+  }
+
+  if (prompts.length === 0) { toast("请输入至少一个测试 prompt", "warn"); return; }
 
   var report = document.getElementById("chatTestReport");
   if (!report) return;
 
   report.classList.remove("hidden");
-  report.innerHTML = '<div style="text-align:center;padding:12px;color:var(--muted);">正在批量测试...</div>';
+  report.innerHTML = '<div style="text-align:center;padding:12px;color:var(--muted);">正在批量测试 ' + prompts.length + ' 个 prompt...</div>';
 
   var results = [];
 
-  for (var i = 0; i < protocols.length; i++) {
-    var protocol = protocols[i];
-    var status = "测试中...";
-    report.innerHTML = '<div style="text-align:center;padding:12px;color:var(--muted);">正在测试: ' + protocol + ' (' + (i+1) + '/' + protocols.length + ')</div>';
+  for (var i = 0; i < prompts.length; i++) {
+    var prompt = prompts[i];
+    report.innerHTML = '<div style="text-align:center;padding:12px;color:var(--muted);">正在测试: ' + (i+1) + '/' + prompts.length + '</div>';
 
     try {
       var body = {
         model: testModel,
-        messages: [{ role: "user", content: testMessage }],
-        stream: true
+        messages: [{ role: "user", content: prompt }],
+        stream: true,
+        protocol: protocol
       };
 
       var response = await fetch("/v1/chat/completions", {
@@ -633,7 +644,7 @@ async function runChatTests() {
       });
 
       if (!response.ok) {
-        results.push({ protocol: protocol, status: "fail", error: "HTTP " + response.status });
+        results.push({ prompt: prompt, status: "fail", error: "HTTP " + response.status });
         continue;
       }
 
@@ -673,25 +684,25 @@ async function runChatTests() {
       }
 
       results.push({
-        protocol: protocol,
+        prompt: prompt.substring(0, 50) + (prompt.length > 50 ? "..." : ""),
         status: "pass",
         content: content.substring(0, 80) + (content.length > 80 ? "..." : ""),
-        toolCalls: hasToolCalls ? "检测到工具调用" : "无工具调用"
+        toolCalls: hasToolCalls ? "有工具调用" : ""
       });
     } catch (error) {
-      results.push({ protocol: protocol, status: "fail", error: String(error) });
+      results.push({ prompt: prompt.substring(0, 50) + "...", status: "fail", error: String(error) });
     }
   }
 
   // Render report
-  var tableHtml = '<table class="chat-test-report"><thead><tr><th>协议</th><th>状态</th><th>响应摘要</th><th>工具调用</th></tr></thead><tbody>';
+  var tableHtml = '<table class="chat-test-report"><thead><tr><th>Prompt</th><th>状态</th><th>响应摘要</th><th>工具</th></tr></thead><tbody>';
   var passCount = 0;
   for (var r = 0; r < results.length; r++) {
     var row = results[r];
     var cls = row.status === "pass" ? "pass" : "fail";
     var statusIcon = row.status === "pass" ? "通过" : "失败";
     if (row.status === "pass") passCount++;
-    tableHtml += '<tr class="' + cls + '"><td>' + escapeHtml(row.protocol) + '</td><td>' + statusIcon + '</td><td>' + escapeHtml(row.content || row.error || "") + '</td><td>' + escapeHtml(row.toolCalls || "") + '</td></tr>';
+    tableHtml += '<tr class="' + cls + '"><td>' + escapeHtml(row.prompt) + '</td><td>' + statusIcon + '</td><td>' + escapeHtml(row.content || row.error || "") + '</td><td>' + escapeHtml(row.toolCalls || "") + '</td></tr>';
   }
   tableHtml += '</tbody></table>';
   tableHtml += '<div style="margin-top:8px;text-align:right;font-size:13px;color:var(--muted);">测试完成: ' + passCount + '/' + results.length + ' 通过</div>';
