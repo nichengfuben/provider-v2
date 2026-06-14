@@ -490,6 +490,13 @@ async def _stream_chat(
                     _log_chunks = request.get("_req_log_chunks")
                     if _log_chunks is not None:
                         _log_chunks.append(safe_part)
+                    _log_id = request.get("_req_log_id")
+                    if _log_id:
+                        try:
+                            from src.webui.services.request_log import request_broker
+                            request_broker.push_event({"type": "request_chunk", "id": _log_id, "delta": safe_part})
+                        except Exception:
+                            pass
                     await _send_init()
                     chunk_data = {
                         "id": cid,

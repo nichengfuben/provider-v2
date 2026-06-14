@@ -86,6 +86,7 @@ var RequestInspector = (function () {
       _requests[msg.id] = {
         id: msg.id, ts: msg.ts, model: msg.model || '',
         messages_count: msg.messages_count || 0,
+        messages: msg.messages || [],
         has_tools: msg.has_tools || false,
         stream: msg.stream || false,
         status: 'pending', latency_ms: null, platform: '',
@@ -204,6 +205,14 @@ var RequestInspector = (function () {
       html += '<div class="req-detail-section"><div class="text-muted" style="padding:8px;">Waiting for response...</div></div>';
     } else {
       html += '<div class="req-detail-section"><div class="text-muted" style="padding:8px;">No response content captured</div></div>';
+    }
+
+    // Raw request messages
+    if (req.messages && req.messages.length > 0) {
+      html += '<div class="req-detail-section">';
+      html += '<div class="req-detail-label" style="cursor:pointer;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display===\'none\'?\'block\':\'none\'">Request Messages (' + req.messages.length + ') &#9660;</div>';
+      html += '<pre class="req-detail-content" style="display:none;">' + escapeHtml(JSON.stringify(req.messages, null, 2)) + '</pre>';
+      html += '</div>';
     }
 
     html += '</div>';

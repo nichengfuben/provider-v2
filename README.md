@@ -18,8 +18,8 @@
 
 <div align="center">
 
-![Status](https://img.shields.io/badge/status-v2.2.87-blue)
-![Version](https://img.shields.io/badge/version-2.2.87-blue)
+![Status](https://img.shields.io/badge/status-v2.2.88-blue)
+![Version](https://img.shields.io/badge/version-2.2.88-blue)
 ![Python](https://img.shields.io/badge/python-3.8+-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Platforms](https://img.shields.io/badge/platforms-12+-orange)
@@ -1257,7 +1257,13 @@ fix(gateway): 修复并发竞速时 token 计数错误
 
 ## 🗺️ 路线图
 
-### 当前版本：v2.2.87
+### 当前版本：v2.2.88
+
+✅ 已完成（v2.2.88）：
+- 请求检查器流式内容改为路由层直接推送到 broker（绕过中间件收集器）
+- 中间件 request_start 事件新增 messages 字段（原始请求消息）
+- 请求详情新增可折叠的 Request Messages 区域显示原始请求 JSON
+- echotools 升级至 1.0.19
 
 ✅ 已完成（v2.2.87）：
 - 修复自动更新 URL 污染 bug：_fetch_from_mirrors 改为 try/finally 保存恢复原始 remote URL
