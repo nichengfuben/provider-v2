@@ -55,16 +55,44 @@ async def _run_git(*args: str, timeout: int = 30) -> Tuple[bool, str, str]:
 
 
 async def _fetch_from_mirrors(branch: str, mirrors: List[str]) -> Tuple[bool, str]:
-    """按优先级尝试 fetch，返回 (成功, 使用的镜像源)。"""
+    """按优先级尝试 fetch，返回 (成功, 使用的镜像源)。
+
+    镜像源可以是完整 git remote URL，也可以是基础 URL（如 https://github.com/）。
+    对于基础 URL，自动从当前 remote 提取仓库路径并拼接。
+    """
+    # 获取当前 remote URL 以提取仓库路径
+    ok, current_url, _ = await _run_git("remote", "get-url", "origin")
+    repo_path = ""
+    if ok and current_url:
+        # 提取仓库路径：https://github.com/user/repo.git -> user/repo.git
+        # 或 git@github.com:user/repo.git -> user/repo.git
+        for prefix in ["https://", "http://", "git://"]:
+            if current_url.startswith(prefix):
+                current_url = current_url[len(prefix):]
+                # Remove host part
+                if "/" in current_url:
+                    current_url = current_url[current_url.index("/") + 1:]
+                break
+        else:
+            # SSH format: git@host:user/repo.git
+            if ":" in current_url:
+                current_url = current_url[current_url.index(":") + 1:]
+        repo_path = current_url
+
     for mirror in mirrors:
+        # 如果是基础 URL（以 / 结尾），拼接仓库路径
+        full_url = mirror
+        if mirror.endswith("/") and repo_path:
+            full_url = mirror + repo_path
+
         # 设置临时 remote URL
-        ok, _, _ = await _run_git("remote", "set-url", "origin", mirror)
+        ok, _, _ = await _run_git("remote", "set-url", "origin", full_url)
         if not ok:
             continue
         ok, _, err = await _run_git("fetch", "origin", branch, timeout=60)
         if ok:
             return True, mirror
-        logger.debug("fetch from %s failed: %s", mirror, err)
+        logger.debug("fetch from %s failed: %s", full_url, err)
     return False, ""
 
 

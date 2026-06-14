@@ -18,8 +18,8 @@
 
 <div align="center">
 
-![Status](https://img.shields.io/badge/status-v2.2.71-blue)
-![Version](https://img.shields.io/badge/version-2.2.71-blue)
+![Status](https://img.shields.io/badge/status-v2.2.72-blue)
+![Version](https://img.shields.io/badge/version-2.2.72-blue)
 ![Python](https://img.shields.io/badge/python-3.8+-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Platforms](https://img.shields.io/badge/platforms-12+-orange)
@@ -1257,7 +1257,11 @@ fix(gateway): 修复并发竞速时 token 计数错误
 
 ## 🗺️ 路线图
 
-### 当前版本：v2.2.71
+### 当前版本：v2.2.72
+
+✅ 已完成（v2.2.72）：
+- 自动更新镜像源改进：默认使用基础 URL（如 `https://github.com/`），后端自动拼接仓库路径
+- 镜像源 UI 添加优先级数字输入框（带上下箭头），支持拖拽排序
 
 ✅ 已完成（v2.2.71）：
 - InputBox 通用组件集成：替换旧聊天输入区，支持文件上传、语音输入、长文本自动转文件

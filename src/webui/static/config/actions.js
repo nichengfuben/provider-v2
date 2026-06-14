@@ -284,11 +284,26 @@ function _renderMirrors(mirrors) {
   }
   list.innerHTML = mirrors.map(function(m, i) {
     return '<div class="mirror-item" style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">'
-      + '<span style="color:var(--muted);font-size:11px;width:16px;">' + (i+1) + '</span>'
+      + '<input type="number" class="config-input mirror-priority" value="' + (i+1) + '" min="1" max="' + mirrors.length + '" step="1" style="width:50px;text-align:center;" data-index="' + i + '">'
       + '<input type="text" class="config-input mirror-url" value="' + escapeHtml(m) + '" style="flex:1;">'
       + '<button type="button" class="text-[12px] text-err hover:underline mirror-remove" data-index="' + i + '">remove</button>'
       + '</div>';
   }).join('');
+  // Bind priority change
+  list.querySelectorAll('.mirror-priority').forEach(function(inp) {
+    inp.addEventListener('change', function() {
+      var inputs = list.querySelectorAll('.mirror-url');
+      var arr = [];
+      inputs.forEach(function(inp) { if (inp.value.trim()) arr.push(inp.value.trim()); });
+      var oldIndex = parseInt(inp.dataset.index);
+      var newIndex = Math.max(0, Math.min(arr.length - 1, parseInt(inp.value) - 1));
+      if (oldIndex !== newIndex && newIndex >= 0 && newIndex < arr.length) {
+        var item = arr.splice(oldIndex, 1)[0];
+        arr.splice(newIndex, 0, item);
+        _renderMirrors(arr);
+      }
+    });
+  });
   // Bind remove buttons
   list.querySelectorAll('.mirror-remove').forEach(function(btn) {
     btn.addEventListener('click', function() {

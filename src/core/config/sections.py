@@ -125,7 +125,7 @@ class AutoupdateCfg(ConfigBase):
     interval: int = 300  # 检查间隔（秒）
     diff_update: bool = True  # 差异更新：仅覆盖变更文件
     mirrors: List[str] = field(default_factory=lambda: [
-        "https://github.com/nichengfuben/provider-v2.git",
+        "https://github.com/",
     ])
 
 
