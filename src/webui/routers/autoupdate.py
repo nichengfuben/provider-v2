@@ -77,11 +77,6 @@ async def _fetch_from_mirrors(branch: str, mirrors: List[str]) -> Tuple[bool, st
             if mirror.endswith("/") and repo_path:
                 full_url = mirror + repo_path
 
-            # 安全检查：构造的 URL 不应包含嵌套协议
-            if full_url.count("://") > 1:
-                logger.debug("跳过嵌套协议 URL: %s", full_url)
-                continue
-
             # 设置临时 remote URL
             ok, _, _ = await _run_git("remote", "set-url", "origin", full_url)
             if not ok:

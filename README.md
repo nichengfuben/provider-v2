@@ -18,8 +18,8 @@
 
 <div align="center">
 
-![Status](https://img.shields.io/badge/status-v2.2.89-blue)
-![Version](https://img.shields.io/badge/version-2.2.89-blue)
+![Status](https://img.shields.io/badge/status-v2.2.90-blue)
+![Version](https://img.shields.io/badge/version-2.2.90-blue)
 ![Python](https://img.shields.io/badge/python-3.8+-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Platforms](https://img.shields.io/badge/platforms-12+-orange)
@@ -1257,7 +1257,10 @@ fix(gateway): 修复并发竞速时 token 计数错误
 
 ## 🗺️ 路线图
 
-### 当前版本：v2.2.89
+### 当前版本：v2.2.90
+
+✅ 已完成（v2.2.90）：
+- 移除自动更新中错误的嵌套协议检查，允许代理镜像 URL 正常拼接
 
 ✅ 已完成（v2.2.89）：
 - 侧栏标签文字简化：「自动更新」→「更新」，「聊天测试」→「聊天」
