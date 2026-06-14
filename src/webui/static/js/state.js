@@ -232,3 +232,9 @@ function resetCandidateIdMap() {
   });
   candidateIdCounter = 0;
 }
+
+function escapeHtml(text) {
+  var d = document.createElement('div');
+  d.textContent = String(text);
+  return d.innerHTML;
+}

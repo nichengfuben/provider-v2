@@ -204,6 +204,35 @@ async function reloadConfigFromFile() {
   }
 }
 
+function onConfigFieldChange(e) {
+  var el = e.target;
+  var section = el.getAttribute('data-section');
+  var key = el.getAttribute('data-key');
+  if (!section || !key || !state.summary || !state.summary.config) return;
+
+  var val;
+  if (el.type === 'checkbox') {
+    val = el.checked;
+  } else if (el.type === 'number') {
+    val = parseInt(el.value, 10) || 0;
+  } else if (el.tagName === 'TEXTAREA') {
+    try {
+      val = JSON.parse(el.value);
+    } catch (err) {
+      return; // invalid JSON, skip update
+    }
+  } else {
+    val = el.value;
+  }
+
+  if (!state.summary.config[section]) state.summary.config[section] = {};
+  state.summary.config[section][key] = val;
+
+  // Update JSON preview
+  configJsonBox.textContent = JSON.stringify(state.summary.config, null, 2);
+  scheduleConfigSave();
+}
+
 function toggleConfigEdit() {
   if (!configEditArea) return;
   const isHidden = configEditArea.classList.contains('hidden');

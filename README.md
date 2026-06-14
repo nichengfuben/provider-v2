@@ -18,8 +18,8 @@
 
 <div align="center">
 
-![Status](https://img.shields.io/badge/status-v2.2.68-blue)
-![Version](https://img.shields.io/badge/version-2.2.68-blue)
+![Status](https://img.shields.io/badge/status-v2.2.69-blue)
+![Version](https://img.shields.io/badge/version-2.2.69-blue)
 ![Python](https://img.shields.io/badge/python-3.8+-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Platforms](https://img.shields.io/badge/platforms-12+-orange)
@@ -1257,7 +1257,14 @@ fix(gateway): 修复并发竞速时 token 计数错误
 
 ## 🗺️ 路线图
 
-### 当前版本：v2.2.68
+### 当前版本：v2.2.69
+
+✅ 已完成（v2.2.69）：
+- WebUI 配置 Tab 表单化：布尔值显示开关、字符串/数字显示输入框、列表/字典显示 JSON 文本域
+- WebUI 请求检查器：实时请求日志列表 + 详情面板，WebSocket 推送 request_start/end 事件
+- 新增 RequestBroker 服务（环形缓冲 100 条 + WebSocket 广播）
+- stats_middleware 增强：请求开始/结束时广播事件
+- 新增 API：GET /v1/webui/ws/requests（WebSocket）、GET /v1/webui/requests（REST）
 
 ✅ 已完成（v2.2.68）：
 - 修复工具调用标签泄露到流式输出的 bug（safe_flush 未检测 buffer 本身是 trigger tag 前缀）
