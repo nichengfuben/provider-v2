@@ -510,6 +510,8 @@ async def _stream_chat(
             elif isinstance(ch, dict):
                 if "_meta" in ch:
                     platform_id = ch["_meta"].get("platform", "")
+                    if platform_id:
+                        resp._platform = platform_id
                 elif "thinking" in ch:
                     await _send_init()
                     chunk_data = {
@@ -699,6 +701,8 @@ async def chat_completions(
             elif isinstance(ch, dict):
                 if "_meta" in ch:
                     platform_id = ch["_meta"].get("platform", "")
+                    if platform_id:
+                        resp._platform = platform_id
                 elif "thinking" in ch:
                     tp.append(ch["thinking"])
                 elif "tool_calls" in ch:

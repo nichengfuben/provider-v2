@@ -623,6 +623,8 @@ async def _stream_messages(
             elif isinstance(ch, dict):
                 if "_meta" in ch:
                     platform_id = ch["_meta"].get("platform", "")
+                    if platform_id:
+                        resp._platform = platform_id
                 elif "thinking" in ch and effective_thinking:
                     thinking_text = ch["thinking"]
                     # 分块输出 thinking_delta，固定步长 20 字符
@@ -820,6 +822,7 @@ async def _collect_messages(
     List[str],
     List[Dict[str, Any]],
     Optional[Dict[str, Any]],
+    str,
 ]:
     """收集非流式消息生成的全部输出。
 
@@ -879,7 +882,7 @@ async def _collect_messages(
                 tool_calls = parsed
                 cleaned = ""
 
-    return cleaned, thinking_parts, tool_calls, usage_d
+    return cleaned, thinking_parts, tool_calls, usage_d, platform_id
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -937,7 +940,7 @@ async def messages_handler(
     ct = int(time.time())
 
     try:
-        content, thinking_parts, tool_calls, usage_d = await _collect_messages(
+        content, thinking_parts, tool_calls, usage_d, platform_id = await _collect_messages(
             body, msgs, tools, request.app[REGISTRY_KEY]
         )
     except NoCandidateError as exc:
@@ -972,7 +975,7 @@ async def messages_handler(
     else:
         ou = len(content) // 3 if content else 0
 
-    return _json(
+    resp = _json(
         {
             "id": mid,
             "type": "message",
@@ -984,6 +987,9 @@ async def messages_handler(
             "usage": {"input_tokens": pt, "output_tokens": ou},
         }
     )
+    if platform_id:
+        resp._platform = platform_id
+    return resp
 
 
 async def list_models(
