@@ -538,6 +538,14 @@ async function sendChatMessage(text, files) {
               finalizeStreamingMessage(toolCalls);
               if (toolCalls.length > 0) {
                 chatConversationHistory.push({ role: "assistant", content: assistantContent, tool_calls: toolCalls });
+                // Inject synthetic tool results (WebUI doesn't execute tools)
+                for (var ti = 0; ti < toolCalls.length; ti++) {
+                  chatConversationHistory.push({
+                    role: "tool",
+                    tool_call_id: toolCalls[ti].id,
+                    content: "[WebUI test mode: tool call displayed but not executed]"
+                  });
+                }
               } else {
                 chatConversationHistory.push({ role: "assistant", content: assistantContent });
               }
@@ -555,6 +563,14 @@ async function sendChatMessage(text, files) {
       finalizeStreamingMessage(toolCalls);
       if (toolCalls.length > 0) {
         chatConversationHistory.push({ role: "assistant", content: assistantContent, tool_calls: toolCalls });
+        // Inject synthetic tool results (WebUI doesn't execute tools)
+        for (var ti = 0; ti < toolCalls.length; ti++) {
+          chatConversationHistory.push({
+            role: "tool",
+            tool_call_id: toolCalls[ti].id,
+            content: "[WebUI test mode: tool call displayed but not executed]"
+          });
+        }
       } else {
         chatConversationHistory.push({ role: "assistant", content: assistantContent });
       }
