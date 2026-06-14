@@ -246,9 +246,15 @@ function _renderConfigData(config) {
 
   configGrid.innerHTML = html;
 
-  // Bind all change events via delegation on configGrid
-  configGrid.addEventListener('change', _onConfigChange);
-  configGrid.addEventListener('input', _onConfigChange);
+  // Bind events only once (survives re-renders since delegation is on configGrid)
+  if (!configGrid._eventsBound) {
+    configGrid._eventsBound = true;
+    configGrid.addEventListener('change', _onConfigChange);
+    configGrid.addEventListener('input', function(e) {
+      if (e.target.tagName === 'TEXTAREA') return;
+      _onConfigChange(e);
+    });
+  }
 
   // Bind list add/remove buttons
   configGrid.querySelectorAll('.config-list-add').forEach(function(btn) {
