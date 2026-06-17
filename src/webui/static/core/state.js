@@ -88,14 +88,22 @@ function log(message) {
   var line = '[' + new Date().toLocaleTimeString() + '] ' + message;
   _logLineCount++;
   _logEntries.unshift({ num: _logLineCount, html: ansiToHtml(line) });
-  if (_logEntries.length > _logMaxEntries) {
+
+  // Only prepend new entry to DOM (O(1) instead of rebuilding all)
+  var div = document.createElement('div');
+  div.className = 'log-line';
+  div.innerHTML = '<span class="log-ln">' + _logLineCount + '</span>' + ansiToHtml(line);
+  if (logBox.firstChild) {
+    logBox.insertBefore(div, logBox.firstChild);
+  } else {
+    logBox.appendChild(div);
+  }
+
+  // Remove excess entries from both array and DOM
+  while (_logEntries.length > _logMaxEntries) {
     _logEntries.pop();
+    if (logBox.lastChild) logBox.removeChild(logBox.lastChild);
   }
-  var html = '';
-  for (var i = 0; i < _logEntries.length; i++) {
-    html += '<div class="log-line"><span class="log-ln">' + _logEntries[i].num + '</span>' + _logEntries[i].html + '</div>';
-  }
-  logBox.innerHTML = html;
 }
 
 function toast(message, type) {

@@ -29,6 +29,8 @@ function _openPortable() {
       }
     });
   }
+  // Re-enumerate recording devices when panel opens (ensures fresh labels after permission grant)
+  _refreshRecordingDevices();
 }
 function _closePortable() {
   var backdrop = document.getElementById('portableBackdrop');
@@ -343,18 +345,10 @@ async function persistLoad(filename) {
 }
 
 // ========================= Recording Device =========================
-(async function loadRecordingDevices() {
+async function _refreshRecordingDevices() {
   try {
     if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) return;
-    // Request permission to get device labels
-    var stream = null;
-    try {
-      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    } catch (e) { /* permission denied, labels may be empty */ }
     var devices = await navigator.mediaDevices.enumerateDevices();
-    if (stream) {
-      stream.getTracks().forEach(function(t) { t.stop(); });
-    }
     var audioInputs = devices.filter(function(d) { return d.kind === 'audioinput'; });
     var opts = [{ value: '', text: '默认设备' }];
     for (var i = 0; i < audioInputs.length; i++) {
@@ -366,14 +360,16 @@ async function persistLoad(filename) {
     var dropdown = window._dropdowns && window._dropdowns['recordingDeviceSelect'];
     if (dropdown) {
       dropdown.setOptions(opts, false);
-      // Restore saved device
       var saved = await persistLoad('config.json');
       if (saved && saved.recordingDeviceId) {
         dropdown.setValue(saved.recordingDeviceId);
       }
     }
   } catch (e) { /* ignore */ }
-})();
+}
+
+// Initial load of recording devices
+_refreshRecordingDevices();
 
 // Recording device change handler
 (function() {

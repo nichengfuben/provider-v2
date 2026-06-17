@@ -1896,3 +1896,13 @@ pytest: (pending)
 [README.md] 版本徽章和路线图更新为 2.2.131
 [.agents/provider-guide/SKILL.md] 版本字段 2.2.130 -> 2.2.131
 验证: py_compile files.py + __init__.py + routes.py 通过
+
+2026-06-17 23:00:00
+
+[src/webui/static/core/state.js] log() 函数性能优化：从 O(n) innerHTML 全量重建改为 O(1) DOM prepend/removeChild，避免大量日志时页面卡死
+[src/webui/static/ui/bootstrap.js] 录音设备枚举提取为 _refreshRecordingDevices() 可复用函数，便携设置面板打开时自动刷新设备列表（确保权限授予后获取设备标签）
+[template/template_config.toml] 版本 2.2.131 -> 2.2.132
+[config.toml] 版本 2.2.131 -> 2.2.132
+[README.md] 版本徽章和路线图更新为 2.2.132
+[.agents/provider-guide/SKILL.md] 版本字段 2.2.131 -> 2.2.132
+纯前端 JS 变更，无需 py_compile
