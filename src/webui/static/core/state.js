@@ -88,13 +88,12 @@ function log(message) {
   // Skip timestamp prefix if message already starts with a date pattern (MM-DD from WebSocket)
   var hasDate = /^\d{2}-\d{2}\s/.test(message);
   var line = hasDate ? message : ('[' + new Date().toLocaleTimeString() + '] ' + message);
-  _logLineCount++;
-  _logEntries.unshift({ num: _logLineCount, html: ansiToHtml(line) });
+  _logEntries.unshift({ html: ansiToHtml(line) });
 
-  // Only prepend new entry to DOM (O(1) instead of rebuilding all)
+  // Prepend new entry to DOM
   var div = document.createElement('div');
   div.className = 'log-line';
-  div.innerHTML = '<span class="log-ln">' + _logLineCount + '</span>' + ansiToHtml(line);
+  div.innerHTML = '<span class="log-ln">1</span>' + ansiToHtml(line);
   if (logBox.firstChild) {
     logBox.insertBefore(div, logBox.firstChild);
   } else {
@@ -105,6 +104,13 @@ function log(message) {
   while (_logEntries.length > _logMaxEntries) {
     _logEntries.pop();
     if (logBox.lastChild) logBox.removeChild(logBox.lastChild);
+  }
+
+  // Renumber all visible entries: #1 at top (newest), increasing downward
+  var lines = logBox.children;
+  for (var i = 0; i < lines.length; i++) {
+    var ln = lines[i].querySelector('.log-ln');
+    if (ln) ln.textContent = i + 1;
   }
 }
 

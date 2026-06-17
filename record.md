@@ -2005,3 +2005,12 @@ pytest: (pending)
 [README.md] 版本徽章和路线图更新为 2.2.141
 [.agents/provider-guide/SKILL.md] 版本字段 2.2.140 -> 2.2.141
 验证: py_compile terminal.py 通过
+
+2026-06-18 09:00:00
+
+[src/webui/static/core/state.js] 修复运行日志行号顺序：最新条目 #1 在顶部，向下递增编号；移除 _logLineCount 依赖，改用 DOM 位置索引重编号
+[template/template_config.toml] 版本 2.2.141 -> 2.2.142
+[config.toml] 版本 2.2.141 -> 2.2.142
+[README.md] 版本徽章和路线图更新为 2.2.142
+[.agents/provider-guide/SKILL.md] 版本字段 2.2.141 -> 2.2.142
+纯前端 JS 变更，无需 py_compile

@@ -18,8 +18,8 @@
 
 <div align="center">
 
-![Status](https://img.shields.io/badge/status-v2.2.141-blue)
-![Version](https://img.shields.io/badge/version-2.2.141-blue)
+![Status](https://img.shields.io/badge/status-v2.2.142-blue)
+![Version](https://img.shields.io/badge/version-2.2.142-blue)
 ![Python](https://img.shields.io/badge/python-3.8+-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Platforms](https://img.shields.io/badge/platforms-16+-orange)
@@ -1257,7 +1257,10 @@ fix(gateway): 修复并发竞速时 token 计数错误
 
 ## 🗺️ 路线图
 
-### 当前版本：v2.2.141
+### 当前版本：v2.2.142
+
+✅ 已完成（v2.2.142）：
+- 修复运行日志行号顺序（最新条目 #1 在顶部，向下递增）
 
 ✅ 已完成（v2.2.141）：
 - 终端退格键修复（DEL→BS 转换）、全部关闭浮动按钮（标签>5时显示）、Windows 终端改用 cmd.exe + UTF-8
