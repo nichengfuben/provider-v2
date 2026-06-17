@@ -45,6 +45,7 @@ docs-src/src/webui/services/INDEX.md
 docs-src/template/INDEX.md
 docs-src/tests-guide.md
 main.py
+prompts/tts_default.prompt
 requirements.txt
 src/__init__.py
 src/core.o/__init__.py
@@ -343,7 +344,15 @@ src/webui/server.py
 src/webui/services/__init__.py
 src/webui/services/stats.py
 src/webui/services/summaries.py
+src/webui/static/chat/chat.js
+src/webui/static/config/actions.js
+src/webui/static/config/render.js
+src/webui/static/core/api.js
+src/webui/static/core/motion.js
+src/webui/static/core/router.js
+src/webui/static/core/state.js
 src/webui/static/css/styles.css
+src/webui/static/dashboard/render.js
 src/webui/static/index.html
 src/webui/static/js/actions.js
 src/webui/static/js/bootstrap.js
@@ -355,6 +364,15 @@ src/webui/static/js/features/stats.js
 src/webui/static/js/motion.js
 src/webui/static/js/render.js
 src/webui/static/js/state.js
+src/webui/static/stats/request-inspector.js
+src/webui/static/stats/stats.js
+src/webui/static/ui/bootstrap.js
+src/webui/static/ui/dropdown.js
+src/webui/static/ui/input-box.css
+src/webui/static/ui/input-box.js
+src/webui/static/ui/sortable-list/sortable-list.css
+src/webui/static/ui/sortable-list/sortable-list.js
+src/webui/static/ui/styles.css
 src/webui/utils/__init__.py
 src/webui/utils/export.py
 template/template_config.toml
@@ -1276,3 +1294,302 @@ pytest: (pending)
 [README.md] 版本徽章和路线图更新为 2.2.67
 [.agents/provider-guide/SKILL.md] 版本字段 2.2.66 -> 2.2.67
 验证: py_compile 通过
+
+2026-06-13 22:00:00
+
+[src/webui/static/ui/input-box.js] 语音输入录音时按钮内容替换为波形 GIF 动画（waveform_64x64.gif），录音结束后恢复原按钮 HTML；移除 ib-recording CSS class 切换方式
+[template/template_config.toml] 版本 2.2.79 -> 2.2.80
+[config.toml] 版本 2.2.79 -> 2.2.80
+[README.md] 版本徽章和路线图更新为 2.2.80
+[.agents/provider-guide/SKILL.md] 版本字段 2.2.79 -> 2.2.80
+纯前端 JS 变更，无需 py_compile
+
+2026-06-14 01:00:00
+
+[src/webui/static/ui/input-box.js] 语音输入波形 GIF 从外部文件 /static/waveform_64x64.gif 改为 base64 data URI 内嵌（与 echotools voice-input.js 一致），移除外部文件依赖
+[src/webui/static/waveform_64x64.gif] 删除不再使用的外部 GIF 文件
+[template/template_config.toml] 版本 2.2.80 -> 2.2.81
+[config.toml] 版本 2.2.80 -> 2.2.81
+[README.md] 版本徽章和路线图更新为 2.2.81
+[.agents/provider-guide/SKILL.md] 版本字段 2.2.80 -> 2.2.81
+纯前端 JS 变更，无需 py_compile
+
+2026-06-14 02:00:00
+
+[prompts/tts_default.prompt] 新增 TTS 默认引导 Prompt 模板文件
+[src/webui/routes.py] 新增 /prompts/ 静态路由，服务 prompt 模板文件
+[src/webui/static/index.html] 便携设置 STT/TTS 模型从文本输入改为 select 下拉菜单，TTS Prompt 旁新增恢复默认按钮
+[src/webui/static/ui/bootstrap.js] 新增 loadVoiceModels() 从 /v1/models 加载模型列表到 STT/TTS 下拉框；新增恢复默认按钮事件；voiceSttModel/voiceTtsModel 注册 CustomDropdown
+[src/webui/static/core/state.js] applyVoiceSettings() 兼容 CustomDropdown 的 setValue()
+[template/template_config.toml] 版本 2.2.81 -> 2.2.82
+[config.toml] 版本 2.2.81 -> 2.2.82
+[README.md] 版本徽章和路线图更新为 2.2.82
+[.agents/provider-guide/SKILL.md] 版本字段 2.2.81 -> 2.2.82
+验证: py_compile src/webui/routes.py 通过
+
+2026-06-14 03:00:00
+
+[src/routes/openai.py] 流式响应 safe_part 推入 request["_req_log_chunks"] 收集器，供请求检查器显示响应内容
+[src/routes/anthropic.py] 同上，两处 safe_part 写入点均加入收集器推送
+[template/template_config.toml] 版本 2.2.82 -> 2.2.83
+[config.toml] 版本 2.2.82 -> 2.2.83
+[README.md] 版本徽章和路线图更新为 2.2.83
+[.agents/provider-guide/SKILL.md] 版本字段 2.2.82 -> 2.2.83
+验证: py_compile src/routes/openai.py src/routes/anthropic.py 通过
+
+2026-06-14 04:00:00
+
+[src/webui/routers/autoupdate.py] 新增 autoupdate_diff() 接口，返回单文件 git diff HEAD..origin/<branch>
+[src/webui/routers/__init__.py] 导出 autoupdate_diff
+[src/webui/routes.py] 注册 POST /v1/admin/autoupdate/diff
+[src/webui/static/config/actions.js] 文件名变为可点击链接，点击弹出彩色 diff 预览对话框；自动更新应用后自动调用 /v1/config/reload 热重载
+[template/template_config.toml] 版本 2.2.83 -> 2.2.84
+[config.toml] 版本 2.2.83 -> 2.2.84
+[README.md] 版本徽章和路线图更新为 2.2.84
+[.agents/provider-guide/SKILL.md] 版本字段 2.2.83 -> 2.2.84
+验证: py_compile src/webui/routers/autoupdate.py src/webui/routers/__init__.py src/webui/routes.py 通过
+
+2026-06-14 05:00:00
+
+[src/webui/static/ui/sortable-list/sortable-list.js] 新增 SortableList 可排序列表组件（上下箭头 + 删除按钮 + 自定义渲染，来自 echotools）
+[src/webui/static/ui/sortable-list/sortable-list.css] SortableList 组件样式
+[src/webui/static/index.html] 引入 sortable-list.css 和 sortable-list.js
+[src/webui/static/config/actions.js] _renderMirrors 改用 SortableList 组件；_getMirrorsFromUI 使用 _mirrorList.getItems()
+[template/template_config.toml] 版本 2.2.84 -> 2.2.85
+[config.toml] 版本 2.2.84 -> 2.2.85
+[README.md] 版本徽章和路线图更新为 2.2.85
+[.agents/provider-guide/SKILL.md] 版本字段 2.2.84 -> 2.2.85
+纯前端 JS/CSS 变更，无需 py_compile
+
+2026-06-14 06:00:00
+
+[requirements.txt] echotools>=1.0.17 -> >=1.0.18（中间件跳过 GET 请求 + request 级别 chunk 收集器）
+[template/template_config.toml] 版本 2.2.85 -> 2.2.86
+[config.toml] 版本 2.2.85 -> 2.2.86
+[README.md] 版本徽章和路线图更新为 2.2.86
+[.agents/provider-guide/SKILL.md] 版本字段 2.2.85 -> 2.2.86
+纯依赖升级，无需 py_compile
+
+2026-06-14 07:00:00
+
+[src/webui/routers/autoupdate.py] 修复 _fetch_from_mirrors URL 污染 bug：try/finally 保存恢复原始 remote URL；新增 _extract_repo_path() 用 regex 清理嵌套协议前缀；构造 URL 含多个 :// 时跳过
+[template/template_config.toml] 版本 2.2.86 -> 2.2.87
+[config.toml] 版本 2.2.86 -> 2.2.87
+[README.md] 版本徽章和路线图更新为 2.2.87
+[.agents/provider-guide/SKILL.md] 版本字段 2.2.86 -> 2.2.87
+验证: py_compile src/webui/routers/autoupdate.py 通过
+
+2026-06-14 08:00:00
+
+[src/routes/openai.py] 流式内容 safe_part 直接推送到 request_broker（实时广播），不再仅依赖中间件 _req_log_chunks 收集器
+[src/webui/static/stats/request-inspector.js] handleMessage 存储 messages 字段；renderDetail 新增可折叠 Request Messages 区域显示原始请求 JSON
+[requirements.txt] echotools>=1.0.18 -> >=1.0.19（中间件 request_start 新增 messages 字段）
+[template/template_config.toml] 版本 2.2.87 -> 2.2.88
+[config.toml] 版本 2.2.87 -> 2.2.88
+[README.md] 版本徽章和路线图更新为 2.2.88
+[.agents/provider-guide/SKILL.md] 版本字段 2.2.87 -> 2.2.88
+验证: py_compile src/routes/openai.py 通过
+
+2026-06-14 09:00:00
+
+[src/webui/static/index.html] 侧栏标签文字简化：自动更新 -> 更新，聊天测试 -> 聊天
+[template/template_config.toml] 版本 2.2.88 -> 2.2.89
+[config.toml] 版本 2.2.88 -> 2.2.89
+[README.md] 版本徽章和路线图更新为 2.2.89
+[.agents/provider-guide/SKILL.md] 版本字段 2.2.88 -> 2.2.89
+纯前端文字变更，无需 py_compile
+
+2026-06-14 10:00:00
+
+[src/webui/routers/autoupdate.py] 移除错误的嵌套协议检查（:// 计数），代理镜像 URL 如 https://99z.top/https://github.com/... 现可正常拼接
+[template/template_config.toml] 版本 2.2.89 -> 2.2.90
+[config.toml] 版本 2.2.89 -> 2.2.90
+[README.md] 版本徽章和路线图更新为 2.2.90
+[.agents/provider-guide/SKILL.md] 版本字段 2.2.89 -> 2.2.90
+验证: py_compile src/webui/routers/autoupdate.py 通过
+
+2026-06-14 11:00:00
+
+[src/platforms/chatmoe/core/constants.py] 新增 flash-lite 模型、ABORT_PATH、RESUME_PATH、CONTEXT_LENGTH、KEY_REFRESH_INTERVAL
+[src/platforms/chatmoe/core/headers.py] Authorization 格式改为 Key {uuid}，User-Agent 更新为 Chrome 149
+[src/platforms/chatmoe/core/payloads.py] 新增 model 字段和 token 参数作为 user_id
+[src/platforms/chatmoe/core/client.py] 重写：SSE 解析支持 event/data/id 行；捕获 X-Stream-Id；新增 abort_stream/resume_stream；定时 Key 重新生成
+[src/platforms/chatmoe/core/adaptercore.py] 新增 abort_stream/resume_stream 方法
+[template/template_config.toml] 版本 2.2.90 -> 2.2.91
+[config.toml] 版本 2.2.90 -> 2.2.91
+[README.md] 版本徽章和路线图更新为 2.2.91
+[.agents/provider-guide/SKILL.md] 版本字段 2.2.90 -> 2.2.91
+验证: py_compile chatmoe 全部 6 文件通过
+
+2026-06-14 12:00:00
+
+[src/platforms/openaifm/core/constants.py] VOICES 改为实际声音名（alloy/coral/echo 等），移除 tts-1/tts-1-hd；User-Agent 更新为 Chrome 149
+[src/platforms/openaifm/core/headers.py] 移除 Authorization 和 Content-Type；添加浏览器标准头
+[src/platforms/openaifm/core/tts.py] 表单字段修正 text->input、style->prompt、新增 vibe；返回 aiohttp.FormData（multipart）
+[src/platforms/openaifm/core/client.py] 单候选项无需认证；_do_tts 使用新 headers/form；支持 prompt/vibe/style 参数
+[template/template_config.toml] 版本 2.2.91 -> 2.2.92
+[config.toml] 版本 2.2.91 -> 2.2.92
+[README.md] 版本徽章和路线图更新为 2.2.92
+[.agents/provider-guide/SKILL.md] 版本字段 2.2.91 -> 2.2.92
+验证: py_compile openaifm 全部 6 文件通过
+
+2026-06-14 13:00:00
+
+[src/platforms/openaifm/core/client.py] _rebuild_candidates 移除对 accounts.py API_KEYS 的依赖（gitignored），始终创建 1 个候选项；移除无用 API_KEYS 导入
+[template/template_config.toml] 版本 2.2.92 -> 2.2.93
+[config.toml] 版本 2.2.92 -> 2.2.93
+[README.md] 版本徽章和路线图更新为 2.2.93
+[.agents/provider-guide/SKILL.md] 版本字段 2.2.92 -> 2.2.93
+验证: py_compile src/platforms/openaifm/core/client.py 通过
+
+2026-06-14 14:00:00
+
+[src/platforms/openaifm/util.py] 移除已删除的 DEFAULT_MODEL 引用（constants.py 重写时遗漏），修复 ImportError 导致平台无法加载
+[template/template_config.toml] 版本 2.2.93 -> 2.2.94
+[config.toml] 版本 2.2.93 -> 2.2.94
+[README.md] 版本徽章和路线图更新为 2.2.94
+[.agents/provider-guide/SKILL.md] 版本字段 2.2.93 -> 2.2.94
+验证: py_compile + import test 通过（from src.platforms.openaifm import Adapter OK）
+
+2026-06-14 15:00:00
+
+[src/webui/static/chat/chat.js] 新增调试日志（发送消息数量和角色）；捕获 delta.reasoning_content 并保存到对话历史；助手消息保存时显示内容/thinking 长度
+[template/template_config.toml] 版本 2.2.94 -> 2.2.95
+[config.toml] 版本 2.2.94 -> 2.2.95
+[README.md] 版本徽章和路线图更新为 2.2.95
+[.agents/provider-guide/SKILL.md] 版本字段 2.2.94 -> 2.2.95
+纯前端 JS 变更，无需 py_compile
+
+2026-06-14 16:00:00
+
+[src/webui/static/config/render.js] renderConfig 改为从 GET /v1/config 获取真实配置（匹配 config.toml 结构），动态渲染所有段
+[src/webui/static/config/actions.js] onConfigFieldChange 改为从 configJsonBox.textContent 解析真实配置，不再依赖 state.summary.config
+[template/template_config.toml] 版本 2.2.95 -> 2.2.96
+[config.toml] 版本 2.2.95 -> 2.2.96
+[README.md] 版本徽章和路线图更新为 2.2.96
+[.agents/provider-guide/SKILL.md] 版本字段 2.2.95 -> 2.2.96
+纯前端 JS 变更，无需 py_compile
+
+2026-06-14 17:00:00
+
+[src/webui/static/stats/request-inspector.js] Request Messages 折叠切换从 inline onclick 改为 addEventListener 事件委托，修复点击无效
+[template/template_config.toml] 版本 2.2.96 -> 2.2.97
+[config.toml] 版本 2.2.96 -> 2.2.97
+[README.md] 版本徽章和路线图更新为 2.2.97
+[.agents/provider-guide/SKILL.md] 版本字段 2.2.96 -> 2.2.97
+纯前端 JS 变更，无需 py_compile
+
+2026-06-14 18:00:00
+
+[src/webui/static/chat/chat.js] 工具调用查看参数/收起参数改用事件委托（msg.addEventListener + e.target.closest）和 style.display 切换，修复点击无效
+[template/template_config.toml] 版本 2.2.97 -> 2.2.98
+[config.toml] 版本 2.2.97 -> 2.2.98
+[README.md] 版本徽章和路线图更新为 2.2.98
+[.agents/provider-guide/SKILL.md] 版本字段 2.2.97 -> 2.2.98
+纯前端 JS 变更，无需 py_compile
+
+2026-06-14 19:00:00
+
+[src/webui/routers/admin.py] config_get 改为直接 tomllib.load config.toml 返回原始结构（原 cfg.to_dict() 方法不存在导致回退到摘要数据）
+[template/template_config.toml] 版本 2.2.98 -> 2.2.99
+[config.toml] 版本 2.2.98 -> 2.2.99
+[README.md] 版本徽章和路线图更新为 2.2.99
+[.agents/provider-guide/SKILL.md] 版本字段 2.2.98 -> 2.2.99
+验证: py_compile src/webui/routers/admin.py 通过
+
+2026-06-14 20:00:00
+
+[src/webui/static/chat/chat.js] 工具参数查看/收起改为 document 级全局事件委托（文件顶部一次性注册），移除 finalizeStreamingMessage 中的逐消息绑定
+[template/template_config.toml] 版本 2.2.99 -> 2.2.100
+[config.toml] 版本 2.2.99 -> 2.2.100
+[README.md] 版本徽章和路线图更新为 2.2.100
+[.agents/provider-guide/SKILL.md] 版本字段 2.2.99 -> 2.2.100
+纯前端 JS 变更，无需 py_compile
+
+2026-06-14 21:00:00
+
+[src/webui/routers/admin.py] config_get 添加 tomli 回退（Python < 3.11 兼容）
+[template/template_config.toml] 版本 2.2.100 -> 2.2.101
+[config.toml] 版本 2.2.100 -> 2.2.101
+[README.md] 版本徽章和路线图更新为 2.2.101
+[.agents/provider-guide/SKILL.md] 版本字段 2.2.100 -> 2.2.101
+验证: py_compile src/webui/routers/admin.py 通过
+
+2026-06-14 22:00:00
+
+[src/webui/static/config/render.js] 重写为组件化架构：6 种配置组件（Toggle/Number/Text/Select/StringList/JsonEditor）+ 10 个段渲染器 + 事件委托
+[src/webui/static/config/actions.js] onConfigFieldChange 改为空操作（由 render.js _onConfigChange 处理）；saveConfig 优先使用 window._currentConfig
+[src/webui/static/ui/styles.css] 新增 config-readonly/config-list/config-list-item/config-list-input/config-list-remove/config-list-add 样式
+[template/template_config.toml] 版本 2.2.101 -> 2.2.102
+[config.toml] 版本 2.2.101 -> 2.2.102
+[README.md] 版本徽章和路线图更新为 2.2.102
+[.agents/provider-guide/SKILL.md] 版本字段 2.2.101 -> 2.2.102
+纯前端 JS/CSS 变更，无需 py_compile
+
+2026-06-14 23:00:00
+
+[src/webui/static/config/render.js] JSON 编辑器 textarea 只在 change 事件（失焦）时提交，input 事件跳过 TEXTAREA；事件绑定加 _eventsBound 标记防重复
+[template/template_config.toml] 版本 2.2.102 -> 2.2.103
+[config.toml] 版本 2.2.102 -> 2.2.103
+[README.md] 版本徽章和路线图更新为 2.2.103
+[.agents/provider-guide/SKILL.md] 版本字段 2.2.102 -> 2.2.103
+纯前端 JS 变更，无需 py_compile
+
+2026-06-15 00:00:00
+
+[src/webui/static/config/render.js] 新增 _fieldBlock 纵向布局组件（标签在上，控件全宽在下）；列表和 JSON 编辑器字段改用 _fieldBlock
+[src/webui/static/ui/styles.css] 输入框改为弹性宽度（flex: 0 1 180px）+ max-width: 100% + box-sizing: border-box；新增 .config-field-block 样式；列表组件加 min-width: 0 防溢出
+[template/template_config.toml] 版本 2.2.103 -> 2.2.104
+[config.toml] 版本 2.2.103 -> 2.2.104
+[README.md] 版本徽章和路线图更新为 2.2.104
+[.agents/provider-guide/SKILL.md] 版本字段 2.2.103 -> 2.2.104
+纯前端 JS/CSS 变更，无需 py_compile
+
+2026-06-15 01:00:00
+
+[src/webui/static/config/render.js] 新增 _renderMappingEditor 键值对编辑器组件（key->value 行式编辑+增删）；_renderRawJson 保留给未知段；fncall_mapping/model_mapping 改用 MappingEditor
+[src/webui/static/ui/styles.css] 新增 config-mapping/config-mapping-row/config-mapping-key/config-mapping-arrow/config-mapping-val/config-mapping-remove 样式
+[template/template_config.toml] 版本 2.2.104 -> 2.2.105
+[config.toml] 版本 2.2.104 -> 2.2.105
+[README.md] 版本徽章和路线图更新为 2.2.105
+[.agents/provider-guide/SKILL.md] 版本字段 2.2.104 -> 2.2.105
+纯前端 JS/CSS 变更，无需 py_compile
+
+2026-06-15 02:00:00
+
+[src/webui/static/config/render.js] renderConfig 添加 configDirty 守卫和 _skipNextConfigRender 标记，防止保存后 refreshAll 覆写表单
+[src/webui/static/config/actions.js] saveConfig 成功后设置 _skipNextConfigRender = true
+[template/template_config.toml] 版本 2.2.105 -> 2.2.106
+[config.toml] 版本 2.2.105 -> 2.2.106
+[README.md] 版本徽章和路线图更新为 2.2.106
+[.agents/provider-guide/SKILL.md] 版本字段 2.2.105 -> 2.2.106
+纯前端 JS 变更，无需 py_compile
+
+2026-06-15 03:00:00
+
+[src/webui/static/config/render.js] renderConfig 防覆写改用 _lastConfigSaveTime 时间戳守卫（5 秒窗口），替代 _skipNextConfigRender 单次 boolean
+[src/webui/static/config/actions.js] saveConfig 成功后设置 _lastConfigSaveTime = Date.now()
+[template/template_config.toml] 版本 2.2.106 -> 2.2.107
+[config.toml] 版本 2.2.106 -> 2.2.107
+[README.md] 版本徽章和路线图更新为 2.2.107
+[.agents/provider-guide/SKILL.md] 版本字段 2.2.106 -> 2.2.107
+纯前端 JS 变更，无需 py_compile
+
+2026-06-15 04:00:00
+
+[src/routes/openai.py] 修复非流式补全路径 NameError: resp 未定义（移除非流式路径中错误的 resp._platform = platform_id 赋值，该变量仅在流式路径 _stream_chat 中存在）
+[template/template_config.toml] 版本 2.2.107 -> 2.2.108
+[config.toml] 版本 2.2.107 -> 2.2.108
+[README.md] 版本徽章和路线图更新为 2.2.108
+[.agents/provider-guide/SKILL.md] 版本字段 2.2.107 -> 2.2.108
+验证: py_compile src/routes/openai.py 通过
+
+2026-06-17 00:00:00
+
+[src/webui/static/chat/chat.js] 聊天错误消息从 system 类型改为 assistant 类型渲染，新增 isError 选项为错误消息添加红色左边框样式，覆盖 7 处错误路径（HTTP 错误、流超时、SSE 错误块、空内容、中止、网络错误等）
+[src/webui/static/ui/styles.css] 新增 .chat-message-error 样式（红色左边框 + 红色文字），区分错误消息与正常助手消息
+[template/template_config.toml] 版本 2.2.108 -> 2.2.109
+[config.toml] 版本 2.2.108 -> 2.2.109
+[README.md] 版本徽章和路线图更新为 2.2.109
+[.agents/provider-guide/SKILL.md] 版本字段 2.2.108 -> 2.2.109
+纯前端 JS/CSS 变更，无需 py_compile

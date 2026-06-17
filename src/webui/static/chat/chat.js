@@ -59,6 +59,9 @@ function appendChatMessage(role, content, options) {
   if (!container) return;
   var msg = document.createElement("div");
   msg.className = "chat-message chat-message-" + role;
+  if (options.isError) {
+    msg.classList.add("chat-message-error");
+  }
   if (options.toolCalls && options.toolCalls.length > 0) {
     var toolHtml = '<div style="margin-bottom:6px;">';
     for (var i = 0; i < options.toolCalls.length; i++) {
@@ -452,7 +455,7 @@ async function sendChatMessage(text, files) {
 
     if (!response.ok) {
       var errText = await response.text();
-      appendChatMessage("system", "Error " + response.status + ": " + errText);
+      appendChatMessage("assistant", "Error " + response.status + ": " + errText, { isError: true });
       chatConversationHistory.pop();
       return;
     }
@@ -460,14 +463,14 @@ async function sendChatMessage(text, files) {
     // 设置流式读取超时（60 秒无数据）
     var streamTimeoutId = setTimeout(function() {
       abortController.abort();
-      appendChatMessage("system", "流式响应超时（60 秒无数据）");
+      appendChatMessage("assistant", "流式响应超时（60 秒无数据）", { isError: true });
     }, 60000);
 
     function resetStreamTimeout() {
       clearTimeout(streamTimeoutId);
       streamTimeoutId = setTimeout(function() {
         abortController.abort();
-        appendChatMessage("system", "流式响应超时（60 秒无数据）");
+        appendChatMessage("assistant", "流式响应超时（60 秒无数据）", { isError: true });
       }, 60000);
     }
 
@@ -503,7 +506,7 @@ async function sendChatMessage(text, files) {
           if (chunk.error) {
             var errMsg = chunk.error.message || chunk.error.code || "unknown error";
             var errType = chunk.error.type || "error";
-            appendChatMessage("system", "[" + errType + "] " + errMsg);
+            appendChatMessage("assistant", "[" + errType + "] " + errMsg, { isError: true });
             chatConversationHistory.pop();
             return;
           }
@@ -585,14 +588,14 @@ async function sendChatMessage(text, files) {
 
     // 如果流结束但完全没有内容，显示错误提示
     if (!assistantAdded && !assistantContent && toolCalls.length === 0) {
-      appendChatMessage("system", "[stream_error] response ended with no content from model " + (body.model || "unknown"));
+      appendChatMessage("assistant", "[stream_error] response ended with no content from model " + (body.model || "unknown"), { isError: true });
       chatConversationHistory.pop();
     }
   } catch (error) {
     if (error.name === 'AbortError') {
-      appendChatMessage("system", "请求已取消或超时");
+      appendChatMessage("assistant", "请求已取消或超时", { isError: true });
     } else {
-      appendChatMessage("system", "请求失败: " + String(error));
+      appendChatMessage("assistant", "请求失败: " + String(error), { isError: true });
     }
     chatConversationHistory.pop();
   } finally {

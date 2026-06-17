@@ -225,6 +225,11 @@ body { margin: 0; font-family: Arial, sans-serif;
   border-bottom-left-radius: 4px;
 }
 
+.chat-message-error {
+  border-left: 3px solid var(--err);
+  color: var(--err);
+}
+
 /* ========================= Message Action Bar ========================= */
 .chat-msg-actions {
   display: flex;

@@ -18,8 +18,8 @@
 
 <div align="center">
 
-![Status](https://img.shields.io/badge/status-v2.2.108-blue)
-![Version](https://img.shields.io/badge/version-2.2.108-blue)
+![Status](https://img.shields.io/badge/status-v2.2.109-blue)
+![Version](https://img.shields.io/badge/version-2.2.109-blue)
 ![Python](https://img.shields.io/badge/python-3.8+-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Platforms](https://img.shields.io/badge/platforms-12+-orange)
@@ -1257,7 +1257,10 @@ fix(gateway): 修复并发竞速时 token 计数错误
 
 ## 🗺️ 路线图
 
-### 当前版本：v2.2.108
+### 当前版本：v2.2.109
+
+✅ 已完成（v2.2.109）：
+- WebUI 聊天错误消息改为助手消息气泡样式（红色左边框区分），不再使用独立错误提示框
 
 ✅ 已完成（v2.2.108）：
 - 修复非流式补全路径 NameError: resp 未定义（移除错误的 resp._platform 赋值）
