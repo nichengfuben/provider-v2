@@ -18,8 +18,8 @@
 
 <div align="center">
 
-![Status](https://img.shields.io/badge/status-v2.2.130-blue)
-![Version](https://img.shields.io/badge/version-2.2.130-blue)
+![Status](https://img.shields.io/badge/status-v2.2.131-blue)
+![Version](https://img.shields.io/badge/version-2.2.131-blue)
 ![Python](https://img.shields.io/badge/python-3.8+-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Platforms](https://img.shields.io/badge/platforms-16+-orange)
@@ -1257,7 +1257,10 @@ fix(gateway): 修复并发竞速时 token 计数错误
 
 ## 🗺️ 路线图
 
-### 当前版本：v2.2.130
+### 当前版本：v2.2.131
+
+✅ 已完成（v2.2.131）：
+- 新增文件管理器选项卡：目录浏览、多标签管理、面包屑导航、右键菜单、文件预览、下载、会话持久化
 
 ✅ 已完成（v2.2.130）：
 - 模型下拉菜单按能力过滤：聊天面板仅显示 chat 模型，STT/TTS 下拉仅显示对应能力模型

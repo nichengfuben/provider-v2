@@ -9,6 +9,7 @@ import aiohttp.web
 from src.webui.routers import (
     autoupdate_apply, autoupdate_check, autoupdate_diff, autoupdate_get, autoupdate_put,
     config_get, config_put, config_reload, export_summary,
+    files_delete, files_download, files_list, files_mkdir, files_read, files_rename,
     login_page, logout_page,
     logs_ws, persist_get, persist_put, reload_service, requests_list, requests_ws,
     stats_api, stats_reset, summary_api, terminal_sessions_api, terminal_ws, webui_page,
@@ -59,3 +60,9 @@ def setup_routes(app: aiohttp.web.Application) -> None:
     app.router.add_post("/v1/webui/persist/{filename}", persist_put)
     app.router.add_get("/v1/webui/ws/terminal/{session_id}", terminal_ws)
     app.router.add_get("/v1/webui/terminal/sessions", terminal_sessions_api)
+    app.router.add_get("/v1/webui/files/list", files_list)
+    app.router.add_get("/v1/webui/files/read", files_read)
+    app.router.add_get("/v1/webui/files/download", files_download)
+    app.router.add_post("/v1/webui/files/mkdir", files_mkdir)
+    app.router.add_post("/v1/webui/files/delete", files_delete)
+    app.router.add_post("/v1/webui/files/rename", files_rename)

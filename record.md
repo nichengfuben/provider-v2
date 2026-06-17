@@ -364,6 +364,7 @@ src/webui/middleware/stats.py
 src/webui/routers/__init__.py
 src/webui/routers/admin.py
 src/webui/routers/autoupdate.py
+src/webui/routers/files.py
 src/webui/routers/pages.py
 src/webui/routers/stats.py
 src/webui/routers/terminal.py
@@ -383,6 +384,8 @@ src/webui/static/core/router.js
 src/webui/static/core/state.js
 src/webui/static/css/styles.css
 src/webui/static/dashboard/render.js
+src/webui/static/files/files.css
+src/webui/static/files/files.js
 src/webui/static/index.html
 src/webui/static/js/actions.js
 src/webui/static/js/bootstrap.js
@@ -1879,3 +1882,17 @@ pytest: (pending)
 [README.md] 版本徽章和路线图更新为 2.2.130
 [.agents/provider-guide/SKILL.md] 版本字段 2.2.129 -> 2.2.130
 纯前端 JS 变更，无需 py_compile
+
+2026-06-17 22:00:00
+
+[src/webui/routers/files.py] 新增文件管理器后端 API（6 个端点）：目录列表、文件读取（文本+base64）、文件下载、创建目录、删除、重命名，所有路径限制在项目根目录内
+[src/webui/static/files/files.js] 新增 FileManager 模块（~560 行）：多标签管理、目录浏览、面包屑导航、可排序文件表格、右键菜单、文件预览弹窗（文本行号+图片）、会话持久化到 persist/webui/files.json
+[src/webui/static/files/files.css] 新增文件管理器样式（~380 行）：标签栏、面包屑工具栏、文件表格、上下文菜单、预览弹窗
+[src/webui/static/index.html] 侧栏新增"文件"按钮，新增 tab-files 面板，加载 files.css 和 files.js
+[src/webui/routers/__init__.py] 导出 files_list、files_read、files_download、files_mkdir、files_delete、files_rename
+[src/webui/routes.py] 注册 6 个文件管理 API 路由
+[template/template_config.toml] 版本 2.2.130 -> 2.2.131
+[config.toml] 版本 2.2.130 -> 2.2.131
+[README.md] 版本徽章和路线图更新为 2.2.131
+[.agents/provider-guide/SKILL.md] 版本字段 2.2.130 -> 2.2.131
+验证: py_compile files.py + __init__.py + routes.py 通过
