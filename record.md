@@ -1615,3 +1615,13 @@ pytest: (pending)
 [README.md] 版本徽章和路线图更新为 2.2.111
 [.agents/provider-guide/SKILL.md] 版本字段 2.2.110 -> 2.2.111
 纯前端 JS/HTML/CSS 变更，无需 py_compile
+
+2026-06-17 03:00:00
+
+[main.py] 修复端口占用错误信息：根据 startup_force_kill_port 实际值显示不同日志（true 时提示已尝试强制终止，false 时提示未强制释放）
+[requirements.txt] echotools 升级 >=1.0.19 -> >=1.0.20（修复端口释放竞态条件：taskkill 后添加重试等待）
+[template/template_config.toml] 版本 2.2.111 -> 2.2.112
+[config.toml] 版本 2.2.111 -> 2.2.112
+[README.md] 版本徽章和路线图更新为 2.2.112
+[.agents/provider-guide/SKILL.md] 版本字段 2.2.111 -> 2.2.112
+验证: py_compile main.py 通过
