@@ -67,8 +67,8 @@
         <div class="border border-border rounded-xl p-3.5 bg-panel-alt card-hover-lift"><div class="text-[13px] text-muted m-0 mb-2">服务状态</div><div class="text-2xl font-bold" id="healthValue">-</div></div>
       </div>
       <div class="flex flex-wrap gap-2 items-center">
-        <div class="border-l-4 border-accent px-3 py-2.5 bg-accent-soft rounded-xl leading-relaxed text-[14px]">该页面优先使用只读摘要接口，单个接口失败时会自动降级，不会导致整页失效。</div>
-        <div class="border-l-4 border-accent px-3 py-2.5 bg-accent-soft rounded-xl leading-relaxed text-[14px]" id="socketNotice">日志 WebSocket: /v1/webui/ws/logs</div>
+        <div class="px-3 py-2.5 bg-accent-soft rounded-xl leading-relaxed text-[14px]">该页面优先使用只读摘要接口，单个接口失败时会自动降级，不会导致整页失效。</div>
+        <div class="px-3 py-2.5 bg-accent-soft rounded-xl leading-relaxed text-[14px]" id="socketNotice">日志 WebSocket: /v1/webui/ws/logs</div>
       </div>
     </section>
 
@@ -99,7 +99,7 @@
             <button class="tab-button cursor-pointer font-bold rounded-lg px-4 py-2.5 border border-border bg-panel text-text hover:bg-panel-alt transition" id="copySummaryButton" type="button">复制摘要</button>
           </div>
         </div>
-        <div class="border-l-4 border-accent px-3 py-2.5 bg-accent-soft rounded-xl leading-relaxed text-[14px]" id="overviewNotice">等待状态刷新后展示摘要提示。</div>
+        <div class="px-3 py-2.5 bg-accent-soft rounded-xl leading-relaxed text-[14px]" id="overviewNotice">等待状态刷新后展示摘要提示。</div>
         <div class="grid gap-3 grid-cols-[repeat(auto-fit,minmax(240px,1fr))]" id="overviewGrid"></div>
       </section>
 
@@ -420,6 +420,10 @@
           <label class="border border-border rounded-xl p-3.5 bg-panel-alt card-hover-lift">
             <div class="text-[13px] text-muted m-0 mb-2">TTS 模型（文字转语音）</div>
             <select id="voiceTtsModel" class="w-full rounded-xl border border-border bg-panel text-text px-3 py-2.5 text-[14px]"><option value="">加载中...</option></select>
+          </label>
+          <label class="border border-border rounded-xl p-3.5 bg-panel-alt card-hover-lift">
+            <div class="text-[13px] text-muted m-0 mb-2">录音设备</div>
+            <select id="recordingDeviceSelect" class="w-full rounded-xl border border-border bg-panel text-text px-3 py-2.5 text-[14px]"><option value="">默认设备</option></select>
           </label>
           <label class="border border-border rounded-xl p-3.5 bg-panel-alt card-hover-lift" style="grid-column: 1 / -1;">
             <div class="flex justify-between items-center mb-2">

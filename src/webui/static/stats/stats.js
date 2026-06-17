@@ -12,10 +12,14 @@ var StatsFeature = (function () {
   var _container = null;
   var _timer = null;
   var _interval = 3000;
+  var _persistTimer = null;
+  var _lastData = null;
 
   function init() {
     _container = document.getElementById('statsGrid');
     if (!_container) return;
+    // Load persisted stats on startup
+    _loadPersisted();
     // Poll: refresh when stats tab is visible
     _timer = setInterval(function () {
       var panel = document.getElementById('tab-stats');
@@ -23,6 +27,12 @@ var StatsFeature = (function () {
         refresh();
       }
     }, _interval);
+    // Persist stats every 10 seconds
+    _persistTimer = setInterval(function() {
+      if (_lastData && typeof persistSave === 'function') {
+        persistSave('stats.json', _lastData);
+      }
+    }, 10000);
     // Initial refresh if already visible
     var panel = document.getElementById('tab-stats');
     if (panel && panel.classList.contains('active')) {
@@ -30,10 +40,22 @@ var StatsFeature = (function () {
     }
   }
 
+  async function _loadPersisted() {
+    if (!_container || typeof persistLoad !== 'function') return;
+    try {
+      var data = await persistLoad('stats.json');
+      if (data) {
+        _lastData = data;
+        render(data);
+      }
+    } catch (e) { /* ignore */ }
+  }
+
   async function refresh() {
     if (!_container) return;
     try {
       var data = await Api.fetchJson('/v1/webui/stats');
+      _lastData = data;
       render(data);
     } catch (e) {
       _container.innerHTML = '<div class="text-err p-4">统计加载失败: ' + e.message + '</div>';

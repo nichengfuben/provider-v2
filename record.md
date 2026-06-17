@@ -1715,3 +1715,20 @@ pytest: (pending)
 [README.md] 版本徽章和路线图更新为 2.2.120
 [.agents/provider-guide/SKILL.md] 版本字段 2.2.119 -> 2.2.120
 纯前端 JS/HTML 变更，无需 py_compile
+
+2026-06-17 12:00:00
+
+[src/webui/routers/admin.py] 新增 persist_get/persist_put 端点，支持读写 persist/webui/ 目录下的 JSON 文件（带路径遍历防护）
+[src/webui/routers/__init__.py] 导出 persist_get、persist_put
+[src/webui/routes.py] 注册 GET/POST /v1/webui/persist/{filename} 路由
+[src/webui/static/index.html] 便携设置新增录音设备下拉菜单；移除信息框 border-l-4 border-accent 左边框
+[src/webui/static/ui/bootstrap.js] 新增录音设备枚举（navigator.mediaDevices.enumerateDevices）和 CustomDropdown，选中设备 ID 持久化到 persist/webui/config.json
+[src/webui/static/core/state.js] 新增 ansiToHtml() 函数（支持 ANSI 颜色/加粗/斜体/下划线转 HTML）；日志面板新增行号和 ANSI 颜色渲染，最多 2000 条自动修剪
+[src/webui/static/chat/chat.js] 新增 renderInlineMarkdown()（加粗/斜体/行内代码/链接）和重写 renderWithCodeBlocks()（标题/列表/代码块）；代码块新增预览/代码选项卡；data-raw 属性确保复制使用原始内容
+[src/webui/static/stats/stats.js] 新增 _loadPersisted() 从 persist/webui/stats.json 加载统计数据，定期自动保存
+[src/webui/static/ui/styles.css] 新增 .log-line/.log-ln 日志行号和 ANSI 样式
+[template/template_config.toml] 版本 2.2.120 -> 2.2.121
+[config.toml] 版本 2.2.120 -> 2.2.121
+[README.md] 版本徽章和路线图更新为 2.2.121
+[.agents/provider-guide/SKILL.md] 版本字段 2.2.120 -> 2.2.121
+验证: py_compile admin.py + routes.py + __init__.py 通过

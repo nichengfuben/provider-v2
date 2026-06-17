@@ -31,10 +31,71 @@ const refreshState = document.getElementById('refreshState');
 const toastWrap = document.getElementById('toastWrap');
 const socketNotice = document.getElementById('socketNotice');
 let logsSocket = null;
+let _logLineCount = 0;
+let _logEntries = [];
+const _logMaxEntries = 2000;
+
+function ansiToHtml(text) {
+  var escaped = text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+  var colors = {
+    '30': '#555', '31': '#e74c3c', '32': '#2ecc71', '33': '#f1c40f',
+    '34': '#3498db', '35': '#9b59b6', '36': '#1abc9c', '37': '#ccc',
+    '90': '#777', '91': '#ff6b6b', '92': '#51cf66', '93': '#ffd43b',
+    '94': '#74c0fc', '95': '#da77f2', '96': '#63e6be', '97': '#fff'
+  };
+  var result = '';
+  var openSpans = 0;
+  var regex = /\x1b\[([\d;]*)m/g;
+  var lastIndex = 0;
+  var match;
+  while ((match = regex.exec(escaped)) !== null) {
+    result += escaped.substring(lastIndex, match.index);
+    var codes = match[1].split(';');
+    for (var i = 0; i < codes.length; i++) {
+      var code = codes[i];
+      if (code === '0' || code === '') {
+        while (openSpans > 0) { result += '</span>'; openSpans--; }
+      } else if (code === '1') {
+        result += '<span style="font-weight:bold">'; openSpans++;
+      } else if (code === '2') {
+        result += '<span style="opacity:0.7">'; openSpans++;
+      } else if (code === '3') {
+        result += '<span style="font-style:italic">'; openSpans++;
+      } else if (code === '4') {
+        result += '<span style="text-decoration:underline">'; openSpans++;
+      } else if (colors[code]) {
+        result += '<span style="color:' + colors[code] + '">'; openSpans++;
+      } else {
+        var codeNum = parseInt(code, 10);
+        if (codeNum >= 40 && codeNum <= 47) {
+          // Background colors — skip silently
+        } else if (codeNum >= 100 && codeNum <= 107) {
+          // Bright background colors — skip silently
+        }
+      }
+    }
+    lastIndex = regex.lastIndex;
+  }
+  result += escaped.substring(lastIndex);
+  while (openSpans > 0) { result += '</span>'; openSpans--; }
+  return result;
+}
 
 function log(message) {
-  const line = '[' + new Date().toLocaleTimeString() + '] ' + message;
-  logBox.textContent = line + '\n' + logBox.textContent;
+  var line = '[' + new Date().toLocaleTimeString() + '] ' + message;
+  _logLineCount++;
+  _logEntries.unshift({ num: _logLineCount, html: ansiToHtml(line) });
+  if (_logEntries.length > _logMaxEntries) {
+    _logEntries.pop();
+  }
+  var html = '';
+  for (var i = 0; i < _logEntries.length; i++) {
+    html += '<div class="log-line"><span class="log-ln">' + _logEntries[i].num + '</span>' + _logEntries[i].html + '</div>';
+  }
+  logBox.innerHTML = html;
 }
 
 function toast(message, type) {

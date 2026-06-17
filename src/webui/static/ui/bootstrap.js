@@ -87,7 +87,9 @@ document.getElementById('copyConfigButton').addEventListener('click', function()
   copyText(configJsonBox.textContent || '{}', '配置摘要已复制');
 });
 document.getElementById('clearLogButton').addEventListener('click', function() {
-  logBox.textContent = '';
+  _logEntries = [];
+  _logLineCount = 0;
+  logBox.innerHTML = '';
   toast('日志已清空', 'ok');
 });
 document.getElementById('reloadServerButton').addEventListener('click', reloadServer);
@@ -198,7 +200,7 @@ applyVoiceSettings();
 window._dropdowns = {};
 ['modelPlatformSelect', 'modelCapabilitySelect', 'chatModelSelect',
  'chatProtocolSelect', 'themeSelect', 'compactSelect',
- 'voiceSttModel', 'voiceTtsModel'].forEach(function(id) {
+ 'voiceSttModel', 'voiceTtsModel', 'recordingDeviceSelect'].forEach(function(id) {
   var el = document.getElementById(id);
   if (el) {
     window._dropdowns[id] = new CustomDropdown(el);
@@ -316,3 +318,71 @@ if (typeof switchTab === 'function') {
     }
   };
 }
+
+// ========================= Persist Helpers =========================
+async function persistSave(filename, data) {
+  try {
+    await fetch('/v1/webui/persist/' + filename, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+  } catch (e) { /* ignore */ }
+}
+
+async function persistLoad(filename) {
+  try {
+    var resp = await fetch('/v1/webui/persist/' + filename);
+    if (resp.ok) return await resp.json();
+  } catch (e) { /* ignore */ }
+  return null;
+}
+
+// ========================= Recording Device =========================
+(async function loadRecordingDevices() {
+  try {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) return;
+    // Request permission to get device labels
+    var stream = null;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch (e) { /* permission denied, labels may be empty */ }
+    var devices = await navigator.mediaDevices.enumerateDevices();
+    if (stream) {
+      stream.getTracks().forEach(function(t) { t.stop(); });
+    }
+    var audioInputs = devices.filter(function(d) { return d.kind === 'audioinput'; });
+    var opts = [{ value: '', text: '默认设备' }];
+    for (var i = 0; i < audioInputs.length; i++) {
+      opts.push({
+        value: audioInputs[i].deviceId,
+        text: audioInputs[i].label || ('麦克风 ' + (i + 1))
+      });
+    }
+    var dropdown = window._dropdowns && window._dropdowns['recordingDeviceSelect'];
+    if (dropdown) {
+      dropdown.setOptions(opts, false);
+      // Restore saved device
+      var saved = await persistLoad('config.json');
+      if (saved && saved.recordingDeviceId) {
+        dropdown.setValue(saved.recordingDeviceId);
+      }
+    }
+  } catch (e) { /* ignore */ }
+})();
+
+// Recording device change handler
+(function() {
+  var dropdown = window._dropdowns && window._dropdowns['recordingDeviceSelect'];
+  if (dropdown) {
+    dropdown.onChange = function(value) {
+      persistSave('config.json', { recordingDeviceId: value });
+    };
+  }
+  var el = document.getElementById('recordingDeviceSelect');
+  if (el) {
+    el.addEventListener('change', function() {
+      persistSave('config.json', { recordingDeviceId: el.value });
+    });
+  }
+})();

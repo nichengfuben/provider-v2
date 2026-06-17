@@ -19,35 +19,106 @@ document.addEventListener("click", function(e) {
 
 // ========================= Code Block Rendering =========================
 /**
- * 将包含 ```code``` 块的文本转换为 HTML，保持代码缩进。
+ * Render inline markdown (bold, italic, inline code, links).
+ * Input should already be HTML-escaped. Code blocks are extracted before calling this.
+ */
+function renderInlineMarkdown(text) {
+  // Protect inline code first
+  var inlineCodes = [];
+  text = text.replace(/`([^`\n]+)`/g, function(m, code) {
+    var idx = inlineCodes.length;
+    inlineCodes.push(code);
+    return '\x00IC' + idx + '\x00';
+  });
+  // Bold: **text**
+  text = text.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+  // Italic: *text*
+  text = text.replace(/(?<![&\w])\*([^*\n]+)\*/g, '<em>$1</em>');
+  // Links: [text](url)
+  text = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:underline;">$1</a>');
+  // Restore inline code
+  for (var i = 0; i < inlineCodes.length; i++) {
+    text = text.replace('\x00IC' + i + '\x00', '<code class="chat-inline-code">' + inlineCodes[i] + '</code>');
+  }
+  return text;
+}
+
+/**
+ * 将包含 ```code``` 块的文本转换为 HTML，支持 markdown 渲染。
  * @param {string} text - 原始文本
  * @returns {string} HTML 字符串
  */
 function renderWithCodeBlocks(text) {
-  var escaped = escapeHtml(text);
+  // Extract code blocks first (protect from escaping and markdown)
   var codeBlocks = [];
   var sentinel = '\x00CB';
   var codeBlockRegex = /```(\w*)\n([\s\S]*?)```/g;
-  var result = escaped.replace(codeBlockRegex, function(match, lang, code) {
-    var langClass = lang ? ' class="language-' + lang.toLowerCase() + '"' : '';
-    var langLabel = lang ? lang.toLowerCase() : 'code';
+  var processed = text.replace(codeBlockRegex, function(match, lang, code) {
     var idx = codeBlocks.length;
-    codeBlocks.push(
-      '<div class="chat-codeblock-wrapper">' +
-      '<div class="chat-codeblock-header">' +
-      '<span class="chat-codeblock-lang">' + langLabel + '</span>' +
-      '<button class="chat-codeblock-copy" type="button">复制</button>' +
-      '</div>' +
-      '<pre class="chat-codeblock"><code' + langClass + '>' + code + '</code></pre>' +
-      '</div>'
-    );
+    codeBlocks.push({ lang: lang, code: code });
     return sentinel + idx + sentinel;
   });
-  result = result.replace(/\n/g, '<br>');
-  for (var i = 0; i < codeBlocks.length; i++) {
-    result = result.replace(sentinel + i + sentinel, codeBlocks[i]);
+
+  // Escape HTML in remaining text
+  processed = escapeHtml(processed);
+
+  // Process block-level markdown on each line
+  var lines = processed.split('\n');
+  var resultLines = [];
+  for (var i = 0; i < lines.length; i++) {
+    var line = lines[i];
+    // Headers
+    var hMatch = line.match(/^(#{1,6})\s+(.+)$/);
+    if (hMatch) {
+      var level = hMatch[1].length;
+      var sizes = { 1: '1.4em', 2: '1.25em', 3: '1.1em', 4: '1em', 5: '0.95em', 6: '0.9em' };
+      resultLines.push('<h' + level + ' style="margin:8px 0 4px;font-size:' + sizes[level] + ';font-weight:bold;">' + renderInlineMarkdown(hMatch[2]) + '</h' + level + '>');
+      continue;
+    }
+    // Unordered list items (* or -)
+    var ulMatch = line.match(/^(\s*)[*-]\s+(.+)$/);
+    if (ulMatch) {
+      var indent = Math.floor(ulMatch[1].length / 2);
+      resultLines.push('<div style="padding-left:' + (indent * 20 + 16) + 'px;">\u2022 ' + renderInlineMarkdown(ulMatch[2]) + '</div>');
+      continue;
+    }
+    // Ordered list items
+    var olMatch = line.match(/^(\s*)(\d+)[.)]\s+(.+)$/);
+    if (olMatch) {
+      var indent2 = Math.floor(olMatch[1].length / 2);
+      resultLines.push('<div style="padding-left:' + (indent2 * 20 + 16) + 'px;">' + olMatch[2] + '. ' + renderInlineMarkdown(olMatch[3]) + '</div>');
+      continue;
+    }
+    // Regular line with inline markdown
+    resultLines.push(renderInlineMarkdown(line));
   }
-  return result;
+  processed = resultLines.join('\n');
+
+  // Convert newlines to <br>
+  processed = processed.replace(/\n/g, '<br>');
+
+  // Restore code blocks with toggle and raw storage
+  for (var j = 0; j < codeBlocks.length; j++) {
+    var cb = codeBlocks[j];
+    var langClass = cb.lang ? ' class="language-' + cb.lang.toLowerCase() + '"' : '';
+    var langLabel = cb.lang ? cb.lang.toLowerCase() : 'code';
+    var escapedCode = escapeHtml(cb.code);
+    var blockHtml =
+      '<div class="chat-codeblock-wrapper">' +
+        '<div class="chat-codeblock-header">' +
+          '<span class="chat-codeblock-lang">' + langLabel + '</span>' +
+          '<div class="chat-codeblock-tabs">' +
+            '<button class="chat-codeblock-tab is-active" data-tab="preview" type="button">preview</button>' +
+            '<button class="chat-codeblock-tab" data-tab="code" type="button">code</button>' +
+          '</div>' +
+          '<button class="chat-codeblock-copy" type="button">复制</button>' +
+        '</div>' +
+        '<pre class="chat-codeblock" data-raw-code="' + escapedCode + '"><code' + langClass + '>' + escapedCode + '</code></pre>' +
+      '</div>';
+    processed = processed.replace(sentinel + j + sentinel, blockHtml);
+  }
+
+  return processed;
 }
 
 // ========================= Chat Message Rendering =========================
@@ -69,6 +140,7 @@ function appendChatMessage(role, content, options) {
     toolHtml += '</div>';
     msg.innerHTML = toolHtml + renderWithCodeBlocks(content);
   } else if (role === "assistant") {
+    msg.setAttribute("data-raw", content);
     msg.innerHTML = renderWithCodeBlocks(content);
   } else if (role === "user") {
     var histIdx = _userMsgCount++;
@@ -101,6 +173,7 @@ function updateStreamingMessage(content) {
   // Only update innerHTML if there's actual content (preserve tool calls structure if present)
   if (content) {
     msg.innerHTML = renderWithCodeBlocks(content);
+    msg.setAttribute("data-raw", content);
   }
   var container = document.getElementById("chatMessagesContainer");
   if (container) container.scrollTop = container.scrollHeight;
@@ -119,7 +192,7 @@ function finalizeStreamingMessage(toolCalls) {
 
   if (toolCalls && toolCalls.length > 0) {
     var msgUid = ++_toolIdCounter;
-    var content = msg.textContent || msg.innerText || "";
+    var content = msg.getAttribute("data-raw") || msg.textContent || "";
     var toolHtml = '<div class="chat-tools-container">';
     for (var i = 0; i < toolCalls.length; i++) {
       var tc = toolCalls[i];
@@ -145,6 +218,7 @@ function finalizeStreamingMessage(toolCalls) {
     }
     toolHtml += '</div>';
     msg.innerHTML = toolHtml + '<div class="chat-assistant-text">' + renderWithCodeBlocks(content) + '</div>';
+    msg.setAttribute("data-raw", content);
   }
 
   appendMessageActions("assistant", msg);
@@ -158,19 +232,44 @@ function escapeHtml(text) {
 }
 
 document.addEventListener("click", function(e) {
+  // Code block copy button
   var btn = e.target.closest(".chat-codeblock-copy");
-  if (!btn) return;
-  var codeEl = btn.parentElement.nextElementSibling;
-  if (!codeEl) return;
-  var code = (codeEl.querySelector("code") || codeEl).textContent;
-  navigator.clipboard.writeText(code).then(function() {
-    btn.textContent = "已复制";
-    btn.classList.add("is-copied");
-    setTimeout(function() {
-      btn.textContent = "复制";
-      btn.classList.remove("is-copied");
-    }, 2000);
-  });
+  if (btn) {
+    var pre = btn.closest('.chat-codeblock-wrapper').querySelector('.chat-codeblock');
+    if (!pre) return;
+    var raw = pre.getAttribute('data-raw-code') || pre.textContent || '';
+    navigator.clipboard.writeText(raw).then(function() {
+      btn.textContent = "已复制";
+      btn.classList.add("is-copied");
+      setTimeout(function() {
+        btn.textContent = "复制";
+        btn.classList.remove("is-copied");
+      }, 2000);
+    });
+    return;
+  }
+
+  // Code block preview/code toggle
+  var tab = e.target.closest(".chat-codeblock-tab");
+  if (tab) {
+    var wrapper = tab.closest('.chat-codeblock-wrapper');
+    if (!wrapper) return;
+    var pre = wrapper.querySelector('.chat-codeblock');
+    var codeEl = pre.querySelector('code');
+    var mode = tab.getAttribute('data-tab');
+    // Update active tab
+    wrapper.querySelectorAll('.chat-codeblock-tab').forEach(function(t) {
+      t.classList.toggle('is-active', t === tab);
+    });
+    if (mode === 'code') {
+      codeEl.textContent = pre.getAttribute('data-raw-code') || codeEl.textContent;
+      codeEl.innerHTML = codeEl.textContent;
+    } else {
+      var raw = pre.getAttribute('data-raw-code') || '';
+      codeEl.innerHTML = escapeHtml(raw);
+    }
+    return;
+  }
 });
 
 // ========================= Message Actions Component =========================
@@ -231,7 +330,7 @@ document.addEventListener("click", function(e) {
     if (role === "assistant") {
       // Edit assistant message content directly
       if (bubble.querySelector(".chat-msg-edit-area")) return;
-      var rawText = bubble.textContent || "";
+      var rawText = bubble.getAttribute("data-raw") || bubble.textContent || "";
 
       var area = document.createElement("div");
       area.className = "chat-msg-edit-area";
@@ -384,11 +483,42 @@ function saveChatState() {
     localStorage.setItem("provider.webui.chatHistory", JSON.stringify(chatConversationHistory));
     localStorage.setItem("provider.webui.chatDom", html);
     localStorage.setItem("provider.webui.userMsgCount", String(_userMsgCount));
+    // Persist to backend
+    if (typeof persistSave === 'function') {
+      persistSave('chat.json', {
+        history: chatConversationHistory,
+        userMsgCount: _userMsgCount
+      });
+    }
   } catch (e) { /* quota exceeded or private mode */ }
 }
 
-function loadChatState() {
+async function loadChatState() {
   try {
+    // Try loading from backend persist first
+    if (typeof persistLoad === 'function') {
+      try {
+        var persisted = await persistLoad('chat.json');
+        if (persisted && persisted.history && persisted.history.length > 0) {
+          chatConversationHistory = persisted.history;
+          _userMsgCount = persisted.userMsgCount || 0;
+          // Re-render messages from history
+          var container = document.getElementById("chatMessagesContainer");
+          if (container) {
+            container.innerHTML = '';
+            _userMsgCount = 0;
+            for (var i = 0; i < chatConversationHistory.length; i++) {
+              var msg = chatConversationHistory[i];
+              appendChatMessage(msg.role, msg.content || '', {
+                toolCalls: msg.tool_calls
+              });
+            }
+          }
+          return;
+        }
+      } catch (e) { /* ignore, fall back to localStorage */ }
+    }
+    // Fallback to localStorage
     var hist = localStorage.getItem("provider.webui.chatHistory");
     var dom = localStorage.getItem("provider.webui.chatDom");
     var count = localStorage.getItem("provider.webui.userMsgCount");

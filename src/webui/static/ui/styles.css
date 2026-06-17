@@ -691,6 +691,48 @@ section.tab-panel > * {
   border-color: var(--accent);
 }
 
+/* Code block tabs */
+.chat-codeblock-tabs {
+  display: flex;
+  gap: 2px;
+  margin-left: auto;
+  margin-right: 8px;
+}
+
+.chat-codeblock-tab {
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  font-size: 11px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.chat-codeblock-tab:hover {
+  background: var(--panel-alt);
+  color: var(--text);
+}
+
+.chat-codeblock-tab.is-active {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+/* Inline code */
+.chat-inline-code {
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: var(--panel-alt);
+  color: var(--accent);
+  font-family: 'SF Mono', 'Cascadia Code', 'Consolas', 'Monaco', monospace;
+  font-size: 0.9em;
+  border: 1px solid var(--border);
+}
+
 .chat-codeblock {
   margin: 0;
   padding: 12px;
@@ -1054,4 +1096,21 @@ section.tab-panel > * {
   margin: 0;
   line-height: 1.5;
   border: 1px solid var(--border);
+}
+
+/* ========== Log Line Numbers ========== */
+.log-line {
+  display: flex;
+  gap: 8px;
+  line-height: 1.6;
+}
+.log-ln {
+  flex-shrink: 0;
+  width: 36px;
+  text-align: right;
+  color: var(--muted);
+  opacity: 0.5;
+  user-select: none;
+  font-size: 11px;
+  line-height: 1.6;
 }
