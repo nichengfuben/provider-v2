@@ -15,9 +15,15 @@ import aiohttp
 
 from src.core.candidate import Candidate, make_id
 from src.core.models_cache import ModelsCache
+from src.core.proxy_selector import ProxySelector
 from src.logger import get_logger
 from src.platforms.qwen.accounts import ACCOUNTS, Account
-from src.platforms.qwen.core.constants import CAPS, MODELS
+from src.platforms.qwen.core.constants import (
+    CAPS,
+    MODELS,
+    PROXY_SELECTOR_PERSIST_PATH,
+    SMART_PROXY_ENABLED,
+)
 from src.platforms.qwen.core.shared import (
     AUTH_CHECK_PATH,
     BASE_URL,
@@ -120,6 +126,7 @@ class QwenClient:
         self._models_cache = ModelsCache("qwen", MODELS, fetch_enabled=False)
         self._proxy_override: Optional[bool] = None
         self._proxy_auto_enabled_at: Optional[float] = None
+        self._proxy_selector = ProxySelector(Path(PROXY_SELECTOR_PERSIST_PATH))
 
     def get_models(self) -> List[str]:
         """返回当前模型列表副本。"""
@@ -160,15 +167,42 @@ class QwenClient:
         return bool(self._proxy_override)
 
     def _get_proxy_kwarg(self) -> Optional[str]:
-        """获取应传递给 session.request 的 proxy 值。"""
+        """获取应传递给 session.request 的 proxy 值。
+
+        优先级层次：
+        0. proxy_enabled = False → 全局禁用（绝对）
+        1. proxy_urls → 由 monkey-patch 层处理（此处不涉及）
+        2. platforms_proxy.enabled_platforms → 平台白名单检查
+        3. SMART_PROXY_ENABLED → 智能选择器（proxy vs direct）
+        """
+        from src.core.config import get_config
+
+        cfg = get_config()
+
+        # Level 0: global kill switch
+        if not cfg.proxy.proxy_enabled:
+            return None
+
         self._check_proxy_expiry()
+
+        # Explicit override (set by WAF auto-enable or manual toggle)
         if self._proxy_override is True:
-            from src.core.config import get_config
-            cfg = get_config()
             if not cfg.platforms_proxy.is_platform_enabled("qwen"):
                 return None
             from src.core.proxy import get_proxy_server
             return get_proxy_server()
+
+        if self._proxy_override is False:
+            return None
+
+        # _proxy_override is None: smart selector or fallback to monkey-patch
+        if SMART_PROXY_ENABLED:
+            if self._proxy_selector.select():
+                from src.core.proxy import get_proxy_server
+                return get_proxy_server()
+            return None
+
+        # SMART_PROXY_ENABLED is False: no override → monkey-patch decides
         return None
 
     # =========================================================================
@@ -346,19 +380,6 @@ class QwenClient:
                 1 for acc in self._account_states.values() if acc.token
             )
             logger.debug("Qwen: 从持久化恢复 %d 个账号 token", loaded)
-
-            proxy_state = data.get("proxy", {})
-            if proxy_state:
-                from src.core.config import get_config
-                cfg = get_config()
-                if cfg.platforms_proxy.is_platform_enabled("qwen"):
-                    self._proxy_override = proxy_state.get("enabled")
-                    auto_at = proxy_state.get("auto_enabled_at")
-                    if auto_at is not None:
-                        self._proxy_auto_enabled_at = float(auto_at)
-                        if time.time() - self._proxy_auto_enabled_at > _PROXY_AUTO_EXPIRY:
-                            self._proxy_override = None
-                            self._proxy_auto_enabled_at = None
         except Exception as e:
             logger.warning("Qwen 持久化加载失败: %s", e)
 
@@ -401,10 +422,6 @@ class QwenClient:
                     "cookies": {
                         **self._cookies,
                         "timestamp": time.time(),
-                    },
-                    "proxy": {
-                        "enabled": self._proxy_override,
-                        "auto_enabled_at": self._proxy_auto_enabled_at,
                     },
                     "updated": time.time(),
                 },
@@ -2055,8 +2072,18 @@ class QwenClient:
                     connect=10, total=SSE_TIMEOUT
                 ),
             }
-            if self._proxy_override is not None:
-                post_kw["proxy"] = self._get_proxy_kwarg()
+            # Smart proxy selector: always ask for proxy decision.
+            # When override is set or SMART_PROXY_ENABLED is True,
+            # _get_proxy_kwarg() returns the proxy URL or None.
+            # When neither applies, "proxy" key is omitted so the
+            # global monkey-patch decides (Level 1: URL patterns).
+            proxy_kw = self._get_proxy_kwarg()
+            _used_smart_proxy: Optional[bool] = (proxy_kw is not None)
+            if proxy_kw is not None or self._proxy_override is not None:
+                post_kw["proxy"] = proxy_kw
+
+            _request_start = time.time()
+            _request_failed = True  # assume failure; cleared on success
 
             async with self._session.post(url, **post_kw) as resp:
                 if resp.status != 200:
@@ -2342,15 +2369,36 @@ class QwenClient:
                 if tts and response_id:
                     await self.request_tts(chat_id, response_id, token)
 
+                _request_failed = False
+
         except (aiohttp.ClientPayloadError, aiohttp.http_exceptions.PayloadEncodingError) as e:
             # 传输中断（如 TransferEncodingError、ContentEncodingError 等），
             # 已 yield 的数据已发出，不向上抛出，避免重试循环
             logger.warning("Qwen 流式响应被截断，已收集部分数据: %s", e)
+            _request_failed = False  # partial success: data was already emitted
+            if _used_smart_proxy is not None and SMART_PROXY_ENABLED:
+                latency_ms = (time.time() - _request_start) * 1000
+                self._proxy_selector.record(
+                    _used_smart_proxy, True, latency_ms
+                )
+                _used_smart_proxy = None  # prevent double-recording in finally
         except Exception as e:
             # 其他未知异常，记录日志后向上传播
             logger.error("Qwen _do_request 未知异常: %s", e, exc_info=True)
+            if _used_smart_proxy is not None and SMART_PROXY_ENABLED:
+                self._proxy_selector.record(_used_smart_proxy, False)
+                _used_smart_proxy = None  # prevent double-recording in finally
             raise
         finally:
+            # Record proxy outcome for smart selector learning
+            if _used_smart_proxy is not None and SMART_PROXY_ENABLED:
+                if not _request_failed:
+                    latency_ms = (time.time() - _request_start) * 1000
+                    self._proxy_selector.record(
+                        _used_smart_proxy, True, latency_ms
+                    )
+                else:
+                    self._proxy_selector.record(_used_smart_proxy, False)
             self._active_chats.pop(candidate.id, None)
             asyncio.ensure_future(self._cleanup_chat(chat_id, token))
 

@@ -168,6 +168,7 @@ src/core/io_utils.py
 src/core/models_cache.py
 src/core/process.py
 src/core/proxy.py
+src/core/proxy_selector.py
 src/core/registry.py
 src/core/retry.py
 src/core/runtime_view.py
@@ -1653,3 +1654,14 @@ pytest: (pending)
 [README.md] 版本徽章和路线图更新为 2.2.114
 [.agents/provider-guide/SKILL.md] 版本字段 2.2.113 -> 2.2.114
 验证: py_compile 10 文件全部通过
+
+2026-06-17 06:00:00
+
+[src/core/proxy_selector.py] 新增智能代理选择器：ProxyRecord 数据类（n_fails/last_success/ema_latency/n_calls）+ ProxySelector 类（4 维评分、10% 探索率、EMA 延迟平滑、原子 JSON 持久化），供各平台复用
+[src/platforms/qwen/core/constants.py] 新增 SMART_PROXY_ENABLED(True) 和 PROXY_SELECTOR_PERSIST_PATH 常量
+[src/platforms/qwen/core/client.py] _get_proxy_kwarg() 重写为严格优先级（Level 0 全局禁用→手动覆盖→智能选择器→monkey-patch）；_do_request() 新增代理结果记录（成功/失败+延迟）供选择器学习；代理状态从 usage.json 移至独立 proxy.json
+[template/template_config.toml] 版本 2.2.114 -> 2.2.115
+[config.toml] 版本 2.2.114 -> 2.2.115
+[README.md] 版本徽章和路线图更新为 2.2.115
+[.agents/provider-guide/SKILL.md] 版本字段 2.2.114 -> 2.2.115
+验证: py_compile 3 文件全部通过
