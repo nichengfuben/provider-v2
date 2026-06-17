@@ -1906,3 +1906,13 @@ pytest: (pending)
 [README.md] 版本徽章和路线图更新为 2.2.132
 [.agents/provider-guide/SKILL.md] 版本字段 2.2.131 -> 2.2.132
 纯前端 JS 变更，无需 py_compile
+
+2026-06-18 00:00:00
+
+[src/webui/static/terminal/terminal.js] 终端选项卡 UI 文本全面汉化：标签名（本地/远程）、右键菜单（重命名/重新连接/关闭/关闭其他/关闭全部）、新建菜单、SSH 对话框（标题/标签/占位符/按钮/验证提示）、终端输出消息（错误/重新连接/进程退出/WebSocket 错误）
+[src/webui/static/index.html] 终端空状态文本和按钮汉化（暂无终端会话/+ 本地终端/+ 远程终端）
+[template/template_config.toml] 版本 2.2.132 -> 2.2.133
+[config.toml] 版本 2.2.132 -> 2.2.133
+[README.md] 版本徽章和路线图更新为 2.2.133
+[.agents/provider-guide/SKILL.md] 版本字段 2.2.132 -> 2.2.133
+纯前端 JS/HTML 变更，无需 py_compile

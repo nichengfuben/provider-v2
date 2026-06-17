@@ -99,7 +99,7 @@ var TerminalManager = (function () {
 
     _tabCounter++;
     var tabId = 'term-' + _tabCounter + '-' + Date.now();
-    var name = options.name || (kind === 'ssh' ? 'SSH' : 'Local') + ' ' + _tabCounter;
+    var name = options.name || (kind === 'ssh' ? '远程' : '本地') + ' ' + _tabCounter;
 
     var tab = {
       id: tabId,
@@ -227,11 +227,11 @@ var TerminalManager = (function () {
         } else if (msg.type === 'output') {
           tab.term.write(msg.data);
         } else if (msg.type === 'error') {
-          tab.term.writeln('\r\n\x1b[31mError: ' + msg.message + '\x1b[0m');
+          tab.term.writeln('\r\n\x1b[31m错误: ' + msg.message + '\x1b[0m');
           tab.status = 'disconnected';
           _renderTabBar();
         } else if (msg.type === 'exit') {
-          tab.term.writeln('\r\n\x1b[33m[Process exited with code ' + msg.code + ']\x1b[0m');
+          tab.term.writeln('\r\n\x1b[33m[进程已退出，退出码 ' + msg.code + ']\x1b[0m');
           tab.status = 'disconnected';
           _renderTabBar();
         }
@@ -248,7 +248,7 @@ var TerminalManager = (function () {
     ws.onerror = function () {
       tab.status = 'disconnected';
       _renderTabBar();
-      tab.term.writeln('\r\n\x1b[31m[WebSocket connection error]\x1b[0m');
+      tab.term.writeln('\r\n\x1b[31m[WebSocket 连接错误]\x1b[0m');
     };
   }
 
@@ -433,12 +433,12 @@ var TerminalManager = (function () {
     _contextMenu.style.top = event.clientY + 'px';
 
     var items = [
-      { label: 'Rename', action: function () { _promptRename(tabId); } },
-      { label: 'Reconnect', action: function () { _reconnectTab(tabId); } },
+      { label: '重命名', action: function () { _promptRename(tabId); } },
+      { label: '重新连接', action: function () { _reconnectTab(tabId); } },
       { separator: true },
-      { label: 'Close', action: function () { closeTab(tabId); } },
-      { label: 'Close Others', action: function () { closeOtherTabs(tabId); } },
-      { label: 'Close All', action: function () { closeAllTabs(); }, danger: true },
+      { label: '关闭', action: function () { closeTab(tabId); } },
+      { label: '关闭其他', action: function () { closeOtherTabs(tabId); } },
+      { label: '关闭全部', action: function () { closeAllTabs(); }, danger: true },
     ];
 
     for (var i = 0; i < items.length; i++) {
@@ -483,7 +483,7 @@ var TerminalManager = (function () {
   function _promptRename(tabId) {
     var tab = _getTabById(tabId);
     if (!tab) return;
-    var newName = prompt('Rename terminal tab:', tab.name);
+    var newName = prompt('重命名终端标签:', tab.name);
     if (newName && newName.trim()) {
       renameTab(tabId, newName.trim());
     }
@@ -499,7 +499,7 @@ var TerminalManager = (function () {
     }
     tab.status = 'connecting';
     tab.term.clear();
-    tab.term.writeln('\x1b[33m[Reconnecting...]\x1b[0m\r\n');
+    tab.term.writeln('\x1b[33m[重新连接中...]\x1b[0m\r\n');
     _renderTabBar();
     _connectWebSocket(tab);
   }
@@ -516,8 +516,8 @@ var TerminalManager = (function () {
     menu.style.top = (event.clientY + 4) + 'px';
 
     var items = [
-      { label: '+ Local Terminal', action: function () { createTab('local'); } },
-      { label: '+ SSH Remote', action: function () { _showSSHDialog(); } },
+      { label: '+ 本地终端', action: function () { createTab('local'); } },
+      { label: '+ 远程终端', action: function () { _showSSHDialog(); } },
     ];
 
     // Add saved connections
@@ -590,7 +590,7 @@ var TerminalManager = (function () {
     var savedHtml = '';
     if (_savedConnections.length > 0) {
       savedHtml = '<div class="terminal-ssh-saved">';
-      savedHtml += '<div class="terminal-ssh-saved-title">Saved Connections</div>';
+      savedHtml += '<div class="terminal-ssh-saved-title">已保存的连接</div>';
       for (var i = 0; i < _savedConnections.length; i++) {
         var conn = _savedConnections[i];
         savedHtml += '<div class="terminal-ssh-saved-item" data-idx="' + i + '">';
@@ -606,48 +606,48 @@ var TerminalManager = (function () {
 
     overlay.innerHTML =
       '<div class="terminal-ssh-dialog">' +
-      '<h3>SSH Remote Terminal</h3>' +
-      '<p class="terminal-ssh-dialog-subtitle">Connect to a remote server via SSH</p>' +
+      '<h3>SSH 远程终端</h3>' +
+      '<p class="terminal-ssh-dialog-subtitle">通过 SSH 连接远程服务器</p>' +
       '<div class="terminal-ssh-field">' +
-      '<label>Quick Connect</label>' +
-      '<input type="text" id="sshQuickInput" placeholder="user@host:port or user:pass@host:port">' +
-      '<div class="terminal-ssh-quick-hint">Press Enter to parse, or fill fields below</div>' +
+      '<label>快速连接</label>' +
+      '<input type="text" id="sshQuickInput" placeholder="user@host:port 或 user:pass@host:port">' +
+      '<div class="terminal-ssh-quick-hint">按回车解析，或在下方填写详细信息</div>' +
       '</div>' +
       '<div class="terminal-ssh-row">' +
       '<div class="terminal-ssh-field">' +
-      '<label>Host</label>' +
+      '<label>主机地址</label>' +
       '<input type="text" id="sshHost" placeholder="192.168.1.1">' +
       '</div>' +
       '<div class="terminal-ssh-field" style="max-width:100px;">' +
-      '<label>Port</label>' +
+      '<label>端口</label>' +
       '<input type="number" id="sshPort" value="22">' +
       '</div>' +
       '</div>' +
       '<div class="terminal-ssh-field">' +
-      '<label>Username</label>' +
+      '<label>用户名</label>' +
       '<input type="text" id="sshUsername" placeholder="root">' +
       '</div>' +
       '<div class="terminal-ssh-field">' +
-      '<label>Password</label>' +
-      '<input type="password" id="sshPassword" placeholder="(leave empty for key auth)">' +
+      '<label>密码</label>' +
+      '<input type="password" id="sshPassword" placeholder="（留空则使用密钥认证）">' +
       '</div>' +
       '<div class="terminal-ssh-field">' +
-      '<label>Private Key (optional)</label>' +
+      '<label>私钥（可选）</label>' +
       '<textarea id="sshKey" placeholder="-----BEGIN OPENSSH PRIVATE KEY-----&#10;...&#10;-----END OPENSSH PRIVATE KEY-----"></textarea>' +
       '</div>' +
       '<div class="terminal-ssh-field">' +
-      '<label>Connection Name (optional)</label>' +
-      '<input type="text" id="sshName" placeholder="My Server">' +
+      '<label>连接名称（可选）</label>' +
+      '<input type="text" id="sshName" placeholder="我的服务器">' +
       '</div>' +
       '<div class="terminal-ssh-field">' +
       '<label style="display:flex;align-items:center;gap:6px;cursor:pointer;">' +
-      '<input type="checkbox" id="sshSave" checked style="width:auto;"> Save connection for later use' +
+      '<input type="checkbox" id="sshSave" checked style="width:auto;"> 保存连接以便后续使用' +
       '</label>' +
       '</div>' +
       savedHtml +
       '<div class="terminal-ssh-actions">' +
-      '<button class="terminal-ssh-btn-cancel" type="button" id="sshCancelBtn">Cancel</button>' +
-      '<button class="terminal-ssh-btn-connect" type="button" id="sshConnectBtn">Connect</button>' +
+      '<button class="terminal-ssh-btn-cancel" type="button" id="sshCancelBtn">取消</button>' +
+      '<button class="terminal-ssh-btn-connect" type="button" id="sshConnectBtn">连接</button>' +
       '</div>' +
       '</div>';
 
@@ -765,11 +765,11 @@ var TerminalManager = (function () {
     var saveConn = overlay.querySelector('#sshSave').checked;
 
     if (!host) {
-      if (typeof toast === 'function') toast('Host is required', 'error');
+      if (typeof toast === 'function') toast('主机地址不能为空', 'error');
       return;
     }
     if (!username) {
-      if (typeof toast === 'function') toast('Username is required', 'error');
+      if (typeof toast === 'function') toast('用户名不能为空', 'error');
       return;
     }
 

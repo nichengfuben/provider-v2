@@ -18,8 +18,8 @@
 
 <div align="center">
 
-![Status](https://img.shields.io/badge/status-v2.2.132-blue)
-![Version](https://img.shields.io/badge/version-2.2.132-blue)
+![Status](https://img.shields.io/badge/status-v2.2.133-blue)
+![Version](https://img.shields.io/badge/version-2.2.133-blue)
 ![Python](https://img.shields.io/badge/python-3.8+-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Platforms](https://img.shields.io/badge/platforms-16+-orange)
@@ -1257,7 +1257,10 @@ fix(gateway): 修复并发竞速时 token 计数错误
 
 ## 🗺️ 路线图
 
-### 当前版本：v2.2.132
+### 当前版本：v2.2.133
+
+✅ 已完成（v2.2.133）：
+- 终端选项卡 UI 文本全面汉化（标签名、右键菜单、SSH 对话框、验证提示、终端输出消息、空状态）
 
 ✅ 已完成（v2.2.132）：
 - 日志面板性能优化（O(1) DOM 更新替代全量重建）；录音设备面板打开时刷新设备列表
