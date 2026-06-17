@@ -625,9 +625,15 @@
   width: 100%;
 }
 
-/* Center add button in vertical expanded layout */
-.files-container.tab-layout-vertical .files-tab-bar:not(.tab-bar-compressed) .files-tab-add {
+/* Add button in vertical layout: sticky at bottom */
+.files-container.tab-layout-vertical .files-tab-add {
   width: 100%;
+  position: sticky;
+  bottom: 0;
+  background: var(--panel);
+  z-index: 1;
+  border-top: 1px solid var(--border);
+  margin-top: 4px;
 }
 
 /* Files body fills remaining space */

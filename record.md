@@ -1981,3 +1981,14 @@ pytest: (pending)
 [README.md] 版本徽章和路线图更新为 2.2.139
 [.agents/provider-guide/SKILL.md] 版本字段 2.2.138 -> 2.2.139
 纯前端 CSS 变更，无需 py_compile
+
+2026-06-18 07:00:00
+
+[src/webui/routers/terminal.py] Windows 终端改用 PowerShell（更好管道处理）；_read_chunk 改为 read1(4096) 块读取；write_input 修复 lambda 闭包问题，新增 _write_stdin 辅助方法
+[src/webui/static/terminal/terminal.css] 竖向标签栏加号按钮 position: sticky bottom: 0，始终固定在可见区域底部
+[src/webui/static/files/files.css] 同上，文件管理器竖向标签栏加号 sticky 底部
+[template/template_config.toml] 版本 2.2.139 -> 2.2.140
+[config.toml] 版本 2.2.139 -> 2.2.140
+[README.md] 版本徽章和路线图更新为 2.2.140
+[.agents/provider-guide/SKILL.md] 版本字段 2.2.139 -> 2.2.140
+验证: py_compile terminal.py 通过

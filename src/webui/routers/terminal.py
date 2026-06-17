@@ -49,19 +49,26 @@ class TerminalSession:
             return False
 
     async def _start_local_windows(self, cols: int, rows: int) -> bool:
-        """Start local terminal on Windows using cmd.exe with pipes."""
+        """Start local terminal on Windows using PowerShell with pipes."""
         env = os.environ.copy()
         env["TERM"] = "xterm-256color"
-        env["COLUMNS"] = str(cols)
-        env["LINES"] = str(rows)
+
+        # Prefer PowerShell over cmd.exe for better pipe handling
+        shell = "powershell.exe"
+        shell_args = ["-NoLogo", "-NoExit"]
+        try:
+            # Check if PowerShell is available
+            subprocess.run(["where", "powershell.exe"], capture_output=True, check=True)
+        except Exception:
+            shell = "cmd.exe"
+            shell_args = []
 
         self.process = subprocess.Popen(
-            ["cmd.exe"],
+            [shell] + shell_args,
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             env=env,
-            bufsize=0,
         )
         self._alive = True
         # Start reader thread (bridged to asyncio)
@@ -97,23 +104,9 @@ class TerminalSession:
         if not self.process or not self.process.stdout:
             return None
         try:
-            # Read available bytes (non-blocking style with small timeout)
-            data = b""
-            byte = self.process.stdout.read(1)
-            if not byte:
+            data = self.process.stdout.read1(4096)
+            if not data:
                 return None
-            data += byte
-            # Try to read more if available
-            while True:
-                try:
-                    more = self.process.stdout.read(1)
-                    if not more:
-                        break
-                    data += more
-                    if len(data) > 4096:
-                        break
-                except Exception:
-                    break
             return data
         except Exception:
             return None
@@ -303,23 +296,27 @@ class TerminalSession:
     async def write_input(self, data: str) -> None:
         """Write input data to the terminal process."""
         try:
+            encoded = data.encode("utf-8")
             if self.kind == "ssh" and self._ssh_channel:
                 await asyncio.get_event_loop().run_in_executor(
-                    None, lambda: self._ssh_channel.send(data.encode("utf-8"))
+                    None, self._ssh_channel.send, encoded
                 )
             elif self.process and self.process.stdin:
                 await asyncio.get_event_loop().run_in_executor(
-                    None, lambda: self.process.stdin.write(data.encode("utf-8"))
-                )
-                await asyncio.get_event_loop().run_in_executor(
-                    None, lambda: self.process.stdin.flush()
+                    None, self._write_stdin, encoded
                 )
             elif self._fd is not None:
                 await asyncio.get_event_loop().run_in_executor(
-                    None, lambda: os.write(self._fd, data.encode("utf-8"))
+                    None, os.write, self._fd, encoded
                 )
         except Exception:
             pass
+
+    def _write_stdin(self, data: bytes) -> None:
+        """Write data to process stdin and flush."""
+        if self.process and self.process.stdin:
+            self.process.stdin.write(data)
+            self.process.stdin.flush()
 
     async def resize(self, cols: int, rows: int) -> None:
         """Resize the terminal."""

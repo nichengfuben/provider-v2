@@ -436,7 +436,6 @@
 
 .terminal-container.tab-layout-vertical .terminal-tab-bar::-webkit-scrollbar {
   width: 4px;
-  height: auto;
 }
 
 .terminal-container.tab-layout-vertical .terminal-tab-bar::-webkit-scrollbar-track {
@@ -525,9 +524,15 @@
   width: 100%;
 }
 
-/* Center add button in vertical expanded layout */
-.terminal-container.tab-layout-vertical .terminal-tab-bar:not(.tab-bar-compressed) .terminal-tab-add {
+/* Add button in vertical layout: sticky at bottom */
+.terminal-container.tab-layout-vertical .terminal-tab-add {
   width: 100%;
+  position: sticky;
+  bottom: 0;
+  background: var(--panel);
+  z-index: 1;
+  border-top: 1px solid var(--border);
+  margin-top: 4px;
 }
 
 /* Terminal body fills remaining space */
