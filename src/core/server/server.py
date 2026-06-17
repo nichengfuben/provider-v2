@@ -148,6 +148,12 @@ async def create_app(registry: Any, session: Any) -> aiohttp.web.Application:
 
     async def _on_startup(application: aiohttp.web.Application) -> None:
         logger.info("aiohttp.web 应用已启动")
+        # Start stats persistence (load from disk + periodic save)
+        try:
+            from src.webui.services.stats import start_persist
+            start_persist()
+        except Exception:
+            pass
         # 将 loguru 日志连接到 WebUI WebSocket（在事件循环启动后）
         try:
             from src.webui.logs_ws import log_broker, setup_loguru_sink
@@ -160,6 +166,12 @@ async def create_app(registry: Any, session: Any) -> aiohttp.web.Application:
 
     async def _on_cleanup(application: aiohttp.web.Application) -> None:
         logger.info("aiohttp.web 应用正在清理")
+        # Final stats save on shutdown
+        try:
+            from src.webui.services.stats import save_stats
+            save_stats()
+        except Exception:
+            pass
 
     app.on_startup.append(_on_startup)
     app.on_cleanup.append(_on_cleanup)

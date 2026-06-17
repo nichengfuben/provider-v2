@@ -1750,3 +1750,16 @@ pytest: (pending)
 [README.md] 版本徽章和路线图更新为 2.2.122
 [.agents/provider-guide/SKILL.md] 版本字段 2.2.121 -> 2.2.122
 验证: py_compile terminal.py + __init__.py + routes.py 通过
+
+2026-06-17 14:00:00
+
+[src/webui/static/chat/chat.js] 新增 formatFileSize()、getFileIcon()、buildFileCardsHtml() 辅助函数，用户消息附件改为文件卡片显示（图标+文件名+大小），替代原有纯文本 [N file(s) attached]
+[src/webui/static/ui/styles.css] 新增 .chat-file-cards/.chat-file-card/.chat-file-icon/.chat-file-info/.chat-file-name/.chat-file-size 文件卡片样式
+[src/webui/services/stats.py] 新增 save_stats()/load_stats()/start_persist() 函数，统计数据完整序列化到 persist/webui/stats.json（30秒定时保存），包含 start_time/计数器/延迟/Token/分布/时间线
+[src/core/server/server.py] _on_startup 调用 start_persist() 启动时恢复统计数据，_on_cleanup 调用 save_stats() 优雅关闭时保存
+[src/webui/static/stats/stats.js] 移除客户端冗余持久化定时器和 _loadPersisted()，改由服务端处理
+[template/template_config.toml] 版本 2.2.122 -> 2.2.123
+[config.toml] 版本 2.2.122 -> 2.2.123
+[README.md] 版本徽章和路线图更新为 2.2.123
+[.agents/provider-guide/SKILL.md] 版本字段 2.2.122 -> 2.2.123
+验证: py_compile server.py + stats.py 通过

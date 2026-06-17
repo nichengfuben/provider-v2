@@ -12,14 +12,11 @@ var StatsFeature = (function () {
   var _container = null;
   var _timer = null;
   var _interval = 3000;
-  var _persistTimer = null;
   var _lastData = null;
 
   function init() {
     _container = document.getElementById('statsGrid');
     if (!_container) return;
-    // Load persisted stats on startup
-    _loadPersisted();
     // Poll: refresh when stats tab is visible
     _timer = setInterval(function () {
       var panel = document.getElementById('tab-stats');
@@ -27,28 +24,11 @@ var StatsFeature = (function () {
         refresh();
       }
     }, _interval);
-    // Persist stats every 10 seconds
-    _persistTimer = setInterval(function() {
-      if (_lastData && typeof persistSave === 'function') {
-        persistSave('stats.json', _lastData);
-      }
-    }, 10000);
     // Initial refresh if already visible
     var panel = document.getElementById('tab-stats');
     if (panel && panel.classList.contains('active')) {
       refresh();
     }
-  }
-
-  async function _loadPersisted() {
-    if (!_container || typeof persistLoad !== 'function') return;
-    try {
-      var data = await persistLoad('stats.json');
-      if (data) {
-        _lastData = data;
-        render(data);
-      }
-    } catch (e) { /* ignore */ }
   }
 
   async function refresh() {

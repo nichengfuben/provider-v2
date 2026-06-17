@@ -18,8 +18,8 @@
 
 <div align="center">
 
-![Status](https://img.shields.io/badge/status-v2.2.122-blue)
-![Version](https://img.shields.io/badge/version-2.2.122-blue)
+![Status](https://img.shields.io/badge/status-v2.2.123-blue)
+![Version](https://img.shields.io/badge/version-2.2.123-blue)
 ![Python](https://img.shields.io/badge/python-3.8+-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Platforms](https://img.shields.io/badge/platforms-12+-orange)
@@ -1257,7 +1257,10 @@ fix(gateway): 修复并发竞速时 token 计数错误
 
 ## 🗺️ 路线图
 
-### 当前版本：v2.2.122
+### 当前版本：v2.2.123
+
+✅ 已完成（v2.2.123）：
+- 聊天文件附件改为文件卡片显示（图标+名称+大小）；统计数据服务端持久化（30秒定时+启停保存，修复运行时间等数据丢失）
 
 ✅ 已完成（v2.2.122）：
 - 新增终端选项卡：本地终端（pty/cmd）+ SSH 远程终端（paramiko），xterm.js 多标签管理，右键菜单，SSH 连接持久化

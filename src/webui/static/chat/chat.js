@@ -121,6 +121,46 @@ function renderWithCodeBlocks(text) {
   return processed;
 }
 
+// ========================= File Card Helpers =========================
+function formatFileSize(bytes) {
+  if (bytes == null || bytes < 0) return '0 B';
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+  if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+  return (bytes / (1024 * 1024 * 1024)).toFixed(1) + ' GB';
+}
+
+function getFileIcon(name) {
+  var ext = (name || '').split('.').pop().toLowerCase();
+  var icons = {
+    pdf: '\u{1F4C4}', doc: '\u{1F4C4}', docx: '\u{1F4C4}',
+    xls: '\u{1F4CA}', xlsx: '\u{1F4CA}', csv: '\u{1F4CA}',
+    png: '\u{1F5BC}', jpg: '\u{1F5BC}', jpeg: '\u{1F5BC}', gif: '\u{1F5BC}', svg: '\u{1F5BC}', webp: '\u{1F5BC}',
+    mp3: '\u{1F3B5}', wav: '\u{1F3B5}', ogg: '\u{1F3B5}', flac: '\u{1F3B5}',
+    mp4: '\u{1F3AC}', avi: '\u{1F3AC}', mkv: '\u{1F3AC}', mov: '\u{1F3AC}',
+    zip: '\u{1F4E6}', rar: '\u{1F4E6}', '7z': '\u{1F4E6}', tar: '\u{1F4E6}', gz: '\u{1F4E6}',
+    js: '\u{1F4DC}', ts: '\u{1F4DC}', py: '\u{1F4DC}', html: '\u{1F4DC}', css: '\u{1F4DC}', json: '\u{1F4DC}',
+    txt: '\u{1F4DD}', md: '\u{1F4DD}', log: '\u{1F4DD}',
+  };
+  return icons[ext] || '\u{1F4CE}';
+}
+
+function buildFileCardsHtml(files) {
+  if (!files || !files.length) return '';
+  var html = '<div class="chat-file-cards">';
+  for (var i = 0; i < files.length; i++) {
+    var f = files[i];
+    html += '<div class="chat-file-card">'
+      + '<span class="chat-file-icon">' + getFileIcon(f.name) + '</span>'
+      + '<span class="chat-file-info">'
+      + '<span class="chat-file-name">' + escapeHtml(f.name) + '</span>'
+      + '<span class="chat-file-size">' + formatFileSize(f.size) + '</span>'
+      + '</span></div>';
+  }
+  html += '</div>';
+  return html;
+}
+
 // ========================= Chat Message Rendering =========================
 var _userMsgCount = 0;
 
@@ -146,7 +186,13 @@ function appendChatMessage(role, content, options) {
     var histIdx = _userMsgCount++;
     msg.setAttribute("data-hist-index", histIdx);
     msg.setAttribute("data-raw", content);
-    msg.textContent = content;
+    var userHtml = '';
+    if (content) userHtml += escapeHtml(content);
+    if (options.files && options.files.length > 0) {
+      userHtml += buildFileCardsHtml(options.files);
+      msg.setAttribute("data-files", JSON.stringify(options.files));
+    }
+    msg.innerHTML = userHtml || escapeHtml(content);
   } else if (role === "system") {
     msg.className = "chat-message chat-message-system";
     msg.style.cssText = "background:rgba(255,180,0,0.12);border-left:3px solid #e6a817;color:#b8860b;padding:8px 12px;border-radius:6px;font-size:13px;margin:6px 0;";
@@ -510,7 +556,8 @@ async function loadChatState() {
             for (var i = 0; i < chatConversationHistory.length; i++) {
               var msg = chatConversationHistory[i];
               appendChatMessage(msg.role, msg.content || '', {
-                toolCalls: msg.tool_calls
+                toolCalls: msg.tool_calls,
+                files: msg.files || null
               });
             }
           }
@@ -540,11 +587,14 @@ async function sendChatMessage(text, files) {
 
   // Add user message
   var displayText = text || '';
+  var fileMeta = null;
   if (files && files.length > 0) {
-    displayText += (displayText ? '\n' : '') + '[' + files.length + ' file(s) attached]';
+    fileMeta = files.map(function(f) { return { name: f.name, size: f.size }; });
   }
-  appendChatMessage("user", displayText);
-  chatConversationHistory.push({ role: "user", content: text || '' });
+  appendChatMessage("user", displayText, { files: fileMeta });
+  var histEntry = { role: "user", content: text || '' };
+  if (fileMeta) histEntry.files = fileMeta;
+  chatConversationHistory.push(histEntry);
   saveChatState();
 
   try {
