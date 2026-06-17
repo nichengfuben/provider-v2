@@ -1916,3 +1916,16 @@ pytest: (pending)
 [README.md] 版本徽章和路线图更新为 2.2.133
 [.agents/provider-guide/SKILL.md] 版本字段 2.2.132 -> 2.2.133
 纯前端 JS/HTML 变更，无需 py_compile
+
+2026-06-18 01:00:00
+
+[src/webui/static/index.html] 便携设置新增标签栏布局下拉菜单（横向顶部/竖向侧边）
+[src/webui/static/ui/bootstrap.js] 新增 _applyTabLayout()/_ensureSidebarToggle()/_applySidebarCompressed() 布局切换逻辑，持久化到 persist/webui/config.json；修复录音设备保存覆盖布局设置问题
+[src/webui/static/terminal/terminal.css] 新增竖向标签栏布局样式（~110 行）：flexbox 行方向、列布局、压缩形态（40px 图标）、展开形态（180px）、悬停 tooltip、侧边切换按钮
+[src/webui/static/files/files.css] 新增文件管理器竖向标签栏布局样式（~110 行），同终端模式
+[src/platforms/ollama/core/constants.py] 常量更新
+[template/template_config.toml] 版本 2.2.133 -> 2.2.134
+[config.toml] 版本 2.2.133 -> 2.2.134
+[README.md] 版本徽章和路线图更新为 2.2.134
+[.agents/provider-guide/SKILL.md] 版本字段 2.2.133 -> 2.2.134
+验证: py_compile ollama/constants.py 通过

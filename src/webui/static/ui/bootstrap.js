@@ -201,7 +201,7 @@ applyVoiceSettings();
 // ========================= Custom Dropdown Initialization =========================
 window._dropdowns = {};
 ['modelPlatformSelect', 'modelCapabilitySelect', 'chatModelSelect',
- 'chatProtocolSelect', 'themeSelect', 'compactSelect',
+ 'chatProtocolSelect', 'themeSelect', 'compactSelect', 'tabLayoutSelect',
  'voiceSttModel', 'voiceTtsModel', 'recordingDeviceSelect',
  'autoupdateBranch', 'requestStatusFilter', 'requestTimeFilter'].forEach(function(id) {
   var el = document.getElementById(id);
@@ -373,16 +373,137 @@ _refreshRecordingDevices();
 
 // Recording device change handler
 (function() {
+  async function _saveRecordingDevice(deviceId) {
+    var existing = await persistLoad('config.json') || {};
+    existing.recordingDeviceId = deviceId;
+    persistSave('config.json', existing);
+  }
   var dropdown = window._dropdowns && window._dropdowns['recordingDeviceSelect'];
   if (dropdown) {
     dropdown.onChange = function(value) {
-      persistSave('config.json', { recordingDeviceId: value });
+      _saveRecordingDevice(value);
     };
   }
   var el = document.getElementById('recordingDeviceSelect');
   if (el) {
     el.addEventListener('change', function() {
-      persistSave('config.json', { recordingDeviceId: el.value });
+      _saveRecordingDevice(el.value);
     });
+  }
+})();
+
+// ========================= Tab Layout Toggle =========================
+var _tabLayoutConfig = { layout: 'horizontal', sidebarCompressed: false };
+
+function _applyTabLayout(layout) {
+  var isVertical = (layout === 'vertical');
+  var termContainer = document.getElementById('terminalContainer');
+  var filesContainer = document.getElementById('filesContainer');
+  var termTabBar = document.getElementById('terminalTabBar');
+  var filesTabBar = document.getElementById('filesTabBar');
+
+  // Toggle vertical class on containers
+  if (termContainer) termContainer.classList.toggle('tab-layout-vertical', isVertical);
+  if (filesContainer) filesContainer.classList.toggle('tab-layout-vertical', isVertical);
+
+  // Ensure sidebar toggle buttons exist in tab bars
+  if (isVertical) {
+    _ensureSidebarToggle(termTabBar, 'terminal');
+    _ensureSidebarToggle(filesTabBar, 'files');
+    _applySidebarCompressed(_tabLayoutConfig.sidebarCompressed);
+  } else {
+    // Remove sidebar toggles and compressed state
+    _removeSidebarToggle(termTabBar);
+    _removeSidebarToggle(filesTabBar);
+    if (termTabBar) termTabBar.classList.remove('tab-bar-compressed');
+    if (filesTabBar) filesTabBar.classList.remove('tab-bar-compressed');
+  }
+
+  // Update select value
+  var select = document.getElementById('tabLayoutSelect');
+  if (select) select.value = layout;
+  var dd = window._dropdowns && window._dropdowns['tabLayoutSelect'];
+  if (dd) dd.setValue(layout);
+}
+
+function _ensureSidebarToggle(tabBar, type) {
+  if (!tabBar) return;
+  var existing = tabBar.querySelector('.tab-sidebar-toggle');
+  if (existing) return;
+  var btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'tab-sidebar-toggle';
+  btn.textContent = _tabLayoutConfig.sidebarCompressed ? '\u25B6' : '\u25C0';
+  btn.title = _tabLayoutConfig.sidebarCompressed ? '展开侧边栏' : '压缩侧边栏';
+  btn.addEventListener('click', async function() {
+    _tabLayoutConfig.sidebarCompressed = !_tabLayoutConfig.sidebarCompressed;
+    _applySidebarCompressed(_tabLayoutConfig.sidebarCompressed);
+    var existing = await persistLoad('config.json') || {};
+    existing.layout = _tabLayoutConfig.layout;
+    existing.sidebarCompressed = _tabLayoutConfig.sidebarCompressed;
+    persistSave('config.json', existing);
+  });
+  tabBar.insertBefore(btn, tabBar.firstChild);
+}
+
+function _removeSidebarToggle(tabBar) {
+  if (!tabBar) return;
+  var existing = tabBar.querySelector('.tab-sidebar-toggle');
+  if (existing) existing.remove();
+}
+
+function _applySidebarCompressed(compressed) {
+  var termTabBar = document.getElementById('terminalTabBar');
+  var filesTabBar = document.getElementById('filesTabBar');
+  if (termTabBar) termTabBar.classList.toggle('tab-bar-compressed', compressed);
+  if (filesTabBar) filesTabBar.classList.toggle('tab-bar-compressed', compressed);
+  // Update toggle button text/title
+  [termTabBar, filesTabBar].forEach(function(bar) {
+    if (!bar) return;
+    var btn = bar.querySelector('.tab-sidebar-toggle');
+    if (!btn) return;
+    btn.textContent = compressed ? '\u25B6' : '\u25C0';
+    btn.title = compressed ? '展开侧边栏' : '压缩侧边栏';
+  });
+}
+
+// Initialize tab layout from saved config
+(async function _initTabLayout() {
+  try {
+    var saved = await persistLoad('config.json');
+    if (saved && saved.layout) {
+      _tabLayoutConfig.layout = saved.layout;
+    }
+    if (saved && typeof saved.sidebarCompressed === 'boolean') {
+      _tabLayoutConfig.sidebarCompressed = saved.sidebarCompressed;
+    }
+  } catch (e) { /* ignore */ }
+  _applyTabLayout(_tabLayoutConfig.layout);
+})();
+
+// Tab layout change handler
+document.getElementById('tabLayoutSelect').addEventListener('change', async function(event) {
+  _tabLayoutConfig.layout = event.target.value;
+  _applyTabLayout(_tabLayoutConfig.layout);
+  var existing = await persistLoad('config.json') || {};
+  existing.layout = _tabLayoutConfig.layout;
+  existing.sidebarCompressed = _tabLayoutConfig.sidebarCompressed;
+  persistSave('config.json', existing);
+  toast('标签栏布局: ' + (event.target.value === 'vertical' ? '竖向侧边' : '横向顶部'), 'ok');
+});
+
+// CustomDropdown onChange for tabLayoutSelect
+(function() {
+  var dropdown = window._dropdowns && window._dropdowns['tabLayoutSelect'];
+  if (dropdown) {
+    dropdown.onChange = async function(value) {
+      _tabLayoutConfig.layout = value;
+      _applyTabLayout(value);
+      var existing = await persistLoad('config.json') || {};
+      existing.layout = value;
+      existing.sidebarCompressed = _tabLayoutConfig.sidebarCompressed;
+      persistSave('config.json', existing);
+      toast('标签栏布局: ' + (value === 'vertical' ? '竖向侧边' : '横向顶部'), 'ok');
+    };
   }
 })();

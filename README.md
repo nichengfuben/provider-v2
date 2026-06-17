@@ -18,8 +18,8 @@
 
 <div align="center">
 
-![Status](https://img.shields.io/badge/status-v2.2.133-blue)
-![Version](https://img.shields.io/badge/version-2.2.133-blue)
+![Status](https://img.shields.io/badge/status-v2.2.134-blue)
+![Version](https://img.shields.io/badge/version-2.2.134-blue)
 ![Python](https://img.shields.io/badge/python-3.8+-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Platforms](https://img.shields.io/badge/platforms-16+-orange)
@@ -1257,7 +1257,10 @@ fix(gateway): 修复并发竞速时 token 计数错误
 
 ## 🗺️ 路线图
 
-### 当前版本：v2.2.133
+### 当前版本：v2.2.134
+
+✅ 已完成（v2.2.134）：
+- 新增标签栏布局切换（横向顶部/竖向侧边），竖向支持展开/压缩形态，设置持久化到 persist/webui/config.json
 
 ✅ 已完成（v2.2.133）：
 - 终端选项卡 UI 文本全面汉化（标签名、右键菜单、SSH 对话框、验证提示、终端输出消息、空状态）
