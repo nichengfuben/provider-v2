@@ -1971,3 +1971,13 @@ pytest: (pending)
 [README.md] 版本徽章和路线图更新为 2.2.138
 [.agents/provider-guide/SKILL.md] 版本字段 2.2.137 -> 2.2.138
 纯前端 JS/CSS 变更，无需 py_compile
+
+2026-06-18 06:00:00
+
+[src/webui/static/terminal/terminal.css] 移除竖向展开布局加号按钮的 margin-top: auto，使展开/压缩模式加号纵向位置一致
+[src/webui/static/files/files.css] 同上，文件管理器竖向展开布局加号位置统一
+[template/template_config.toml] 版本 2.2.138 -> 2.2.139
+[config.toml] 版本 2.2.138 -> 2.2.139
+[README.md] 版本徽章和路线图更新为 2.2.139
+[.agents/provider-guide/SKILL.md] 版本字段 2.2.138 -> 2.2.139
+纯前端 CSS 变更，无需 py_compile

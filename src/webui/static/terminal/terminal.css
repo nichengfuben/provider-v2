@@ -528,7 +528,6 @@
 /* Center add button in vertical expanded layout */
 .terminal-container.tab-layout-vertical .terminal-tab-bar:not(.tab-bar-compressed) .terminal-tab-add {
   width: 100%;
-  margin-top: auto;
 }
 
 /* Terminal body fills remaining space */
