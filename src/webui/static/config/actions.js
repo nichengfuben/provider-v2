@@ -51,7 +51,6 @@ function connectLogsSocket() {
   logsSocket.onopen = function() {
     reconnectAttempts = 0; // 重置重连计数
     socketNotice.textContent = '日志 WebSocket: 已连接';
-    log('日志 WebSocket 已连接，正在加载历史日志...');
   };
   logsSocket.onmessage = function(event) {
     try {
@@ -60,7 +59,7 @@ function connectLogsSocket() {
         // hello 不显示，历史日志会紧随其后
       }
       if (payload.type === 'history') {
-        log('已加载 ' + payload.count + ' 条历史日志。');
+        // History count notification — no log needed
       }
       if (payload.type === 'log' && payload.message) {
         var levelColors = {
@@ -86,7 +85,7 @@ function connectLogsSocket() {
         // 心跳响应不显示
       }
     } catch (error) {
-      log('\x1b[31m[error] 消息解析失败：' + String(error) + '\x1b[0m');
+      // Ignore parse errors
     }
   };
   logsSocket.onerror = function() {
@@ -112,7 +111,6 @@ async function refreshAll() {
       renderPlatforms(summaryResult.value.platforms || {});
     } else {
       // API failed, show error state
-      log('刷新状态失败: ' + (summaryResult.reason ? summaryResult.reason.message : '未知错误'));
       if (document.getElementById('versionValue')) {
         document.getElementById('versionValue').textContent = '加载失败';
       }
@@ -130,25 +128,21 @@ async function refreshAll() {
     document.getElementById('lastRefresh').textContent = new Date().toLocaleTimeString();
   } catch (error) {
     toast('状态刷新失败：' + String(error), 'error');
-    log('状态刷新失败：' + String(error));
   }
 }
 
 async function refreshModels() {
   try {
-    log('开始刷新模型缓存。');
     const result = await fetchJson('/v1/admin/refresh_models', { method: 'POST' });
     toast('模型刷新完成', 'ok');
     await refreshAll();
   } catch (error) {
     toast('模型刷新失败：' + String(error), 'error');
-    log('模型刷新失败：' + String(error));
   }
 }
 
 async function saveConfig() {
   try {
-    log('正在保存配置...');
     let configData;
     if (configEditArea && !configEditArea.classList.contains('hidden')) {
       configData = JSON.parse(configEditArea.value);
@@ -167,23 +161,19 @@ async function saveConfig() {
       state.configDirty = false;
       updateConfigSaveStatus();
       toast('配置已保存并重新加载', 'ok');
-      log('配置已保存并重新加载。');
       // Prevent renderConfig from re-fetching and overwriting the form for 5 seconds
       if (typeof _lastConfigSaveTime !== 'undefined') _lastConfigSaveTime = Date.now();
       await refreshAll();
     } else {
       toast('保存失败：' + (result.error || '未知错误'), 'error');
-      log('配置保存失败：' + JSON.stringify(result));
     }
   } catch (error) {
     toast('保存失败：' + String(error), 'error');
-    log('配置保存失败：' + String(error));
   }
 }
 
 async function reloadServer() {
   try {
-    log('正在请求服务重启...');
     const response = await fetch('/v1/admin/reload', { method: 'POST' });
     if (!response.ok) {
       const errorText = await response.text();
@@ -192,35 +182,29 @@ async function reloadServer() {
     const result = await response.json();
     if (result.status === 'ok') {
       toast('服务正在重启，页面将自动刷新', 'ok');
-      log('服务重启已触发，页面将在3秒后刷新。');
       setTimeout(function() { location.reload(); }, 3000);
     } else {
       toast('重启失败：' + (result.error || '未知错误'), 'error');
-      log('服务重启失败：' + JSON.stringify(result));
     }
   } catch (error) {
     toast('重启失败：' + String(error), 'error');
-    log('服务重启失败：' + String(error));
   }
 }
 
 async function reloadConfigFromFile() {
   try {
-    log('正在从文件重新加载配置...');
     const response = await fetch('/v1/config/reload', { method: 'POST' });
     const result = await response.json();
     if (result.status === 'ok') {
       state.configDirty = false;
       updateConfigSaveStatus();
       toast('配置已从文件重新加载', 'ok');
-      log('配置已从文件重新加载。');
       await refreshAll();
     } else {
       toast('重载失败：' + (result.error || '未知错误'), 'error');
     }
   } catch (error) {
     toast('重载失败：' + String(error), 'error');
-    log('配置重载失败：' + String(error));
   }
 }
 

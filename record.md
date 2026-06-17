@@ -2014,3 +2014,15 @@ pytest: (pending)
 [README.md] 版本徽章和路线图更新为 2.2.142
 [.agents/provider-guide/SKILL.md] 版本字段 2.2.141 -> 2.2.142
 纯前端 JS 变更，无需 py_compile
+
+2026-06-18 10:00:00
+
+[src/webui/routers/terminal.py] Windows 终端改用 asyncio.create_subprocess_exec（非阻塞 StreamReader 读取 + async stdin.write/drain）；新增 _async_process 属性和清理逻辑；write_input 支持 asyncio stdin
+[src/webui/static/chat/chat.js] 移除自构日志：发送消息调试日志、助手回复保存日志
+[src/webui/static/config/actions.js] 移除自构日志：WebSocket 连接、历史加载、状态刷新、模型刷新、配置保存、服务重启、配置重载（共 12 处）
+[src/webui/static/ui/bootstrap.js] 移除自构日志：主题切换、刷新间隔更新
+[template/template_config.toml] 版本 2.2.142 -> 2.2.143
+[config.toml] 版本 2.2.142 -> 2.2.143
+[README.md] 版本徽章和路线图更新为 2.2.143
+[.agents/provider-guide/SKILL.md] 版本字段 2.2.142 -> 2.2.143
+验证: py_compile terminal.py 通过

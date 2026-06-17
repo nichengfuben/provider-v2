@@ -619,9 +619,6 @@ async function sendChatMessage(text, files) {
       body.tools = tools;
     }
 
-    // Debug: log conversation history state
-    var roleSummary = historySlice.map(function(m) { return m.role; }).join(', ');
-    log('发送 ' + historySlice.length + ' 条消息 [' + roleSummary + ']');
 
     // 创建超时控制器（默认 120 秒）
     var timeoutMs = 120000;
@@ -743,7 +740,6 @@ async function sendChatMessage(text, files) {
                 chatConversationHistory.push(assistantMsg);
               }
               assistantAdded = true;
-              log('助手回复已保存 (' + assistantContent.length + ' chars' + (reasoningContent ? ', ' + reasoningContent.length + ' thinking' : '') + ')');
             }
           }
         } catch (parseError) {

@@ -30,6 +30,7 @@ class TerminalSession:
         self.session_id = session_id
         self.kind = kind
         self.process: Optional[subprocess.Popen] = None
+        self._async_process = None  # asyncio subprocess (Windows)
         self._fd: Optional[int] = None  # pty master fd (Unix)
         self._reader_task: Optional[asyncio.Task] = None
         self._ws: Optional[aiohttp.web.WebSocketResponse] = None
@@ -49,60 +50,62 @@ class TerminalSession:
             return False
 
     async def _start_local_windows(self, cols: int, rows: int) -> bool:
-        """Start local terminal on Windows using cmd.exe with UTF-8 encoding."""
+        """Start local terminal on Windows using asyncio subprocess."""
         env = os.environ.copy()
         env["TERM"] = "xterm-256color"
         env["PYTHONIOENCODING"] = "utf-8"
-        env["ANSICON"] = "1"  # Enable ANSI escape code support
+        env["ANSICON"] = "1"
 
-        # Use cmd.exe as primary shell with UTF-8 code page
-        self.process = subprocess.Popen(
-            ["cmd.exe", "/K", "chcp 65001 >nul & title Provider-V2 Terminal"],
-            stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            env=env,
-        )
+        try:
+            self._async_process = await asyncio.create_subprocess_exec(
+                "cmd.exe", "/K", "chcp 65001 >nul & prompt $P$G",
+                stdin=asyncio.subprocess.PIPE,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.STDOUT,
+                env=env,
+            )
+        except Exception as e:
+            await self._send_error(f"Failed to start Windows terminal: {e}")
+            return False
+
         self._alive = True
-        # Start reader thread (bridged to asyncio)
-        loop = asyncio.get_event_loop()
-        self._reader_task = loop.create_task(self._read_windows_output())
+        self._reader_task = asyncio.ensure_future(self._read_windows_async())
         return True
 
-    async def _read_windows_output(self) -> None:
-        """Read from Windows process stdout and send to WebSocket."""
-        loop = asyncio.get_event_loop()
-        proc = self.process
+    async def _read_windows_async(self) -> None:
+        """Read from Windows process using asyncio StreamReader."""
+        proc = self._async_process
         if not proc or not proc.stdout:
             return
         try:
-            while self._alive and proc.poll() is None:
-                # Read in a thread to avoid blocking
-                data = await loop.run_in_executor(None, self._read_chunk)
-                if data is None:
+            while self._alive and proc.returncode is None:
+                try:
+                    data = await asyncio.wait_for(proc.stdout.read(4096), timeout=0.5)
+                except asyncio.TimeoutError:
+                    continue
+                if not data:
                     break
-                if data and self._ws and not self._ws.closed:
+                if self._ws and not self._ws.closed:
                     await self._ws.send_json({
                         "type": "output",
                         "data": data.decode("utf-8", errors="replace"),
                     })
+        except asyncio.CancelledError:
+            pass
         except Exception:
             pass
         finally:
             if self._ws and not self._ws.closed:
-                await self._ws.send_json({"type": "exit", "code": proc.returncode if proc else -1})
+                code = proc.returncode if proc else -1
+                await self._ws.send_json({"type": "exit", "code": code if code is not None else -1})
+
+    async def _read_windows_output(self) -> None:
+        """Legacy reader — not used on Windows anymore."""
+        pass
 
     def _read_chunk(self) -> Optional[bytes]:
-        """Read a chunk from process stdout (blocking, runs in executor)."""
-        if not self.process or not self.process.stdout:
-            return None
-        try:
-            data = self.process.stdout.read1(4096)
-            if not data:
-                return None
-            return data
-        except Exception:
-            return None
+        """Legacy chunk reader — not used on Windows anymore."""
+        return None
 
     async def _start_local_unix(self, cols: int, rows: int) -> bool:
         """Start local terminal on Unix using pty."""
@@ -294,6 +297,9 @@ class TerminalSession:
                 await asyncio.get_event_loop().run_in_executor(
                     None, self._ssh_channel.send, encoded
                 )
+            elif hasattr(self, '_async_process') and self._async_process and self._async_process.stdin:
+                self._async_process.stdin.write(encoded)
+                await self._async_process.stdin.drain()
             elif self.process and self.process.stdin:
                 await asyncio.get_event_loop().run_in_executor(
                     None, self._write_stdin, encoded
@@ -362,6 +368,15 @@ class TerminalSession:
             self._fd = None
 
         # Kill process
+        if hasattr(self, '_async_process') and self._async_process:
+            try:
+                self._async_process.terminate()
+                await asyncio.wait_for(self._async_process.wait(), timeout=3)
+            except Exception:
+                try:
+                    self._async_process.kill()
+                except Exception:
+                    pass
         if self.process:
             try:
                 if sys.platform != "win32":

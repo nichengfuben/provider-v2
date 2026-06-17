@@ -6,7 +6,6 @@ document.getElementById('fabThemeButton').addEventListener('click', function() {
   state.settings.theme = (current === 'light') ? 'dark' : 'light';
   saveSettings();
   toast('主题已切换为 ' + state.settings.theme, 'ok');
-  log('主题已切换为 ' + state.settings.theme + '。');
 });
 function _openPortable() {
   portablePanel.style.display = 'block';
@@ -58,7 +57,6 @@ document.getElementById('refreshIntervalInput').value = String(state.settings.re
 document.getElementById('refreshIntervalInput').addEventListener('change', function(event) {
   state.settings.refreshInterval = Number(event.target.value || 0);
   saveSettings();
-  log('自动刷新间隔已更新。');
 });
 document.getElementById('timeoutInput').value = String(state.settings.timeoutMs);
 document.getElementById('timeoutInput').addEventListener('change', function(event) {
