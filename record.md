@@ -1593,3 +1593,14 @@ pytest: (pending)
 [README.md] 版本徽章和路线图更新为 2.2.109
 [.agents/provider-guide/SKILL.md] 版本字段 2.2.108 -> 2.2.109
 纯前端 JS/CSS 变更，无需 py_compile
+
+2026-06-17 01:00:00
+
+[src/webui/static/chat/chat.js] 移除错误消息的 isError 选项和 .chat-message-error 类引用，错误消息现在与正常助手消息完全一致无任何视觉区分
+[src/webui/static/ui/styles.css] 删除 .chat-message-error 样式类（红色左边框和红色文字）
+[src/webui/static/index.html] 聊天面板改为 flex 列布局（固定高度 550px），消息区域 flex-1 内部滚动，输入框 flex-shrink-0 始终固定在底部
+[template/template_config.toml] 版本 2.2.109 -> 2.2.110
+[config.toml] 版本 2.2.109 -> 2.2.110
+[README.md] 版本徽章和路线图更新为 2.2.110
+[.agents/provider-guide/SKILL.md] 版本字段 2.2.109 -> 2.2.110
+纯前端 JS/HTML/CSS 变更，无需 py_compile
