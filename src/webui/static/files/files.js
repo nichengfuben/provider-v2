@@ -177,6 +177,26 @@ var FileManager = (function () {
       createTab('/');
     });
     _tabBar.appendChild(addBtn);
+
+    // Show/hide floating close-all button when tabs > 5
+    var closeAllBtn = document.getElementById('filesCloseAllBtn');
+    if (_tabs.length > 5) {
+      if (!closeAllBtn) {
+        closeAllBtn = document.createElement('div');
+        closeAllBtn.id = 'filesCloseAllBtn';
+        closeAllBtn.className = 'tab-close-all-btn';
+        closeAllBtn.innerHTML = '&times; 全部关闭';
+        closeAllBtn.title = '关闭所有标签';
+        closeAllBtn.addEventListener('click', function (e) {
+          e.stopPropagation();
+          closeAllTabs();
+        });
+        _container.appendChild(closeAllBtn);
+      }
+      closeAllBtn.style.display = '';
+    } else if (closeAllBtn) {
+      closeAllBtn.style.display = 'none';
+    }
   }
 
   // ========================= Directory Loading =========================

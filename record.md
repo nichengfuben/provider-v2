@@ -1992,3 +1992,16 @@ pytest: (pending)
 [README.md] 版本徽章和路线图更新为 2.2.140
 [.agents/provider-guide/SKILL.md] 版本字段 2.2.139 -> 2.2.140
 验证: py_compile terminal.py 通过
+
+2026-06-18 08:00:00
+
+[src/webui/static/terminal/terminal.js] 退格键修复：onData 将 \x7f (DEL) 转换为 \x08 (BS)；新增 attachCustomKeyEventHandler 支持 Ctrl+Backspace 删除单词；新增全部关闭浮动按钮（标签>5时显示）
+[src/webui/static/files/files.js] 新增全部关闭浮动按钮（标签>5时显示）
+[src/webui/static/terminal/terminal.css] 新增 .tab-close-all-btn 浮动按钮样式；terminal-container 添加 position: relative
+[src/webui/static/files/files.css] 同上，新增 .tab-close-all-btn 样式；files-container 添加 position: relative
+[src/webui/routers/terminal.py] Windows 终端改用 cmd.exe + chcp 65001 + ANSICON=1，更好的交互式终端支持
+[template/template_config.toml] 版本 2.2.140 -> 2.2.141
+[config.toml] 版本 2.2.140 -> 2.2.141
+[README.md] 版本徽章和路线图更新为 2.2.141
+[.agents/provider-guide/SKILL.md] 版本字段 2.2.140 -> 2.2.141
+验证: py_compile terminal.py 通过

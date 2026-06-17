@@ -49,22 +49,15 @@ class TerminalSession:
             return False
 
     async def _start_local_windows(self, cols: int, rows: int) -> bool:
-        """Start local terminal on Windows using PowerShell with pipes."""
+        """Start local terminal on Windows using cmd.exe with UTF-8 encoding."""
         env = os.environ.copy()
         env["TERM"] = "xterm-256color"
+        env["PYTHONIOENCODING"] = "utf-8"
+        env["ANSICON"] = "1"  # Enable ANSI escape code support
 
-        # Prefer PowerShell over cmd.exe for better pipe handling
-        shell = "powershell.exe"
-        shell_args = ["-NoLogo", "-NoExit"]
-        try:
-            # Check if PowerShell is available
-            subprocess.run(["where", "powershell.exe"], capture_output=True, check=True)
-        except Exception:
-            shell = "cmd.exe"
-            shell_args = []
-
+        # Use cmd.exe as primary shell with UTF-8 code page
         self.process = subprocess.Popen(
-            [shell] + shell_args,
+            ["cmd.exe", "/K", "chcp 65001 >nul & title Provider-V2 Terminal"],
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,

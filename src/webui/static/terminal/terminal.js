@@ -178,11 +178,25 @@ var TerminalManager = (function () {
     tab.term = term;
     tab.fitAddon = fitAddon;
 
-    // Input handler
+    // Input handler — convert backspace for Windows compatibility
     term.onData(function (data) {
       if (tab.ws && tab.ws.readyState === WebSocket.OPEN) {
-        tab.ws.send(JSON.stringify({ type: 'input', data: data }));
+        // Convert DEL (\x7f) to BS (\x08) for Windows shells
+        var fixed = data.replace(/\x7f/g, '\x08');
+        tab.ws.send(JSON.stringify({ type: 'input', data: fixed }));
       }
+    });
+
+    // Custom key handler for special keys
+    term.attachCustomKeyEventHandler(function (ev) {
+      // Ctrl+Backspace → send Ctrl+W (\x17) for word delete
+      if (ev.type === 'keydown' && ev.key === 'Backspace' && ev.ctrlKey) {
+        if (tab.ws && tab.ws.readyState === WebSocket.OPEN) {
+          tab.ws.send(JSON.stringify({ type: 'input', data: '\x17' }));
+        }
+        return false; // Prevent default
+      }
+      return true; // Let xterm handle other keys
     });
 
     // Context menu on tab bar
@@ -435,6 +449,26 @@ var TerminalManager = (function () {
         _showAddMenu(e);
       });
       _tabBar.appendChild(newAddBtn);
+    }
+
+    // Show/hide floating close-all button when tabs > 5
+    var closeAllBtn = document.getElementById('terminalCloseAllBtn');
+    if (_tabs.length > 5) {
+      if (!closeAllBtn) {
+        closeAllBtn = document.createElement('div');
+        closeAllBtn.id = 'terminalCloseAllBtn';
+        closeAllBtn.className = 'tab-close-all-btn';
+        closeAllBtn.innerHTML = '&times; 全部关闭';
+        closeAllBtn.title = '关闭所有标签';
+        closeAllBtn.addEventListener('click', function (e) {
+          e.stopPropagation();
+          closeAllTabs();
+        });
+        _container.appendChild(closeAllBtn);
+      }
+      closeAllBtn.style.display = '';
+    } else if (closeAllBtn) {
+      closeAllBtn.style.display = 'none';
     }
   }
 

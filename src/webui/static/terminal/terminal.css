@@ -9,6 +9,7 @@
   border: 1px solid var(--border);
   border-radius: 12px;
   overflow: hidden;
+  position: relative;
 }
 
 /* Horizontal tab bar */
@@ -533,6 +534,28 @@
   z-index: 1;
   border-top: 1px solid var(--border);
   margin-top: 4px;
+}
+
+/* Floating close-all button */
+.tab-close-all-btn {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  padding: 4px 12px;
+  background: var(--err, #e74c3c);
+  color: #fff;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  z-index: 10;
+  opacity: 0.85;
+  transition: opacity 0.15s, background 0.15s;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+.tab-close-all-btn:hover {
+  opacity: 1;
+  background: var(--err, #c0392b);
 }
 
 /* Terminal body fills remaining space */
