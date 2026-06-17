@@ -14,6 +14,10 @@ var RequestInspector = (function () {
   var _statusFilter = '';
   var _timeFilter = 0;  // seconds, 0 = all
 
+  // Pagination state
+  var _currentPage = 1;
+  var _pageSize = 5;
+
   function init() {
     var panel = document.getElementById('requestInspector');
     if (!panel) return;
@@ -56,8 +60,32 @@ var RequestInspector = (function () {
         _requests = {};
         _order = [];
         _selectedId = null;
+        _currentPage = 1;
         renderList();
         renderDetail();
+      });
+    }
+
+    // Pagination controls
+    var pageInput = document.getElementById('reqPageInput');
+    var prevBtn = document.getElementById('reqPagePrev');
+    var nextBtn = document.getElementById('reqPageNext');
+    if (pageInput) {
+      pageInput.addEventListener('change', function () {
+        var val = parseInt(pageInput.value) || 1;
+        var total = _getTotalPages();
+        _currentPage = Math.max(1, Math.min(val, total));
+        renderList();
+      });
+    }
+    if (prevBtn) {
+      prevBtn.addEventListener('click', function () {
+        if (_currentPage > 1) { _currentPage--; renderList(); }
+      });
+    }
+    if (nextBtn) {
+      nextBtn.addEventListener('click', function () {
+        if (_currentPage < _getTotalPages()) { _currentPage++; renderList(); }
       });
     }
   }
@@ -97,6 +125,7 @@ var RequestInspector = (function () {
         var old = _order.pop();
         delete _requests[old];
       }
+      _currentPage = 1;
     } else if (msg.type === 'request_chunk') {
       var req = _requests[msg.id];
       if (req) {
@@ -138,32 +167,84 @@ var RequestInspector = (function () {
     return true;
   }
 
+  function _getFilteredItems() {
+    var items = [];
+    for (var i = 0; i < _order.length; i++) {
+      var req = _requests[_order[i]];
+      if (req && _matchFilter(req)) items.push(req);
+    }
+    return items;
+  }
+
+  function _getTotalPages() {
+    var count = _getFilteredItems().length;
+    return Math.max(1, Math.ceil(count / _pageSize));
+  }
+
   function renderList() {
     var list = document.getElementById('requestList');
     if (!list) return;
-    var html = '';
-    var visibleCount = 0;
-    for (var i = 0; i < _order.length; i++) {
-      var req = _requests[_order[i]];
-      if (!req || !_matchFilter(req)) continue;
-      visibleCount++;
-      var cls = 'req-item' + (_selectedId === req.id ? ' req-selected' : '');
-      var statusCls = req.status === 'pending' ? 'req-pending' : (req.status >= 400 ? 'req-error' : 'req-ok');
-      var time = new Date(req.ts * 1000);
-      var ts = pad(time.getHours()) + ':' + pad(time.getMinutes()) + ':' + pad(time.getSeconds());
-      var modelShort = (req.model || '').split('/').pop().split('-').slice(0, 2).join('-');
-      var platformShort = (req.platform || '').charAt(0).toUpperCase() + (req.platform || '').slice(1);
-      var latency = req.latency_ms !== null ? req.latency_ms + 'ms' : '...';
-      html += '<div class="' + cls + '" data-req-id="' + req.id + '" onclick="RequestInspector.select(\'' + req.id + '\')">';
-      html += '<span class="req-ts">' + ts + '</span>';
-      html += '<span class="req-model">' + escapeHtml(modelShort) + '</span>';
-      if (platformShort) html += '<span class="req-platform">' + escapeHtml(platformShort) + '</span>';
-      html += '<span class="req-status ' + statusCls + '">' + (req.status === 'pending' ? '...' : req.status) + '</span>';
-      html += '<span class="req-latency">' + latency + '</span>';
-      html += '</div>';
+
+    var filtered = _getFilteredItems();
+    var totalItems = filtered.length;
+    var totalPages = Math.max(1, Math.ceil(totalItems / _pageSize));
+
+    // Clamp current page
+    if (_currentPage > totalPages) _currentPage = totalPages;
+    if (_currentPage < 1) _currentPage = 1;
+
+    // Auto-show/hide search input based on total count
+    var searchInput = document.getElementById('requestSearchInput');
+    if (searchInput) {
+      searchInput.style.display = totalItems > _pageSize ? '' : 'none';
+      if (totalItems <= _pageSize) {
+        searchInput.value = '';
+        _searchText = '';
+      }
     }
-    list.innerHTML = html || '<div class="text-muted" style="padding:12px;text-align:center;">' +
-      (_order.length > 0 ? 'No matching requests' : 'No requests yet') + '</div>';
+
+    // Show/hide pagination
+    var pagination = document.getElementById('requestPagination');
+    if (pagination) {
+      pagination.style.display = totalPages > 1 ? '' : 'none';
+    }
+
+    // Update pagination controls
+    var pageInput = document.getElementById('reqPageInput');
+    var pageTotal = document.getElementById('reqPageTotal');
+    var totalCount = document.getElementById('reqTotalCount');
+    if (pageInput) { pageInput.value = _currentPage; pageInput.max = totalPages; }
+    if (pageTotal) { pageTotal.textContent = '/' + totalPages; }
+    if (totalCount) { totalCount.textContent = totalItems + ' 条'; }
+
+    // Render current page items
+    var start = (_currentPage - 1) * _pageSize;
+    var end = Math.min(start + _pageSize, totalItems);
+    var html = '';
+
+    if (totalItems === 0) {
+      html = '<div class="text-muted" style="padding:12px;text-align:center;">' +
+        (_order.length > 0 ? 'No matching requests' : 'No requests yet') + '</div>';
+    } else {
+      for (var i = start; i < end; i++) {
+        var req = filtered[i];
+        var cls = 'req-item' + (_selectedId === req.id ? ' req-selected' : '');
+        var statusCls = req.status === 'pending' ? 'req-pending' : (req.status >= 400 ? 'req-error' : 'req-ok');
+        var time = new Date(req.ts * 1000);
+        var ts = pad(time.getHours()) + ':' + pad(time.getMinutes()) + ':' + pad(time.getSeconds());
+        var modelShort = (req.model || '').split('/').pop().split('-').slice(0, 2).join('-');
+        var platformShort = (req.platform || '').charAt(0).toUpperCase() + (req.platform || '').slice(1);
+        var latency = req.latency_ms !== null ? req.latency_ms + 'ms' : '...';
+        html += '<div class="' + cls + '" data-req-id="' + req.id + '" onclick="RequestInspector.select(\'' + req.id + '\')">';
+        html += '<span class="req-ts">' + ts + '</span>';
+        html += '<span class="req-model">' + escapeHtml(modelShort) + '</span>';
+        if (platformShort) html += '<span class="req-platform">' + escapeHtml(platformShort) + '</span>';
+        html += '<span class="req-status ' + statusCls + '">' + (req.status === 'pending' ? '...' : req.status) + '</span>';
+        html += '<span class="req-latency">' + latency + '</span>';
+        html += '</div>';
+      }
+    }
+    list.innerHTML = html;
   }
 
   function select(id) {

@@ -1676,3 +1676,13 @@ pytest: (pending)
 [README.md] 版本徽章和路线图更新为 2.2.116
 [.agents/provider-guide/SKILL.md] 版本字段 2.2.115 -> 2.2.116
 验证: py_compile registry.py + watcher.py 通过
+
+2026-06-17 08:00:00
+
+[src/webui/static/stats/request-inspector.js] 请求检查器新增分页：每页 5 条、页码输入框+/总页数、上/下页按钮、总条数显示；搜索框仅在条目 >5 时自动出现；新请求自动跳转第 1 页
+[src/webui/static/index.html] 请求日志区域新增分页控件（页码输入、前后翻页、总条数）；搜索框默认隐藏；列表移除 max-height 改由分页控制
+[template/template_config.toml] 版本 2.2.116 -> 2.2.117
+[config.toml] 版本 2.2.116 -> 2.2.117
+[README.md] 版本徽章和路线图更新为 2.2.117
+[.agents/provider-guide/SKILL.md] 版本字段 2.2.116 -> 2.2.117
+纯前端 JS/HTML 变更，无需 py_compile

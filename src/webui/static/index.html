@@ -125,7 +125,7 @@
           </div>
           <!-- Filter bar -->
           <div class="flex flex-wrap gap-2 mb-2" id="requestFilterBar">
-            <input type="text" id="requestSearchInput" placeholder="搜索 model / platform..." class="config-input" style="width:200px;">
+            <input type="text" id="requestSearchInput" placeholder="搜索 model / platform..." class="config-input" style="width:200px;display:none;">
             <select id="requestStatusFilter" class="config-input" style="width:120px;">
               <option value="">全部状态</option>
               <option value="200">200 OK</option>
@@ -142,7 +142,14 @@
             <button type="button" id="requestClearBtn" class="text-[12px] text-muted hover:underline cursor-pointer" style="padding:4px 8px;">清空日志</button>
           </div>
           <div id="requestInspector" style="min-height:200px;">
-            <div id="requestList" class="border border-border rounded-xl bg-panel-alt" style="max-height:400px;overflow-y:auto;"></div>
+            <div id="requestList" class="border border-border rounded-xl bg-panel-alt"></div>
+            <div id="requestPagination" class="flex items-center gap-2 mt-2" style="display:none;font-size:13px;">
+              <button type="button" id="reqPagePrev" class="config-input" style="width:auto;padding:2px 8px;cursor:pointer;">&lt;</button>
+              <input type="number" id="reqPageInput" min="1" value="1" class="config-input" style="width:50px;text-align:center;">
+              <span id="reqPageTotal" class="text-muted">/1</span>
+              <button type="button" id="reqPageNext" class="config-input" style="width:auto;padding:2px 8px;cursor:pointer;">&gt;</button>
+              <span id="reqTotalCount" class="text-muted" style="margin-left:auto;font-size:12px;"></span>
+            </div>
           </div>
         </div>
       </section>

@@ -18,8 +18,8 @@
 
 <div align="center">
 
-![Status](https://img.shields.io/badge/status-v2.2.116-blue)
-![Version](https://img.shields.io/badge/version-2.2.116-blue)
+![Status](https://img.shields.io/badge/status-v2.2.117-blue)
+![Version](https://img.shields.io/badge/version-2.2.117-blue)
 ![Python](https://img.shields.io/badge/python-3.8+-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Platforms](https://img.shields.io/badge/platforms-12+-orange)
@@ -1257,7 +1257,10 @@ fix(gateway): 修复并发竞速时 token 计数错误
 
 ## 🗺️ 路线图
 
-### 当前版本：v2.2.116
+### 当前版本：v2.2.117
+
+✅ 已完成（v2.2.117）：
+- 请求日志分页（每页 5 条、页码输入框 + /{n}、搜索框 >5 条时自动显示）
 
 ✅ 已完成（v2.2.116）：
 - 修复 Qwen 平台热重载失败（echotools 插件发现支持 __getattr__ 懒加载 + watcher 平台分类修复）
