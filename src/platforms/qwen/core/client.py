@@ -198,7 +198,7 @@ class QwenClient:
         self._load_persist()
         self._rebuild_candidates()
 
-        logger.info(
+        logger.debug(
             "Qwen 客户端立即初始化完成，初始候选项: %d 个",
             len(self._candidates),
         )
@@ -230,7 +230,7 @@ class QwenClient:
         self._bg_tasks.append(
             asyncio.ensure_future(self._bg_persist())
         )
-        logger.info("Qwen 后台任务已启动")
+        logger.debug("Qwen 后台任务已启动")
 
     def update_models(self, models: List[str]) -> None:
         """更新模型列表并刷新候选项（合并内置 + 传入，去重）。"""
@@ -340,7 +340,7 @@ class QwenClient:
                 < COOKIE_REFRESH_INTERVAL
             ):
                 self._cookies = saved_cookies
-                logger.info("Qwen: 从持久化恢复 Cookie")
+                logger.debug("Qwen: 从持久化恢复 Cookie")
 
             loaded = sum(
                 1 for acc in self._account_states.values() if acc.token
@@ -469,7 +469,7 @@ class QwenClient:
         batch = need_login[:INITIAL_LOGIN_MAX]
 
         if batch:
-            logger.info(
+            logger.debug(
                 "Qwen 初始登录: %d 个账号需要登录，本次处理 %d 个",
                 len(need_login), len(batch),
             )
@@ -490,7 +490,7 @@ class QwenClient:
         logged = sum(
             1 for acc in self._account_states.values() if acc.is_login
         )
-        logger.info(
+        logger.debug(
             "Qwen 初始登录完成: %d/%d 账号已登录",
             logged, len(self._account_states),
         )
@@ -511,7 +511,7 @@ class QwenClient:
             try:
                 batch = self._select_login_batch()
                 if batch:
-                    logger.info(
+                    logger.debug(
                         "Qwen 登录轮询: 选中 %d 个账号", len(batch),
                     )
                     for acc in batch:
@@ -529,7 +529,7 @@ class QwenClient:
                     self._save_persist()
 
                     success = sum(1 for a in batch if a.is_login)
-                    logger.info(
+                    logger.debug(
                         "Qwen 登录轮询完成: %d/%d 成功",
                         success, len(batch),
                     )
@@ -815,7 +815,7 @@ class QwenClient:
                     raw = await resp.json(content_type=None)
                     remote_models = extract_model_ids(raw)
                     if remote_models:
-                        logger.info(
+                        logger.debug(
                             "Qwen 远程模型获取成功: %d 个", len(remote_models)
                         )
                         return remote_models

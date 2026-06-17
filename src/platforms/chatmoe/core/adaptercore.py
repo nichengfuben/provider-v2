@@ -95,7 +95,7 @@ class Adapter(PlatformAdapter):
         self._models = models
         if self._client is not None:
             self._client.update_models(models)
-        logger.info("chatmoe 模型列表已更新: %d 个", len(models))
+        logger.debug("chatmoe 模型列表已更新: %d 个", len(models))
 
     async def fetch_remote_models(self) -> List[str]:
         """拉取远程模型列表。

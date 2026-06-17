@@ -572,7 +572,7 @@ class OllamaClient:
         except Exception as e:
             logger.warning("ollama缓存加载失败: %s", e)
             self._servers, self._registry = {}, {}
-        logger.info(
+        logger.debug(
             "ollama客户端初始化完成（缓存: %d服务器, %d模型）",
             len(self._servers),
             len(self._registry),
@@ -581,7 +581,7 @@ class OllamaClient:
     async def background_setup(self) -> None:
         """后台完善：执行服务器发现并启动定时刷新。"""
         if not DYNAMIC_DISCOVERY:
-            logger.info(
+            logger.debug(
                 "ollama动态发现已禁用，使用持久化缓存（%d服务器, %d模型）",
                 len(self._servers),
                 len(self._registry),

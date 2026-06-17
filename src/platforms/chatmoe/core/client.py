@@ -47,7 +47,7 @@ class ChatmoeClient:
         """立即初始化，不阻塞。"""
         self._session = session
         self._rebuild_candidates()
-        logger.info("chatmoe 客户端初始化完成，候选项: %d 个", len(self._candidates))
+        logger.debug("chatmoe 客户端初始化完成，候选项: %d 个", len(self._candidates))
 
     async def background_setup(self) -> None:
         """后台启动 Key 定时刷新任务。"""

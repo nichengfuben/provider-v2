@@ -338,7 +338,7 @@ class Client:
         """
         self._session = session
         self._rebuild_candidates()
-        logger.info("edgetts 初始化完成")
+        logger.debug("edgetts 初始化完成")
 
     async def background_setup(self) -> None:
         """后台设置（TTS 平台无额外后台任务）。"""

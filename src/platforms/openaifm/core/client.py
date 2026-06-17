@@ -32,7 +32,7 @@ class OpenaiFmClient:
         """初始化客户端。"""
         self._session = session
         self._rebuild_candidates()
-        logger.info("openaifm 初始化完成，候选项: %d 个", len(self._candidates))
+        logger.debug("openaifm 初始化完成，候选项: %d 个", len(self._candidates))
 
     def _rebuild_candidates(self) -> None:
         """构建候选项（单候选项，无需认证，不依赖 accounts.py）。"""

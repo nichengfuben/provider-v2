@@ -134,7 +134,7 @@ class NoobKeysClient:
         """
         self._session = session
         self._keys = [_KeyState(k) for k in API_KEYS if k and k.strip()]
-        logger.info(
+        logger.debug(
             "noobkeys 客户端初始化完成, %d 个 APIKey",
             len(self._keys),
         )

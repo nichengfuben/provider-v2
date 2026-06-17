@@ -18,8 +18,8 @@
 
 <div align="center">
 
-![Status](https://img.shields.io/badge/status-v2.2.113-blue)
-![Version](https://img.shields.io/badge/version-2.2.113-blue)
+![Status](https://img.shields.io/badge/status-v2.2.114-blue)
+![Version](https://img.shields.io/badge/version-2.2.114-blue)
 ![Python](https://img.shields.io/badge/python-3.8+-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Platforms](https://img.shields.io/badge/platforms-12+-orange)
@@ -1257,7 +1257,10 @@ fix(gateway): 修复并发竞速时 token 计数错误
 
 ## 🗺️ 路线图
 
-### 当前版本：v2.2.113
+### 当前版本：v2.2.114
+
+✅ 已完成（v2.2.114）：
+- 所有平台启动日志从 INFO 降为 DEBUG（config manager + 9 个平台客户端/适配器）
 
 ✅ 已完成（v2.2.113）：
 - Qwen 平台登录逻辑重写：统一轮询式登录替代并发批量登录，智能选择算法（最旧100→随机15-30→取10顺序登录），login+settings 统一，代理支持

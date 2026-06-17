@@ -114,7 +114,7 @@ class OllamaAdapter(PlatformAdapter):
         self._models = models
         if self._client is not None:
             self._client.update_models(models)
-        logger.info("ollama模型列表已更新: %d个", len(models))
+        logger.debug("ollama模型列表已更新: %d个", len(models))
 
     async def fetch_remote_models(self) -> List[str]:
         """拉取远程模型列表（从已发现的服务器获取）。

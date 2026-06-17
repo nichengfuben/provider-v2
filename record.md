@@ -1635,3 +1635,21 @@ pytest: (pending)
 [README.md] 版本徽章和路线图更新为 2.2.113
 [.agents/provider-guide/SKILL.md] 版本字段 2.2.112 -> 2.2.113
 验证: py_compile client.py + shared.py 通过
+
+2026-06-17 05:00:00
+
+[src/core/config/manager.py] 配置加载日志从 INFO 改为 DEBUG
+[src/platforms/chatmoe/core/client.py] chatmoe 客户端初始化完成日志从 INFO 改为 DEBUG
+[src/platforms/chatmoe/core/adaptercore.py] chatmoe 模型列表已更新日志从 INFO 改为 DEBUG
+[src/platforms/noobkeys/core/client.py] noobkeys 客户端初始化完成日志从 INFO 改为 DEBUG
+[src/platforms/ollama/core/client.py] ollama 客户端初始化完成和动态发现已禁用日志从 INFO 改为 DEBUG
+[src/platforms/ollama/core/adaptercore.py] ollama 模型列表已更新日志从 INFO 改为 DEBUG
+[src/platforms/edgetts/core/client.py] edgetts 初始化完成日志从 INFO 改为 DEBUG
+[src/platforms/gtts/core/client.py] gtts 初始化完成日志从 INFO 改为 DEBUG
+[src/platforms/openaifm/core/client.py] openaifm 初始化完成日志从 INFO 改为 DEBUG
+[src/platforms/qwen/core/client.py] Qwen 初始登录、登录完成、登录轮询、轮询完成日志从 INFO 改为 DEBUG
+[template/template_config.toml] 版本 2.2.113 -> 2.2.114
+[config.toml] 版本 2.2.113 -> 2.2.114
+[README.md] 版本徽章和路线图更新为 2.2.114
+[.agents/provider-guide/SKILL.md] 版本字段 2.2.113 -> 2.2.114
+验证: py_compile 10 文件全部通过
