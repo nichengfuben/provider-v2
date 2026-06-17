@@ -255,7 +255,17 @@
               <span id="autoupdateResultStatus" class="text-[12px]"></span>
             </div>
             <div id="autoupdateResultMeta" class="text-[12px] text-muted mb-2"></div>
-            <div id="autoupdateChangedFiles" class="text-[12px] font-mono" style="max-height:200px;overflow:auto;"></div>
+            <div class="flex flex-wrap gap-2 mb-2" id="autoupdateFileToolbar">
+              <input type="text" id="autoupdateSearchInput" placeholder="搜索文件..." class="config-input" style="width:180px;display:none;">
+              <button type="button" class="text-[12px] text-accent hover:underline cursor-pointer" id="autoupdateSelectAllBtn" style="padding:2px 6px;">全选</button>
+              <button type="button" class="text-[12px] text-muted hover:underline cursor-pointer" id="autoupdateSelectNoneBtn" style="padding:2px 6px;">取消全选</button>
+            </div>
+            <div id="autoupdateChangedFiles" class="text-[12px] font-mono" style="max-height:240px;overflow-y:auto;"></div>
+            <div class="flex gap-2 mt-3" id="autoupdateActionBtns" style="display:none;">
+              <button type="button" class="cursor-pointer font-bold rounded-lg px-4 py-2 border border-accent bg-accent text-white hover:opacity-90 transition text-[13px]" id="autoupdateConfirmBtn">确认更新</button>
+              <button type="button" class="cursor-pointer font-bold rounded-lg px-4 py-2 border border-border bg-panel text-text hover:bg-panel-alt transition text-[13px]" id="autoupdateCancelBtn">取消</button>
+              <span id="autoupdateSelectedCount" class="text-[12px] text-muted flex items-center ml-2"></span>
+            </div>
           </div>
         </div>
       </section>

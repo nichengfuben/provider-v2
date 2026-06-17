@@ -315,16 +315,23 @@ function _showCheckResults(d) {
   var statusEl = document.getElementById('autoupdateResultStatus');
   var metaEl = document.getElementById('autoupdateResultMeta');
   var filesEl = document.getElementById('autoupdateChangedFiles');
+  var actionBtns = document.getElementById('autoupdateActionBtns');
+  var searchInput = document.getElementById('autoupdateSearchInput');
+  var selectedCount = document.getElementById('autoupdateSelectedCount');
   var applyBtn = document.getElementById('autoupdateApplyBtn');
   if (!panel) return;
   panel.classList.remove('hidden');
+
+  // Hide toolbar and action buttons by default
+  if (actionBtns) actionBtns.style.display = 'none';
+  if (searchInput) searchInput.style.display = 'none';
+  if (applyBtn) applyBtn.classList.add('hidden');
 
   if (d.status === 'error') {
     statusEl.textContent = '[error]';
     statusEl.style.color = 'var(--err)';
     metaEl.textContent = d.message || 'Check failed';
     filesEl.innerHTML = '';
-    if (applyBtn) applyBtn.classList.add('hidden');
     return;
   }
 
@@ -333,51 +340,95 @@ function _showCheckResults(d) {
     statusEl.style.color = 'var(--ok)';
     metaEl.textContent = (d.local_hash || '') + ' = ' + (d.remote_hash || '') + ' (mirror: ' + (d.mirror || '') + ')';
     filesEl.innerHTML = '';
-    if (applyBtn) applyBtn.classList.add('hidden');
     return;
   }
 
-  statusEl.textContent = d.changed_count + ' file(s) changed';
+  var files = d.changed_files || [];
+  statusEl.textContent = files.length + ' file(s) changed';
   statusEl.style.color = 'var(--warn)';
   metaEl.textContent = (d.local_hash || '?') + ' -> ' + (d.remote_hash || '?') + ' (mirror: ' + (d.mirror || '') + ')';
 
-  var files = d.changed_files || [];
-  var filesHtml = '<div class="flex gap-2 mb-2">';
-  filesHtml += '<button type="button" class="text-[12px] text-accent hover:underline cursor-pointer" id="autoupdateSelectAllBtn">全选</button>';
-  filesHtml += '<button type="button" class="text-[12px] text-muted hover:underline cursor-pointer" id="autoupdateSelectNoneBtn">取消全选</button>';
-  filesHtml += '</div>';
-  filesHtml += files.map(function(f) {
-    return '<label class="flex items-center gap-2" style="padding:2px 0;cursor:pointer;">'
-      + '<input type="checkbox" class="autoupdate-file-check" value="' + escapeHtml(f) + '" checked>'
-      + '<span class="text-[12px] font-mono autoupdate-file-link" data-file="' + escapeHtml(f) + '" style="color:var(--accent);cursor:pointer;text-decoration:underline;" title="点击查看变更">' + escapeHtml(f) + '</span>'
-      + '</label>';
-  }).join('');
-  filesEl.innerHTML = filesHtml;
+  // Show search box only when >5 files
+  if (searchInput) {
+    searchInput.style.display = files.length > 5 ? '' : 'none';
+    searchInput.value = '';
+  }
 
-  // Bind select all/none
+  // Show action buttons
+  if (actionBtns) actionBtns.style.display = '';
+
+  function _renderFileList(filter) {
+    var filtered = filter ? files.filter(function(f) { return f.toLowerCase().indexOf(filter) !== -1; }) : files;
+    var html = filtered.map(function(f) {
+      return '<label class="flex items-center gap-2" style="padding:2px 0;cursor:pointer;">'
+        + '<input type="checkbox" class="autoupdate-file-check" value="' + escapeHtml(f) + '" checked>'
+        + '<span class="text-[12px] font-mono autoupdate-file-link" data-file="' + escapeHtml(f) + '" style="color:var(--accent);cursor:pointer;text-decoration:underline;" title="点击查看变更">' + escapeHtml(f) + '</span>'
+        + '</label>';
+    }).join('');
+    filesEl.innerHTML = html || '<div class="text-muted" style="padding:8px;">No matching files</div>';
+    _bindFileEvents();
+    _updateSelectedCount();
+  }
+
+  function _updateSelectedCount() {
+    var checked = filesEl.querySelectorAll('.autoupdate-file-check:checked').length;
+    var total = filesEl.querySelectorAll('.autoupdate-file-check').length;
+    if (selectedCount) selectedCount.textContent = '已选 ' + checked + '/' + total + ' 个文件';
+  }
+
+  function _bindFileEvents() {
+    filesEl.querySelectorAll('.autoupdate-file-link').forEach(function(link) {
+      link.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        _showFileDiff(link.dataset.file);
+      });
+    });
+    filesEl.querySelectorAll('.autoupdate-file-check').forEach(function(cb) {
+      cb.addEventListener('change', _updateSelectedCount);
+    });
+  }
+
+  // Search input handler
+  if (searchInput) {
+    searchInput.oninput = function() {
+      _renderFileList(searchInput.value.toLowerCase());
+    };
+  }
+
+  // Select all / none buttons
   var selectAllBtn = document.getElementById('autoupdateSelectAllBtn');
   var selectNoneBtn = document.getElementById('autoupdateSelectNoneBtn');
   if (selectAllBtn) {
-    selectAllBtn.addEventListener('click', function() {
+    selectAllBtn.onclick = function() {
       filesEl.querySelectorAll('.autoupdate-file-check').forEach(function(cb) { cb.checked = true; });
-    });
+      _updateSelectedCount();
+    };
   }
   if (selectNoneBtn) {
-    selectNoneBtn.addEventListener('click', function() {
+    selectNoneBtn.onclick = function() {
       filesEl.querySelectorAll('.autoupdate-file-check').forEach(function(cb) { cb.checked = false; });
-    });
+      _updateSelectedCount();
+    };
   }
 
-  // Bind file link clicks for diff preview
-  filesEl.querySelectorAll('.autoupdate-file-link').forEach(function(link) {
-    link.addEventListener('click', function(e) {
-      e.preventDefault();
-      e.stopPropagation();
-      _showFileDiff(link.dataset.file);
-    });
-  });
+  // Confirm button -> apply update
+  var confirmBtn = document.getElementById('autoupdateConfirmBtn');
+  if (confirmBtn) {
+    confirmBtn.onclick = function() { applyAutoupdate(); };
+  }
 
-  if (applyBtn) applyBtn.classList.remove('hidden');
+  // Cancel button -> hide results
+  var cancelBtn = document.getElementById('autoupdateCancelBtn');
+  if (cancelBtn) {
+    cancelBtn.onclick = function() {
+      panel.classList.add('hidden');
+      if (applyBtn) applyBtn.classList.add('hidden');
+    };
+  }
+
+  // Initial render
+  _renderFileList('');
 }
 
 async function _showFileDiff(filepath) {

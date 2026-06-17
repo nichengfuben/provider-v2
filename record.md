@@ -1705,3 +1705,13 @@ pytest: (pending)
 [README.md] 版本徽章和路线图更新为 2.2.119
 [.agents/provider-guide/SKILL.md] 版本字段 2.2.118 -> 2.2.119
 验证: py_compile src/logger.py 通过
+
+2026-06-17 11:00:00
+
+[src/webui/static/config/actions.js] _showCheckResults() 重写：修复文件复选框不显示问题，新增 _renderFileList(filter) 支持搜索过滤，新增确认/取消按钮绑定，新增已选文件计数显示
+[src/webui/static/index.html] 更新面板检查结果区域新增：搜索框（>5 文件时显示）、全选/取消全选工具栏、确认更新+取消操作按钮、已选计数
+[template/template_config.toml] 版本 2.2.119 -> 2.2.120
+[config.toml] 版本 2.2.119 -> 2.2.120
+[README.md] 版本徽章和路线图更新为 2.2.120
+[.agents/provider-guide/SKILL.md] 版本字段 2.2.119 -> 2.2.120
+纯前端 JS/HTML 变更，无需 py_compile

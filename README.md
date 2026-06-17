@@ -18,8 +18,8 @@
 
 <div align="center">
 
-![Status](https://img.shields.io/badge/status-v2.2.119-blue)
-![Version](https://img.shields.io/badge/version-2.2.119-blue)
+![Status](https://img.shields.io/badge/status-v2.2.120-blue)
+![Version](https://img.shields.io/badge/version-2.2.120-blue)
 ![Python](https://img.shields.io/badge/python-3.8+-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Platforms](https://img.shields.io/badge/platforms-12+-orange)
@@ -1257,7 +1257,10 @@ fix(gateway): 修复并发竞速时 token 计数错误
 
 ## 🗺️ 路线图
 
-### 当前版本：v2.2.119
+### 当前版本：v2.2.120
+
+✅ 已完成（v2.2.120）：
+- 更新面板修复：文件复选框正常显示、确认/取消按钮、搜索框（>5 文件时自动出现）、已选计数
 
 ✅ 已完成（v2.2.119）：
 - 修复 Windows 下 Runner 进程日志无颜色（colorama 包装 stderr 确保 VTP 启用 + isatty 检测改为 stderr）
