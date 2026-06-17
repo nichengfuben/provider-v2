@@ -7,6 +7,7 @@ from .autoupdate import autoupdate_apply, autoupdate_check, autoupdate_diff, aut
 from .pages import login_page, logout_page, webui_page
 from .stats import requests_list, requests_ws, stats_api, stats_reset
 from .summary import export_summary, summary_api
+from .terminal import terminal_sessions_api, terminal_ws
 from .websocket import logs_ws
 
 __all__ = [
@@ -15,4 +16,5 @@ __all__ = [
     "webui_page", "login_page", "logout_page",
     "summary_api", "export_summary", "logs_ws",
     "stats_api", "stats_reset", "requests_ws", "requests_list",
+    "terminal_ws", "terminal_sessions_api",
 ]

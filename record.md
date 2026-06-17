@@ -338,6 +338,7 @@ src/webui/routers/admin.py
 src/webui/routers/autoupdate.py
 src/webui/routers/pages.py
 src/webui/routers/stats.py
+src/webui/routers/terminal.py
 src/webui/routes.py
 src/webui/schemas/__init__.py
 src/webui/schemas/summary.py
@@ -367,6 +368,8 @@ src/webui/static/js/render.js
 src/webui/static/js/state.js
 src/webui/static/stats/request-inspector.js
 src/webui/static/stats/stats.js
+src/webui/static/terminal/terminal.css
+src/webui/static/terminal/terminal.js
 src/webui/static/ui/bootstrap.js
 src/webui/static/ui/dropdown.js
 src/webui/static/ui/input-box.css
@@ -1732,3 +1735,18 @@ pytest: (pending)
 [README.md] 版本徽章和路线图更新为 2.2.121
 [.agents/provider-guide/SKILL.md] 版本字段 2.2.120 -> 2.2.121
 验证: py_compile admin.py + routes.py + __init__.py 通过
+
+2026-06-17 13:00:00
+
+[src/webui/routers/terminal.py] 新增终端 WebSocket 路由：TerminalSession 类管理本地终端（Windows cmd.exe/Unix pty）和 SSH 远程终端（paramiko 密码/密钥/agent 认证），支持 resize、会话生命周期管理
+[src/webui/static/terminal/terminal.js] 新增 TerminalManager 模块：xterm.js 集成（VSCode 暗色主题 + FitAddon），横向标签栏管理（创建/切换/关闭/重命名），WebSocket 通信协议（init/input/resize），右键上下文菜单，SSH 连接对话框（支持 user:pass@host:port 快速解析），保存连接持久化
+[src/webui/static/terminal/terminal.css] 新增终端标签栏、终端容器、右键菜单、SSH 对话框样式
+[src/webui/static/index.html] 侧栏新增"终端"按钮，新增 tab-terminal 面板，加载 xterm.js CDN（5.3.0 + FitAddon 0.8.0）
+[src/webui/routers/__init__.py] 导出 terminal_ws、terminal_sessions_api
+[src/webui/routes.py] 注册 /v1/webui/ws/terminal/{session_id} 和 /v1/webui/terminal/sessions 路由
+[requirements.txt] 新增 paramiko>=3.0.0（SSH 远程终端支持）
+[template/template_config.toml] 版本 2.2.121 -> 2.2.122
+[config.toml] 版本 2.2.121 -> 2.2.122
+[README.md] 版本徽章和路线图更新为 2.2.122
+[.agents/provider-guide/SKILL.md] 版本字段 2.2.121 -> 2.2.122
+验证: py_compile terminal.py + __init__.py + routes.py 通过

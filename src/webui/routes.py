@@ -11,7 +11,7 @@ from src.webui.routers import (
     config_get, config_put, config_reload, export_summary,
     login_page, logout_page,
     logs_ws, persist_get, persist_put, reload_service, requests_list, requests_ws,
-    stats_api, stats_reset, summary_api, webui_page,
+    stats_api, stats_reset, summary_api, terminal_sessions_api, terminal_ws, webui_page,
 )
 
 __all__ = ["setup_routes"]
@@ -57,3 +57,5 @@ def setup_routes(app: aiohttp.web.Application) -> None:
     app.router.add_get("/v1/webui/requests", requests_list)
     app.router.add_get("/v1/webui/persist/{filename}", persist_get)
     app.router.add_post("/v1/webui/persist/{filename}", persist_put)
+    app.router.add_get("/v1/webui/ws/terminal/{session_id}", terminal_ws)
+    app.router.add_get("/v1/webui/terminal/sessions", terminal_sessions_api)

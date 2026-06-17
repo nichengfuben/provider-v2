@@ -36,6 +36,10 @@
   <link rel="stylesheet" href="/static/ui/styles.css">
   <link rel="stylesheet" href="/static/ui/input-box.css">
   <link rel="stylesheet" href="/static/ui/sortable-list/sortable-list.css">
+  <link rel="stylesheet" href="/static/terminal/terminal.css">
+  <link href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.min.js"></script>
 </head>
 <body data-initial-tab="overview">
   <div class="max-w-[1440px] mx-auto p-3 md:p-4 grid gap-4">
@@ -82,6 +86,7 @@
       <button class="sidebar-nav-item tab-button" data-tab="autoupdate" type="button">更新</button>
       <button class="sidebar-nav-item tab-button" data-tab="chat" type="button">聊天</button>
       <button class="sidebar-nav-item tab-button" data-tab="logs" type="button">日志</button>
+      <button class="sidebar-nav-item tab-button" data-tab="terminal" type="button">终端</button>
     </aside>
 
     <section class="bg-panel border border-border rounded-2xl shadow-panel grid gap-0 overflow-hidden" id="mainTabSection">
@@ -367,6 +372,30 @@
         <pre class="border border-border rounded-xl p-3.5 bg-panel-soft min-h-[200px] max-h-[400px] overflow-auto text-[13px] leading-relaxed font-mono card-hover-lift" id="logBox"></pre>
       </section>
 
+      <section class="tab-panel hidden" id="tab-terminal" aria-labelledby="tab-terminal-button">
+        <div class="flex flex-wrap justify-between items-end gap-3">
+          <div>
+            <h2>终端</h2>
+            <p class="m-0 text-muted leading-relaxed">本地终端与 SSH 远程终端，支持多标签管理。</p>
+          </div>
+        </div>
+        <div class="terminal-container" id="terminalContainer">
+          <div class="terminal-tab-bar" id="terminalTabBar">
+            <div class="terminal-tab-add" id="terminalAddBtn">+</div>
+          </div>
+          <div class="terminal-body" id="terminalBody">
+            <div class="terminal-empty-state" id="terminalEmptyState">
+              <div class="terminal-empty-state-icon">&#9002;_</div>
+              <div class="terminal-empty-state-text">No terminal sessions open</div>
+              <div class="terminal-empty-state-actions">
+                <button type="button" id="terminalEmptyLocalBtn">+ Local Terminal</button>
+                <button type="button" id="terminalEmptySSHBtn">+ SSH Remote</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
         </main>
       </div>
     </section>
@@ -452,6 +481,16 @@
   <script src="/static/ui/bootstrap.js"></script>
   <script src="/static/stats/stats.js"></script>
   <script src="/static/stats/request-inspector.js"></script>
+  <script src="/static/terminal/terminal.js"></script>
+  <script>
+    // Terminal empty-state buttons
+    (function() {
+      var localBtn = document.getElementById('terminalEmptyLocalBtn');
+      var sshBtn = document.getElementById('terminalEmptySSHBtn');
+      if (localBtn) localBtn.addEventListener('click', function() { TerminalManager.createTab('local'); });
+      if (sshBtn) sshBtn.addEventListener('click', function() { TerminalManager.showSSHDialog(); });
+    })();
+  </script>
   <script>
     // Initialize modular features
     if (typeof StatsFeature !== 'undefined') {

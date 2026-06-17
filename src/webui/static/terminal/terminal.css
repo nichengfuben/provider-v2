@@ -1,0 +1,415 @@
+/* Terminal Tab Styles */
+
+.terminal-container {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 260px);
+  min-height: 400px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+/* Horizontal tab bar */
+.terminal-tab-bar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 8px;
+  background: var(--panel-alt);
+  border-bottom: 1px solid var(--border);
+  overflow-x: auto;
+  overflow-y: hidden;
+  flex-shrink: 0;
+}
+
+.terminal-tab-bar::-webkit-scrollbar {
+  height: 4px;
+}
+
+.terminal-tab-bar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.terminal-tab-bar::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 2px;
+}
+
+.terminal-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--muted);
+  transition: background 0.15s, color 0.15s;
+  min-width: 100px;
+  max-width: 200px;
+}
+
+.terminal-tab:hover {
+  background: var(--panel);
+  color: var(--text);
+}
+
+.terminal-tab.active {
+  background: var(--panel);
+  color: var(--text);
+  border-color: var(--border);
+}
+
+.terminal-tab-status {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--muted);
+}
+
+.terminal-tab-status.connected {
+  background: var(--ok);
+}
+
+.terminal-tab-status.disconnected {
+  background: var(--err);
+}
+
+.terminal-tab-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.terminal-tab-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  font-size: 14px;
+  line-height: 1;
+  opacity: 0;
+  transition: opacity 0.15s, background 0.15s;
+  flex-shrink: 0;
+}
+
+.terminal-tab:hover .terminal-tab-close,
+.terminal-tab.active .terminal-tab-close {
+  opacity: 0.6;
+}
+
+.terminal-tab-close:hover {
+  opacity: 1 !important;
+  background: var(--err);
+  color: #fff;
+}
+
+.terminal-tab-add {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  font-size: 18px;
+  cursor: pointer;
+  color: var(--muted);
+  background: transparent;
+  border: 1px dashed var(--border);
+  flex-shrink: 0;
+  transition: background 0.15s, color 0.15s;
+}
+
+.terminal-tab-add:hover {
+  background: var(--panel);
+  color: var(--text);
+  border-color: var(--accent);
+}
+
+/* Terminal body area */
+.terminal-body {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  background: #1e1e1e;
+}
+
+.terminal-body .xterm {
+  height: 100%;
+  padding: 4px;
+}
+
+.terminal-body .xterm-viewport {
+  overflow-y: auto !important;
+}
+
+/* Empty state */
+.terminal-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 16px;
+  color: var(--muted);
+}
+
+.terminal-empty-state-icon {
+  font-size: 48px;
+  opacity: 0.5;
+}
+
+.terminal-empty-state-text {
+  font-size: 14px;
+}
+
+.terminal-empty-state-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.terminal-empty-state-actions button {
+  padding: 10px 20px;
+  border-radius: 10px;
+  font-size: 14px;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: var(--panel-alt);
+  color: var(--text);
+  transition: background 0.15s;
+}
+
+.terminal-empty-state-actions button:hover {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+/* Context menu */
+.terminal-context-menu {
+  position: fixed;
+  z-index: 10000;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 6px;
+  min-width: 160px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+.terminal-context-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  color: var(--text);
+  transition: background 0.1s;
+}
+
+.terminal-context-menu-item:hover {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.terminal-context-menu-item.danger {
+  color: var(--err);
+}
+
+.terminal-context-menu-item.danger:hover {
+  background: rgba(217, 72, 72, 0.1);
+}
+
+.terminal-context-menu-separator {
+  height: 1px;
+  margin: 4px 8px;
+  background: var(--border);
+}
+
+/* SSH Dialog */
+.terminal-ssh-dialog-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.terminal-ssh-dialog {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 24px;
+  width: 100%;
+  max-width: 440px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.2);
+}
+
+.terminal-ssh-dialog h3 {
+  margin: 0 0 4px 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.terminal-ssh-dialog-subtitle {
+  margin: 0 0 20px 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.terminal-ssh-field {
+  margin-bottom: 14px;
+}
+
+.terminal-ssh-field label {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+
+.terminal-ssh-field input,
+.terminal-ssh-field textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--panel-alt);
+  color: var(--text);
+  font-size: 14px;
+  font-family: inherit;
+}
+
+.terminal-ssh-field textarea {
+  resize: vertical;
+  min-height: 60px;
+  font-family: monospace;
+  font-size: 12px;
+}
+
+.terminal-ssh-field input:focus,
+.terminal-ssh-field textarea:focus {
+  border-color: var(--accent) !important;
+}
+
+.terminal-ssh-row {
+  display: flex;
+  gap: 12px;
+}
+
+.terminal-ssh-row .terminal-ssh-field {
+  flex: 1;
+}
+
+.terminal-ssh-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 20px;
+}
+
+.terminal-ssh-actions button {
+  padding: 10px 20px;
+  border-radius: 10px;
+  font-size: 14px;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  transition: background 0.15s;
+}
+
+.terminal-ssh-btn-cancel {
+  background: var(--panel-alt);
+  color: var(--text);
+}
+
+.terminal-ssh-btn-cancel:hover {
+  background: var(--panel);
+}
+
+.terminal-ssh-btn-connect {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent) !important;
+}
+
+.terminal-ssh-btn-connect:hover {
+  opacity: 0.9;
+}
+
+.terminal-ssh-quick-hint {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+/* Saved connections list in dialog */
+.terminal-ssh-saved {
+  margin-top: 16px;
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+}
+
+.terminal-ssh-saved-title {
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+.terminal-ssh-saved-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: background 0.1s;
+}
+
+.terminal-ssh-saved-item:hover {
+  background: var(--accent-soft);
+}
+
+.terminal-ssh-saved-item-info {
+  flex: 1;
+  overflow: hidden;
+}
+
+.terminal-ssh-saved-item-name {
+  font-weight: 500;
+}
+
+.terminal-ssh-saved-item-host {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.terminal-ssh-saved-item-del {
+  opacity: 0;
+  color: var(--err);
+  cursor: pointer;
+  padding: 2px 6px;
+  font-size: 14px;
+}
+
+.terminal-ssh-saved-item:hover .terminal-ssh-saved-item-del {
+  opacity: 0.7;
+}
+
+.terminal-ssh-saved-item-del:hover {
+  opacity: 1 !important;
+}

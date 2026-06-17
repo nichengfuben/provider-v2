@@ -18,8 +18,8 @@
 
 <div align="center">
 
-![Status](https://img.shields.io/badge/status-v2.2.121-blue)
-![Version](https://img.shields.io/badge/version-2.2.121-blue)
+![Status](https://img.shields.io/badge/status-v2.2.122-blue)
+![Version](https://img.shields.io/badge/version-2.2.122-blue)
 ![Python](https://img.shields.io/badge/python-3.8+-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Platforms](https://img.shields.io/badge/platforms-12+-orange)
@@ -1257,7 +1257,10 @@ fix(gateway): 修复并发竞速时 token 计数错误
 
 ## 🗺️ 路线图
 
-### 当前版本：v2.2.121
+### 当前版本：v2.2.122
+
+✅ 已完成（v2.2.122）：
+- 新增终端选项卡：本地终端（pty/cmd）+ SSH 远程终端（paramiko），xterm.js 多标签管理，右键菜单，SSH 连接持久化
 
 ✅ 已完成（v2.2.121）：
 - WebUI 五项修复：录音设备选择器、日志 ANSI 颜色+行号、统计/聊天持久化、Markdown 渲染+原始复制、信息框边框移除
