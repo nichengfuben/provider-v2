@@ -1,5 +1,5 @@
 [server]
-version = "2.2.134"
+version = "2.2.135"
 host = "0.0.0.0"
 port = 1337
 debug = false
@@ -23,7 +23,7 @@ concurrent_enabled = true
 concurrent_count = 3
 min_tokens = 10
 group_list_type = "whitelist"
-group_list = []
+group_list = ["qwen"]
 
 [proxy]
 proxy_server = "http://103.242.2.242:40000"

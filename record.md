@@ -1929,3 +1929,14 @@ pytest: (pending)
 [README.md] 版本徽章和路线图更新为 2.2.134
 [.agents/provider-guide/SKILL.md] 版本字段 2.2.133 -> 2.2.134
 验证: py_compile ollama/constants.py 通过
+
+2026-06-18 02:00:00
+
+[src/platforms/ollama/core/client.py] _fetch_page() 新增代理支持（读取 proxy config 传递给 requests.get）；_do_refresh() 网络返回空结果时保留缓存不覆盖（网络故障保护）；发现完成和刷新完成日志从 INFO 降为 DEBUG
+[src/webui/static/config/actions.js] 日志渲染格式匹配控制台输出：MM-DD HH:mm:ss | [ L ] | module | message，ANSI 颜色（蓝时间、彩色级别、青模块名）
+[src/webui/static/core/state.js] log() 函数智能跳过时间戳前缀（检测已有日期格式时不重复添加）
+[template/template_config.toml] 版本 2.2.134 -> 2.2.135
+[config.toml] 版本 2.2.134 -> 2.2.135
+[README.md] 版本徽章和路线图更新为 2.2.135
+[.agents/provider-guide/SKILL.md] 版本字段 2.2.134 -> 2.2.135
+验证: py_compile ollama/client.py 通过

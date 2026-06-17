@@ -68,13 +68,18 @@ function connectLogsSocket() {
           'I': '34', 'INFO': '34',
           'W': '33', 'WARNING': '33',
           'E': '31', 'ERROR': '31',
-          'C': '91', 'CRITICAL': '91'
+          'C': '91', 'CRITICAL': '91',
+          'S': '32', 'SUCCESS': '32'
         };
-        var level = (payload.level || 'INFO').toUpperCase();
+        var level = (payload.level || 'I').toUpperCase();
         var colorCode = levelColors[level] || '37';
         var ts = payload.timestamp || '--:--:--';
-        var mod = payload.module ? ' ' + payload.module + ' |' : ' |';
-        var line = '\x1b[' + colorCode + 'm[' + level + ']' + mod + ' ' + payload.message + '\x1b[0m';
+        var mod = payload.module || '';
+        // Match console format: MM-DD HH:mm:ss | [ L ] | module | message
+        var now = new Date();
+        var dateStr = String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
+        var timeStr = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0') + ':' + String(now.getSeconds()).padStart(2, '0');
+        var line = '\x1b[34m' + dateStr + ' ' + timeStr + '\x1b[0m | \x1b[' + colorCode + 'm[ ' + level + ' ]\x1b[0m | \x1b[36m' + mod + '\x1b[0m | ' + payload.message;
         log(line);
       }
       if (payload.type === 'pong') {

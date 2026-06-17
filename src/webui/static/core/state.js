@@ -85,7 +85,9 @@ function ansiToHtml(text) {
 }
 
 function log(message) {
-  var line = '[' + new Date().toLocaleTimeString() + '] ' + message;
+  // Skip timestamp prefix if message already starts with a date pattern (MM-DD from WebSocket)
+  var hasDate = /^\d{2}-\d{2}\s/.test(message);
+  var line = hasDate ? message : ('[' + new Date().toLocaleTimeString() + '] ' + message);
   _logLineCount++;
   _logEntries.unshift({ num: _logLineCount, html: ansiToHtml(line) });
 
