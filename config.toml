@@ -36,7 +36,7 @@ group_list_type = "whitelist"
 
 [platforms]
 platform_list_type = "blacklist"
-platform_list = ["caiyuesbk", "cerebras", "chutes", "codebuddy", "n1n", "nvidia", "openrouter", "perplexity", "deepseek", "cursor", "deepseek", "aitianhu2", "apiairforce", "azuretranslate", "yandextranslate", "noobkeys", "deepl", "googletranslate"]
+platform_list = ["caiyuesbk", "cerebras", "chutes", "codebuddy", "n1n", "nvidia", "openrouter", "perplexity", "deepseek", "cursor", "aitianhu2", "apiairforce", "azuretranslate", "yandextranslate", "noobkeys", "deepl", "googletranslate"]
 
 [fncall]
 protocol = "antml"
