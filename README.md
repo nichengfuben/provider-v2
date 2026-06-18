@@ -18,8 +18,8 @@
 
 <div align="center">
 
-![Status](https://img.shields.io/badge/status-v2.2.147-blue)
-![Version](https://img.shields.io/badge/version-2.2.147-blue)
+![Status](https://img.shields.io/badge/status-v2.2.148-blue)
+![Version](https://img.shields.io/badge/version-2.2.148-blue)
 ![Python](https://img.shields.io/badge/python-3.8+-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Platforms](https://img.shields.io/badge/platforms-16+-orange)
@@ -1257,7 +1257,10 @@ fix(gateway): 修复并发竞速时 token 计数错误
 
 ## 🗺️ 路线图
 
-### 当前版本：v2.2.147
+### 当前版本：v2.2.148
+
+✅ 已完成（v2.2.148）：
+- 代码块选项卡默认 code（仅 HTML 显示 preview）、流式代码块解析支持未闭合反引号、请求日志持久化
 
 ✅ 已完成（v2.2.147）：
 - WebUI 日志 ANSI 颜色、聊天加载动画与 Send→Stop、工具调用持久化修复、流式渲染优化、便携面板交互改进

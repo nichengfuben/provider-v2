@@ -154,6 +154,12 @@ async def create_app(registry: Any, session: Any) -> aiohttp.web.Application:
             start_persist()
         except Exception:
             pass
+        # Start request log persistence (load from disk + periodic save)
+        try:
+            from src.webui.services.request_log import start_request_persist
+            start_request_persist()
+        except Exception:
+            pass
         # 将 loguru 日志连接到 WebUI WebSocket（在事件循环启动后）
         try:
             from src.webui.logs_ws import log_broker, setup_loguru_sink

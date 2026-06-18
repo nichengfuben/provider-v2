@@ -10,6 +10,16 @@ function renderStreamingContent(text) {
     codeBlocks.push({ lang: lang, code: code });
     return sentinel + idx + sentinel;
   });
+  // Handle incomplete code block at end (starts with ``` but no closing ```)
+  var incompleteMatch = processed.match(/```(\w*)\n?([\s\S]*)$/);
+  var incompleteCode = '';
+  if (incompleteMatch && !processed.endsWith('```')) {
+    var iLang = incompleteMatch[1] || '';
+    var iCode = incompleteMatch[2] || '';
+    var iIdx = codeBlocks.length;
+    codeBlocks.push({ lang: iLang, code: iCode, incomplete: true });
+    processed = processed.substring(0, incompleteMatch.index) + sentinel + iIdx + sentinel;
+  }
   processed = escapeHtml(processed);
   processed = processed.replace(/\n/g, '<br>');
   for (var j = 0; j < codeBlocks.length; j++) {
@@ -131,14 +141,19 @@ function renderWithCodeBlocks(text) {
     var langClass = cb.lang ? ' class="language-' + cb.lang.toLowerCase() + '"' : '';
     var langLabel = cb.lang ? cb.lang.toLowerCase() : 'code';
     var escapedCode = escapeHtml(cb.code);
+    var tabsHtml = '';
+    if (cb.lang && cb.lang.toLowerCase() === 'html') {
+      tabsHtml =
+        '<div class="chat-codeblock-tabs">' +
+          '<button class="chat-codeblock-tab is-active" data-tab="code" type="button">code</button>' +
+          '<button class="chat-codeblock-tab" data-tab="preview" type="button">preview</button>' +
+        '</div>';
+    }
     var blockHtml =
       '<div class="chat-codeblock-wrapper">' +
         '<div class="chat-codeblock-header">' +
           '<span class="chat-codeblock-lang">' + langLabel + '</span>' +
-          '<div class="chat-codeblock-tabs">' +
-            '<button class="chat-codeblock-tab is-active" data-tab="preview" type="button">preview</button>' +
-            '<button class="chat-codeblock-tab" data-tab="code" type="button">code</button>' +
-          '</div>' +
+          tabsHtml +
           '<button class="chat-codeblock-copy" type="button">复制</button>' +
         '</div>' +
         '<pre class="chat-codeblock" data-raw-code="' + escapedCode + '"><code' + langClass + '>' + escapedCode + '</code></pre>' +
@@ -392,11 +407,11 @@ document.addEventListener("click", function(e) {
       t.classList.toggle('is-active', t === tab);
     });
     if (mode === 'code') {
-      codeEl.textContent = pre.getAttribute('data-raw-code') || codeEl.textContent;
-      codeEl.innerHTML = codeEl.textContent;
+      codeEl.textContent = pre.getAttribute('data-raw-code') || '';
     } else {
+      // preview mode: render HTML content
       var raw = pre.getAttribute('data-raw-code') || '';
-      codeEl.innerHTML = escapeHtml(raw);
+      codeEl.innerHTML = raw;
     }
     return;
   }

@@ -2073,3 +2073,14 @@ pytest: (pending)
 [README.md] 版本徽章和路线图更新为 2.2.147
 [.agents/provider-guide/SKILL.md] 版本字段 2.2.146 -> 2.2.147
 验证: py_compile logs_ws.py 通过; pytest 失败均为 pre-existing echotools 迁移问题
+
+2026-06-19 12:00:00
+
+[src/webui/static/chat/chat.js] 代码块选项卡默认 code（仅 HTML 显示 preview）；流式解析支持未闭合反引号；修复选项卡切换双转义 bug
+[src/webui/services/request_log.py] 新增请求日志持久化：save_requests/load_requests 保存到 persist/webui/requests.json，30 秒定时保存，启动时恢复
+[src/core/server/server.py] _on_startup 新增 start_request_persist 调用
+[template/template_config.toml] 版本 2.2.147 -> 2.2.148
+[config.toml] 版本跟随模板 2.2.148
+[README.md] 版本徽章和路线图更新为 2.2.148
+[.agents/provider-guide/SKILL.md] 版本字段 2.2.147 -> 2.2.148
+验证: py_compile request_log.py + server.py 通过
