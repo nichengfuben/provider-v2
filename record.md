@@ -2057,3 +2057,19 @@ pytest: (pending)
 [README.md] 版本徽章和路线图更新为 2.2.146
 [.agents/provider-guide/SKILL.md] 版本字段 2.2.145 -> 2.2.146
 验证: py_compile admin.py 通过; pytest 失败均为 pre-existing echotools 迁移问题，与本次变更无关
+
+2026-06-19 08:00:00
+
+[.gitignore] 新增 agent_log 忽略规则
+[src/webui/logs_ws.py] loguru sink 消息字段添加 ANSI 颜色码（INFO=蓝/WARNING=黄/ERROR=红/SUCCESS=绿加粗/CRITICAL=红加粗），匹配控制台输出
+[src/webui/static/config/actions.js] WebSocket 日志处理使用后端 ANSI 消息，时间戳改用后端 timestamp
+[src/webui/static/chat/chat.js] 新增 renderStreamingContent 简化流式渲染（仅 HTML 转义+代码块包裹）；新增 _setStreaming 实现 Send→Stop 按钮切换；新增 _chatAbortController 支持中断生成；聊天加载动画（思考中→生成中转圈）独立于助手消息气泡；修复 saveChatState 在 finish_reason 和 fallback 路径中调用；修复 loadChatState 跳过合成 tool 消息；修复 finalizeStreamingMessage 读取 data-raw 避免 spinner 文字混入；移除 sendBtn/btnText 死代码
+[src/webui/static/core/state.js] 新增 persistWebUISettings/loadWebUISettings/initSettingsFromServer 服务端持久化设置
+[src/webui/static/index.html] 便携面板移除关闭按钮，改用 confirm-overlay 模式（点击外部关闭）
+[src/webui/static/ui/bootstrap.js] 便携面板 _openPortable/_closePortable 改用 confirm-overlay/is-visible CSS 过渡动画
+[src/webui/static/ui/styles.css] 新增 chat-loading-spinner 转圈动画样式
+[template/template_config.toml] 版本 2.2.146 -> 2.2.147
+[config.toml] 版本跟随模板 2.2.147
+[README.md] 版本徽章和路线图更新为 2.2.147
+[.agents/provider-guide/SKILL.md] 版本字段 2.2.146 -> 2.2.147
+验证: py_compile logs_ws.py 通过; pytest 失败均为 pre-existing echotools 迁移问题

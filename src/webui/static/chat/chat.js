@@ -1,5 +1,26 @@
 // Chat input handled by InputBox component (input-box.js)
 
+// ========================= Simple Streaming Renderer =========================
+function renderStreamingContent(text) {
+  var codeBlocks = [];
+  var sentinel = '\x00CB';
+  var codeBlockRegex = /```(\w*)\n([\s\S]*?)```/g;
+  var processed = text.replace(codeBlockRegex, function(match, lang, code) {
+    var idx = codeBlocks.length;
+    codeBlocks.push({ lang: lang, code: code });
+    return sentinel + idx + sentinel;
+  });
+  processed = escapeHtml(processed);
+  processed = processed.replace(/\n/g, '<br>');
+  for (var j = 0; j < codeBlocks.length; j++) {
+    var cb = codeBlocks[j];
+    var escapedCode = escapeHtml(cb.code);
+    processed = processed.replace(sentinel + j + sentinel,
+      '<pre class="chat-codeblock"><code>' + escapedCode + '</code></pre>');
+  }
+  return processed;
+}
+
 // ========================= Tool Parameter Toggle (Global Delegate) =========================
 document.addEventListener("click", function(e) {
   var trigger = e.target.closest(".chat-tool-dropdown-trigger");
@@ -218,14 +239,61 @@ function appendChatMessage(role, content, options) {
   return msg;
 }
 
+var _spinnerCreatedAt = 0;
+var _SPINNER_MIN_MS = 400;
+var _pendingContent = null;
+var _pendingTimer = null;
+
+function _removeChatSpinner() {
+  var s = document.getElementById("_chatSpinner");
+  if (s) s.remove();
+  if (_pendingTimer) { clearTimeout(_pendingTimer); _pendingTimer = null; _pendingContent = null; }
+}
+
 function updateStreamingMessage(content) {
   var msg = document.getElementById("chatStreamingMessage");
-  if (!msg) {
-    msg = appendChatMessage("assistant", "", { isStreaming: true });
+  if (!msg && content) {
+    // First content arrived — create assistant message bubble before the spinner
+    var spinner = document.getElementById("_chatSpinner");
+    msg = document.createElement("div");
+    msg.className = "chat-message chat-message-assistant";
+    msg.id = "chatStreamingMessage";
+    var container = document.getElementById("chatMessagesContainer");
+    if (spinner && container) {
+      container.insertBefore(msg, spinner);
+    } else if (container) {
+      container.appendChild(msg);
+    }
+    // Update spinner text to generating
+    if (spinner) {
+      var span = spinner.querySelector(".chat-loading-spinner");
+      if (span) span.childNodes[span.childNodes.length - 1].textContent = "\u751F\u6210\u4E2D\u2026";
+    }
   }
-  // Only update innerHTML if there's actual content (preserve tool calls structure if present)
+  if (!msg) return;
+
   if (content) {
-    msg.innerHTML = renderWithCodeBlocks(content);
+    var elapsed = Date.now() - _spinnerCreatedAt;
+    if (elapsed < _SPINNER_MIN_MS) {
+      _pendingContent = content;
+      if (!_pendingTimer) {
+        _pendingTimer = setTimeout(function() {
+          _pendingTimer = null;
+          var m = document.getElementById("chatStreamingMessage");
+          if (m && _pendingContent) {
+            m.innerHTML = renderStreamingContent(_pendingContent);
+            m.setAttribute("data-raw", _pendingContent);
+          }
+          _pendingContent = null;
+          var c = document.getElementById("chatMessagesContainer");
+          if (c) c.scrollTop = c.scrollHeight;
+        }, _SPINNER_MIN_MS - elapsed);
+      }
+      return;
+    }
+    _pendingContent = null;
+    if (_pendingTimer) { clearTimeout(_pendingTimer); _pendingTimer = null; }
+    msg.innerHTML = renderStreamingContent(content);
     msg.setAttribute("data-raw", content);
   }
   var container = document.getElementById("chatMessagesContainer");
@@ -240,12 +308,14 @@ function finalizeStreamingMessage(toolCalls) {
   if (!msg && toolCalls && toolCalls.length > 0) {
     msg = appendChatMessage("assistant", "", { isStreaming: false });
   }
-  if (!msg) return;
+  if (!msg) { _removeChatSpinner(); return; }
   msg.removeAttribute("id");
+  _removeChatSpinner();
+
+  var content = msg.getAttribute("data-raw") || "";
 
   if (toolCalls && toolCalls.length > 0) {
     var msgUid = ++_toolIdCounter;
-    var content = msg.getAttribute("data-raw") || msg.textContent || "";
     var toolHtml = '<div class="chat-tools-container">';
     for (var i = 0; i < toolCalls.length; i++) {
       var tc = toolCalls[i];
@@ -272,6 +342,13 @@ function finalizeStreamingMessage(toolCalls) {
     toolHtml += '</div>';
     msg.innerHTML = toolHtml + '<div class="chat-assistant-text">' + renderWithCodeBlocks(content) + '</div>';
     msg.setAttribute("data-raw", content);
+  } else if (!content) {
+    // No tool calls and no text content — clear spinner if still showing
+    msg.innerHTML = '';
+    msg.setAttribute("data-raw", "");
+  } else {
+    // Re-render with full code block features (tabs, copy button)
+    msg.innerHTML = renderWithCodeBlocks(content);
   }
 
   appendMessageActions("assistant", msg);
@@ -530,6 +607,26 @@ async function loadModelsList() {
 
 // ========================= Send Chat Message (Streaming) =========================
 var chatConversationHistory = [];
+var _chatAbortController = null;
+
+function _setStreaming(isStreaming) {
+  if (!window._chatInputBox) return;
+  var sendBtn = window._chatInputBox._el('sendBtn');
+  if (!sendBtn) return;
+  var span = sendBtn.querySelector('span');
+  var svg = sendBtn.querySelector('svg');
+  if (isStreaming) {
+    if (span) span.textContent = 'Stop';
+    if (svg) svg.innerHTML = '<rect x="6" y="6" width="12" height="12" rx="2" fill="currentColor" stroke="none"/>';
+    sendBtn.onclick = function() {
+      if (_chatAbortController) _chatAbortController.abort();
+    };
+  } else {
+    if (span) span.textContent = 'Send';
+    if (svg) svg.innerHTML = '<path d="M6 12L3.269 3.125A59.769 59.769 0 0121.485 12 59.768 59.768 0 013.27 20.875L5.999 12Zm0 0h7.5"/>';
+    sendBtn.onclick = function() { window._chatInputBox._doSend(); };
+  }
+}
 
 function saveChatState() {
   try {
@@ -564,6 +661,7 @@ async function loadChatState() {
             _userMsgCount = 0;
             for (var i = 0; i < chatConversationHistory.length; i++) {
               var msg = chatConversationHistory[i];
+              if (msg.role === "tool") continue;
               appendChatMessage(msg.role, msg.content || '', {
                 toolCalls: msg.tool_calls,
                 files: msg.files || null
@@ -623,9 +721,23 @@ async function sendChatMessage(text, files) {
     // 创建超时控制器（默认 120 秒）
     var timeoutMs = 120000;
     var abortController = new AbortController();
+    _chatAbortController = abortController;
+    _setStreaming(true);
     var timeoutId = setTimeout(function() {
       abortController.abort();
     }, timeoutMs);
+
+    // Show loading spinner while waiting for response
+    _spinnerCreatedAt = Date.now();
+    var container = document.getElementById("chatMessagesContainer");
+    var spinnerEl = document.createElement("div");
+    spinnerEl.id = "_chatSpinner";
+    spinnerEl.style.cssText = "display:inline-flex;align-items:center;gap:10px;margin:6px 0 6px 4px;";
+    spinnerEl.innerHTML = '<span class="chat-loading-spinner">\u601D\u8003\u4E2D\u2026</span>';
+    if (container) {
+      container.appendChild(spinnerEl);
+      container.scrollTop = container.scrollHeight;
+    }
 
     var response = await fetch("/v1/chat/completions", {
       method: "POST",
@@ -637,6 +749,7 @@ async function sendChatMessage(text, files) {
     clearTimeout(timeoutId); // 响应已开始，取消超时
 
     if (!response.ok) {
+      _removeChatSpinner();
       var errText = await response.text();
       appendChatMessage("assistant", "Error " + response.status + ": " + errText);
       chatConversationHistory.pop();
@@ -646,6 +759,7 @@ async function sendChatMessage(text, files) {
     // 设置流式读取超时（60 秒无数据）
     var streamTimeoutId = setTimeout(function() {
       abortController.abort();
+      _removeChatSpinner();
       appendChatMessage("assistant", "流式响应超时（60 秒无数据）");
     }, 60000);
 
@@ -653,6 +767,7 @@ async function sendChatMessage(text, files) {
       clearTimeout(streamTimeoutId);
       streamTimeoutId = setTimeout(function() {
         abortController.abort();
+        _removeChatSpinner();
         appendChatMessage("assistant", "流式响应超时（60 秒无数据）");
       }, 60000);
     }
@@ -689,6 +804,7 @@ async function sendChatMessage(text, files) {
           if (chunk.error) {
             var errMsg = chunk.error.message || chunk.error.code || "unknown error";
             var errType = chunk.error.type || "error";
+            _removeChatSpinner();
             appendChatMessage("assistant", "[" + errType + "] " + errMsg);
             chatConversationHistory.pop();
             return;
@@ -728,7 +844,6 @@ async function sendChatMessage(text, files) {
               if (toolCalls.length > 0) {
                 assistantMsg.tool_calls = toolCalls;
                 chatConversationHistory.push(assistantMsg);
-                // Inject synthetic tool results (WebUI doesn't execute tools)
                 for (var ti = 0; ti < toolCalls.length; ti++) {
                   chatConversationHistory.push({
                     role: "tool",
@@ -740,6 +855,7 @@ async function sendChatMessage(text, files) {
                 chatConversationHistory.push(assistantMsg);
               }
               assistantAdded = true;
+              saveChatState();
             }
           }
         } catch (parseError) {
@@ -766,14 +882,17 @@ async function sendChatMessage(text, files) {
       } else {
         chatConversationHistory.push(fallbackMsg);
       }
+      saveChatState();
     }
 
     // 如果流结束但完全没有内容，显示错误提示
     if (!assistantAdded && !assistantContent && toolCalls.length === 0) {
+      _removeChatSpinner();
       appendChatMessage("assistant", "[stream_error] response ended with no content from model " + (body.model || "unknown"));
       chatConversationHistory.pop();
     }
   } catch (error) {
+    _removeChatSpinner();
     if (error.name === 'AbortError') {
       appendChatMessage("assistant", "请求已取消或超时");
     } else {
@@ -783,8 +902,8 @@ async function sendChatMessage(text, files) {
   } finally {
     clearTimeout(timeoutId);
     clearTimeout(streamTimeoutId);
-    sendBtn.disabled = false;
-    btnText.textContent = "发送";
+    _setStreaming(false);
+    _chatAbortController = null;
   }
 }
 

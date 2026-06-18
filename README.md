@@ -18,8 +18,8 @@
 
 <div align="center">
 
-![Status](https://img.shields.io/badge/status-v2.2.146-blue)
-![Version](https://img.shields.io/badge/version-2.2.146-blue)
+![Status](https://img.shields.io/badge/status-v2.2.147-blue)
+![Version](https://img.shields.io/badge/version-2.2.147-blue)
 ![Python](https://img.shields.io/badge/python-3.8+-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Platforms](https://img.shields.io/badge/platforms-16+-orange)
@@ -1257,7 +1257,10 @@ fix(gateway): 修复并发竞速时 token 计数错误
 
 ## 🗺️ 路线图
 
-### 当前版本：v2.2.146
+### 当前版本：v2.2.147
+
+✅ 已完成（v2.2.147）：
+- WebUI 日志 ANSI 颜色、聊天加载动画与 Send→Stop、工具调用持久化修复、流式渲染优化、便携面板交互改进
 
 ✅ 已完成（v2.2.146）：
 - WebUI 便携设置持久化从 config.json 迁移到 config.toml，后端 persist API 支持 TOML 格式

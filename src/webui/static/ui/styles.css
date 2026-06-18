@@ -528,6 +528,28 @@ textarea:focus {
   animation: toastSlideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
+/* Chat loading spinner */
+@keyframes chatSpinnerRotate {
+  to { transform: rotate(360deg); }
+}
+.chat-loading-spinner {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--muted);
+  font-size: 13px;
+  margin: 6px 0 6px 4px;
+}
+.chat-loading-spinner::before {
+  content: '';
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: chatSpinnerRotate 0.8s linear infinite;
+}
+
 /* Section stagger children - disabled to prevent tab-switch reflow */
 section.tab-panel > * {
   opacity: 1;

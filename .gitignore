@@ -18,6 +18,7 @@ env
 node_modules
 persist
 venv
+agent_log
 
 # Extensions
 *.dll

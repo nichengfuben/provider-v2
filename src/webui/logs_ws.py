@@ -75,18 +75,33 @@ class WebUILogBroker:
             for socket in stale:
                 self._sockets.discard(socket)
 
+    _MSG_ANSI = {
+        "TRACE": "\033[37m",
+        "DEBUG": "\033[32m",
+        "INFO": "\033[34m",
+        "SUCCESS": "\033[1;32m",
+        "WARNING": "\033[1;33m",
+        "ERROR": "\033[31m",
+        "CRITICAL": "\033[1;31m",
+    }
+
     def _loguru_sink(self, message: Any) -> None:
         """loguru sink：同步函数，通过 run_coroutine_threadsafe 推入事件循环。"""
         if message is None or self._loop is None:
             return
         try:
             record = message.record
+            level_name = record["level"].name
+            msg_text = str(record["message"])
+            color = self._MSG_ANSI.get(level_name, "")
+            if color:
+                msg_text = f"{color}{msg_text}\033[0m"
             payload = {
                 "type": "log",
                 "timestamp": record["time"].strftime("%H:%M:%S"),
-                "level": _LEVEL_ABBR.get(record["level"].name, record["level"].name[0]),
+                "level": _LEVEL_ABBR.get(level_name, level_name[0]),
                 "module": record["extra"].get("module_name", ""),
-                "message": str(record["message"]),
+                "message": msg_text,
             }
             if self._loop.is_running():
                 asyncio.run_coroutine_threadsafe(self.broadcast(payload), self._loop)

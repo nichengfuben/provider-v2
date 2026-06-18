@@ -8,46 +8,18 @@ document.getElementById('fabThemeButton').addEventListener('click', function() {
   toast('主题已切换为 ' + state.settings.theme, 'ok');
 });
 function _openPortable() {
-  portablePanel.style.display = 'block';
-  var backdrop = document.getElementById('portableBackdrop');
-  var inner = portablePanel.querySelector('section');
-  if (typeof MotionKit !== 'undefined') {
-    MotionKit.setState(backdrop, { opacity: 0 });
-    MotionKit.opacityTo(backdrop, 1, 6);
-    if (inner) {
-      MotionKit.setState(inner, { opacity: 0, size: 92 });
-      MotionKit.opacityTo(inner, 1, 6);
-      MotionKit.sizeTo(inner, 100, 6);
-    }
-    // floatScale on dialog buttons
-    var btns = portablePanel.querySelectorAll('button, select');
-    btns.forEach(function(btn) {
-      if (!btn._motionAttached && typeof MotionKit.floatScale === 'function') {
-        MotionKit.floatScale(btn, 105, 97, 100, 0.15);
-        btn._motionAttached = true;
-      }
-    });
-  }
-  // Re-enumerate recording devices when panel opens (ensures fresh labels after permission grant)
+  portablePanel.style.display = '';
   _refreshRecordingDevices();
+  requestAnimationFrame(function() { portablePanel.classList.add('is-visible'); });
 }
 function _closePortable() {
-  var backdrop = document.getElementById('portableBackdrop');
-  var inner = portablePanel.querySelector('section');
-  if (typeof MotionKit !== 'undefined' && inner) {
-    MotionKit.opacityTo(inner, 0, 8);
-    MotionKit.sizeTo(inner, 92, 8);
-    MotionKit.opacityTo(backdrop, 0, 8);
-    setTimeout(function() { portablePanel.style.display = 'none'; }, 200);
-  } else {
-    portablePanel.style.display = 'none';
-  }
+  portablePanel.classList.remove('is-visible');
+  setTimeout(function() { portablePanel.style.display = 'none'; }, 200);
 }
 document.getElementById('portableButton').addEventListener('click', function() {
-  if (portablePanel.style.display === 'none') _openPortable();
+  if (!portablePanel.style.display || portablePanel.style.display === 'none') _openPortable();
   else _closePortable();
 });
-document.getElementById('portableCloseBtn').addEventListener('click', _closePortable);
 document.getElementById('portableBackdrop').addEventListener('click', _closePortable);
 document.getElementById('themeSelect').addEventListener('change', function(event) {
   state.settings.theme = event.target.value;
@@ -210,6 +182,9 @@ window._dropdowns = {};
 // Re-apply settings after dropdown initialization (needed for themeSelect/compactSelect)
 applyTheme();
 applyCompact();
+
+// Load portable settings from server-side config.toml (overrides localStorage)
+initSettingsFromServer();
 
 scheduleRefresh();
 switchTab(initialTab);

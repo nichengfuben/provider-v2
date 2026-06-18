@@ -74,11 +74,10 @@ function connectLogsSocket() {
         var colorCode = levelColors[level] || '37';
         var ts = payload.timestamp || '--:--:--';
         var mod = payload.module || '';
-        // Match console format: MM-DD HH:mm:ss | [ L ] | module | message
         var now = new Date();
         var dateStr = String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
         var timeStr = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0') + ':' + String(now.getSeconds()).padStart(2, '0');
-        var line = '\x1b[34m' + dateStr + ' ' + timeStr + '\x1b[0m | \x1b[' + colorCode + 'm[ ' + level + ' ]\x1b[0m | \x1b[36m' + mod + '\x1b[0m | ' + payload.message;
+        var line = '\x1b[34m' + dateStr + ' ' + ts + '\x1b[0m | \x1b[' + colorCode + 'm[ ' + level + ' ]\x1b[0m | \x1b[36m' + mod + '\x1b[0m | ' + payload.message;
         log(line);
       }
       if (payload.type === 'pong') {

@@ -179,6 +179,52 @@ function saveSettings() {
   applyTheme();
   applyCompact();
   scheduleRefresh();
+  persistWebUISettings();
+}
+
+async function persistWebUISettings() {
+  try {
+    var existing = await persistLoad('config.toml') || {};
+    existing.theme = state.settings.theme;
+    existing.refreshInterval = state.settings.refreshInterval;
+    existing.timeoutMs = state.settings.timeoutMs;
+    existing.compact = state.settings.compact;
+    persistSave('config.toml', existing);
+  } catch (e) { /* ignore */ }
+}
+
+async function loadWebUISettings() {
+  try {
+    var saved = await persistLoad('config.toml');
+    if (!saved) return false;
+    var changed = false;
+    if (saved.theme) { state.settings.theme = saved.theme; changed = true; }
+    if (typeof saved.refreshInterval === 'number') { state.settings.refreshInterval = saved.refreshInterval; changed = true; }
+    if (typeof saved.timeoutMs === 'number') { state.settings.timeoutMs = saved.timeoutMs; changed = true; }
+    if (saved.compact) { state.settings.compact = saved.compact; changed = true; }
+    return changed;
+  } catch (e) { return false; }
+}
+
+async function initSettingsFromServer() {
+  var loaded = await loadWebUISettings();
+  if (loaded) {
+    applyTheme();
+    applyCompact();
+    scheduleRefresh();
+    var themeSelect = document.getElementById('themeSelect');
+    var themeDd = window._dropdowns && window._dropdowns['themeSelect'];
+    if (themeSelect) themeSelect.value = state.settings.theme;
+    if (themeDd) themeDd.setValue(state.settings.theme);
+    var compactSelect = document.getElementById('compactSelect');
+    var compactDd = window._dropdowns && window._dropdowns['compactSelect'];
+    if (compactSelect) compactSelect.value = state.settings.compact;
+    if (compactDd) compactDd.setValue(state.settings.compact);
+    var refreshInput = document.getElementById('refreshIntervalInput');
+    if (refreshInput) refreshInput.value = String(state.settings.refreshInterval);
+    var timeoutInput = document.getElementById('timeoutInput');
+    if (timeoutInput) timeoutInput.value = String(state.settings.timeoutMs);
+  }
 }
 
 function loadVoiceSettings() {

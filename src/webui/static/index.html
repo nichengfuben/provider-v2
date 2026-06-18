@@ -423,10 +423,9 @@
     <div class="fixed bottom-4 right-4 grid gap-2 z-[9999]" id="toastWrap"></div>
   </div>
 
-  <div id="portablePanel" style="display:none;position:fixed;inset:0;z-index:99999;">
-    <div id="portableBackdrop" style="position:absolute;inset:0;background:rgba(0,0,0,0.45);"></div>
-    <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:16px;">
-      <section class="bg-panel border border-border rounded-2xl shadow-panel p-5 grid gap-4" style="max-width:600px;width:100%;max-height:85vh;overflow-y:auto;">
+  <div id="portablePanel" class="confirm-overlay" style="display:none;">
+    <div id="portableBackdrop" style="position:absolute;inset:0;"></div>
+    <section class="confirm-dialog bg-panel border border-border rounded-2xl shadow-panel p-5 grid gap-4" style="max-width:600px;min-width:300px;max-height:85vh;overflow-y:auto;">
         <div class="flex flex-wrap justify-between items-end gap-3">
           <div>
             <h2>便携设置</h2>
@@ -434,7 +433,6 @@
           </div>
           <div class="flex flex-wrap gap-2 items-center">
             <button class="cursor-pointer font-bold rounded-xl w-10 h-10 border border-border bg-panel text-text hover:bg-panel-alt transition flex items-center justify-center" id="fabThemeButton" type="button" aria-label="切换主题"><span id="fabThemeIcon">&#9790;</span></button>
-            <button class="cursor-pointer font-bold rounded-xl w-10 h-10 border border-border bg-panel text-text hover:bg-panel-alt transition flex items-center justify-center" id="portableCloseBtn" type="button" aria-label="关闭">&times;</button>
           </div>
         </div>
         <div class="grid gap-3 grid-cols-[repeat(auto-fit,minmax(240px,1fr))]">
@@ -490,7 +488,6 @@
         </div>
         <p class="m-0 text-muted leading-relaxed">设置不写回服务端配置文件，避免对线上进程产生意外副作用。</p>
       </section>
-    </div>
   </div>
 
   <script src="/static/core/api.js"></script>
