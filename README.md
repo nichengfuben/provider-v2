@@ -18,8 +18,8 @@
 
 <div align="center">
 
-![Status](https://img.shields.io/badge/status-v2.2.143-blue)
-![Version](https://img.shields.io/badge/version-2.2.143-blue)
+![Status](https://img.shields.io/badge/status-v2.2.144-blue)
+![Version](https://img.shields.io/badge/version-2.2.144-blue)
 ![Python](https://img.shields.io/badge/python-3.8+-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Platforms](https://img.shields.io/badge/platforms-16+-orange)
@@ -1257,9 +1257,9 @@ fix(gateway): 修复并发竞速时 token 计数错误
 
 ## 🗺️ 路线图
 
-### 当前版本：v2.2.143
+### 当前版本：v2.2.144
 
-✅ 已完成（v2.2.143）：
+✅ 已完成（v2.2.144）：
 - Windows 终端改用 asyncio subprocess（非阻塞 I/O）；移除 WebUI 自构日志（仅保留后端 WebSocket 日志转发）
 
 ✅ 已完成（v2.2.142）：

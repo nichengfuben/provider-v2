@@ -1,4 +1,6 @@
 /x/project/provider-self
+agent_log/activity/20260618.md
+agent_log/audit/20260618_arch_provider-self.md
 .agents/provider-guide/SKILL.md
 .gitignore
 AGENTS.md
@@ -2026,3 +2028,13 @@ pytest: (pending)
 [README.md] 版本徽章和路线图更新为 2.2.143
 [.agents/provider-guide/SKILL.md] 版本字段 2.2.142 -> 2.2.143
 验证: py_compile terminal.py 通过
+
+2026-06-18 16:13:00
+
+[config.toml] 调试日志级别从 DEBUG 改为 INFO；版本 2.2.143 -> 2.2.144
+[template/template_config.toml] 版本 2.2.143 -> 2.2.144
+[README.md] 版本徽章和路线图更新为 2.2.144
+[.agents/provider-guide/SKILL.md] 版本字段 2.2.143 -> 2.2.144
+[agent_log/activity/20260618.md] 新建当日活动日志
+[agent_log/audit/20260618_arch_provider-self.md] 新建七维度架构审计报告（总评 6.1/10）
+无 Python 源码变更，无需 py_compile
