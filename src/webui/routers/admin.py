@@ -85,7 +85,7 @@ async def config_reload(request: aiohttp.web.Request) -> aiohttp.web.Response:
 
 
 async def persist_get(request: aiohttp.web.Request) -> aiohttp.web.Response:
-    """GET /v1/webui/persist/{filename} — read a JSON file from persist/webui/."""
+    """GET /v1/webui/persist/{filename} — read a JSON/TOML file from persist/webui/."""
     import json
     from pathlib import Path
 
@@ -95,8 +95,13 @@ async def persist_get(request: aiohttp.web.Request) -> aiohttp.web.Response:
     persist_dir = Path(__file__).resolve().parent.parent.parent.parent / "persist" / "webui"
     filepath = persist_dir / filename
     try:
-        with open(filepath, "r", encoding="utf-8") as f:
-            data = json.load(f)
+        if filename.endswith(".toml"):
+            import tomllib
+            with open(filepath, "rb") as f:
+                data = tomllib.load(f)
+        else:
+            with open(filepath, "r", encoding="utf-8") as f:
+                data = json.load(f)
         return aiohttp.web.json_response(data)
     except FileNotFoundError:
         return aiohttp.web.json_response({"error": "not found"}, status=404)
@@ -105,7 +110,7 @@ async def persist_get(request: aiohttp.web.Request) -> aiohttp.web.Response:
 
 
 async def persist_put(request: aiohttp.web.Request) -> aiohttp.web.Response:
-    """POST /v1/webui/persist/{filename} — write JSON to persist/webui/."""
+    """POST /v1/webui/persist/{filename} — write JSON/TOML to persist/webui/."""
     import json
     from pathlib import Path
 
@@ -117,8 +122,28 @@ async def persist_put(request: aiohttp.web.Request) -> aiohttp.web.Response:
     filepath = persist_dir / filename
     try:
         body = await request.json()
-        with open(filepath, "w", encoding="utf-8") as f:
-            json.dump(body, f, ensure_ascii=False, indent=2)
+        if filename.endswith(".toml"):
+            try:
+                import tomlkit
+                with open(filepath, "w", encoding="utf-8") as f:
+                    tomlkit.dump(body, f)
+            except ImportError:
+                lines = []
+                for k, v in body.items():
+                    if isinstance(v, bool):
+                        lines.append(f"{k} = {'true' if v else 'false'}")
+                    elif isinstance(v, int):
+                        lines.append(f"{k} = {v}")
+                    elif isinstance(v, float):
+                        lines.append(f"{k} = {v}")
+                    else:
+                        escaped = str(v).replace("\\", "\\\\").replace('"', '\\"')
+                        lines.append(f'{k} = "{escaped}"')
+                with open(filepath, "w", encoding="utf-8") as f:
+                    f.write("\n".join(lines) + "\n")
+        else:
+            with open(filepath, "w", encoding="utf-8") as f:
+                json.dump(body, f, ensure_ascii=False, indent=2)
         return aiohttp.web.json_response({"status": "ok"})
     except Exception as e:
         return aiohttp.web.json_response({"error": str(e)}, status=500)

@@ -2047,3 +2047,13 @@ pytest: (pending)
 [README.md] 版本徽章和路线图更新为 2.2.145
 [.agents/provider-guide/SKILL.md] 版本字段 2.2.144 -> 2.2.145
 验证: py_compile client.py 通过; pytest 跳过（pre-existing echotools 迁移失败 + qwen 网络测试超时）
+
+2026-06-19 00:00:00
+
+[src/webui/routers/admin.py] persist_get/persist_put 支持 .toml 扩展名：GET 用 tomllib 读取返回 JSON，POST 用 tomlkit（fallback 内置 writer）写入 TOML
+[src/webui/static/ui/bootstrap.js] 10 处 config.json 引用改为 config.toml（录音设备、标签布局、侧边栏压缩持久化）
+[template/template_config.toml] 版本 2.2.145 -> 2.2.146
+[config.toml] 版本跟随模板 2.2.146
+[README.md] 版本徽章和路线图更新为 2.2.146
+[.agents/provider-guide/SKILL.md] 版本字段 2.2.145 -> 2.2.146
+验证: py_compile admin.py 通过; pytest 失败均为 pre-existing echotools 迁移问题，与本次变更无关

@@ -358,7 +358,7 @@ async function _refreshRecordingDevices() {
     var dropdown = window._dropdowns && window._dropdowns['recordingDeviceSelect'];
     if (dropdown) {
       dropdown.setOptions(opts, false);
-      var saved = await persistLoad('config.json');
+      var saved = await persistLoad('config.toml');
       if (saved && saved.recordingDeviceId) {
         dropdown.setValue(saved.recordingDeviceId);
       }
@@ -372,9 +372,9 @@ _refreshRecordingDevices();
 // Recording device change handler
 (function() {
   async function _saveRecordingDevice(deviceId) {
-    var existing = await persistLoad('config.json') || {};
+    var existing = await persistLoad('config.toml') || {};
     existing.recordingDeviceId = deviceId;
-    persistSave('config.json', existing);
+    persistSave('config.toml', existing);
   }
   var dropdown = window._dropdowns && window._dropdowns['recordingDeviceSelect'];
   if (dropdown) {
@@ -436,10 +436,10 @@ function _ensureSidebarToggle(tabBar, type) {
   btn.addEventListener('click', async function() {
     _tabLayoutConfig.sidebarCompressed = !_tabLayoutConfig.sidebarCompressed;
     _applySidebarCompressed(_tabLayoutConfig.sidebarCompressed);
-    var existing = await persistLoad('config.json') || {};
+    var existing = await persistLoad('config.toml') || {};
     existing.layout = _tabLayoutConfig.layout;
     existing.sidebarCompressed = _tabLayoutConfig.sidebarCompressed;
-    persistSave('config.json', existing);
+    persistSave('config.toml', existing);
   });
   tabBar.insertBefore(btn, tabBar.firstChild);
 }
@@ -468,7 +468,7 @@ function _applySidebarCompressed(compressed) {
 // Initialize tab layout from saved config
 (async function _initTabLayout() {
   try {
-    var saved = await persistLoad('config.json');
+    var saved = await persistLoad('config.toml');
     if (saved && saved.layout) {
       _tabLayoutConfig.layout = saved.layout;
     }
@@ -483,10 +483,10 @@ function _applySidebarCompressed(compressed) {
 document.getElementById('tabLayoutSelect').addEventListener('change', async function(event) {
   _tabLayoutConfig.layout = event.target.value;
   _applyTabLayout(_tabLayoutConfig.layout);
-  var existing = await persistLoad('config.json') || {};
+  var existing = await persistLoad('config.toml') || {};
   existing.layout = _tabLayoutConfig.layout;
   existing.sidebarCompressed = _tabLayoutConfig.sidebarCompressed;
-  persistSave('config.json', existing);
+  persistSave('config.toml', existing);
   toast('标签栏布局: ' + (event.target.value === 'vertical' ? '竖向侧边' : '横向顶部'), 'ok');
 });
 
@@ -497,10 +497,10 @@ document.getElementById('tabLayoutSelect').addEventListener('change', async func
     dropdown.onChange = async function(value) {
       _tabLayoutConfig.layout = value;
       _applyTabLayout(value);
-      var existing = await persistLoad('config.json') || {};
+      var existing = await persistLoad('config.toml') || {};
       existing.layout = value;
       existing.sidebarCompressed = _tabLayoutConfig.sidebarCompressed;
-      persistSave('config.json', existing);
+      persistSave('config.toml', existing);
       toast('标签栏布局: ' + (value === 'vertical' ? '竖向侧边' : '横向顶部'), 'ok');
     };
   }
