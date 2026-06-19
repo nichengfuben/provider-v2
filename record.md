@@ -2154,3 +2154,12 @@ py_compile: src/webui/middleware/static_nocache.py 通过
 [.agents/provider-guide/SKILL.md] 版本字段 2.2.153 -> 2.2.154
 py_compile: client.py, terminal.py 全部通过
 echotools 1.0.24 已发布到 PyPI
+
+2026-06-19 14:00:00
+
+[src/webui/static/terminal/terminal.js] 修复 Enter 键发送 CR 改为 CRLF，解决 Windows cmd.exe 管道模式下命令不执行的问题
+[template/template_config.toml] 版本 2.2.154 -> 2.2.155
+[config.toml] 版本跟随模板 2.2.155
+[README.md] 版本徽章和路线图更新为 2.2.155
+[.agents/provider-guide/SKILL.md] 版本字段 2.2.154 -> 2.2.155
+纯前端 JS 单行修复，无需 py_compile

@@ -107,7 +107,7 @@ function TerminalRenderer(container, cols, rows) {
     switch (e.key) {
       case 'Enter':
         e.preventDefault();
-        if (_onDataCb) _onDataCb('\r');
+        if (_onDataCb) _onDataCb('\r\n');
         return;
       case 'Backspace':
         e.preventDefault();
