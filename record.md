@@ -353,6 +353,16 @@ src/platforms/yandextranslate/core/adaptercore.py
 src/platforms/yandextranslate/core/client.py
 src/platforms/yandextranslate/core/constants.py
 src/platforms/yandextranslate/util.py
+src/platforms/zen/__init__.py
+src/platforms/zen/adapter.py
+src/platforms/zen/core/__init__.py
+src/platforms/zen/core/adaptercore.py
+src/platforms/zen/core/client.py
+src/platforms/zen/core/constants.py
+src/platforms/zen/core/headers.py
+src/platforms/zen/core/payloads.py
+src/platforms/zen/core/sse.py
+src/platforms/zen/util.py
 src/routes/__init__.py
 src/routes/anthropic.py
 src/routes/openai.py
@@ -2210,3 +2220,21 @@ py_compile: admin.py 通过
 [README.md] 版本徽章和路线图更新为 2.2.160
 [.agents/provider-guide/SKILL.md] 版本字段 2.2.159 -> 2.2.160
 py_compile: static_nocache.py 通过
+
+2026-06-19 18:00:00
+
+[src/platforms/zen/__init__.py] 新增 zen 平台适配器 — OpenCode.ai API
+[src/platforms/zen/adapter.py] 新增 adapter 重导出模块
+[src/platforms/zen/util.py] 新增 util 延迟加载模块
+[src/platforms/zen/core/__init__.py] 新增 core 包初始化
+[src/platforms/zen/core/adaptercore.py] 新增 ZenAdapter 实现，含 ModelsCache 自动模型获取
+[src/platforms/zen/core/client.py] 新增 HTTP 客户端，Bearer 认证，SSE 流式，重试逻辑
+[src/platforms/zen/core/constants.py] 新增常量定义，含 FILTER_PAID_MODELS 全局控制
+[src/platforms/zen/core/headers.py] 新增请求头构建模块
+[src/platforms/zen/core/payloads.py] 新增请求体构建模块
+[src/platforms/zen/core/sse.py] 新增 SSE 流式解析，reasoning 字段映射为 thinking
+[template/template_config.toml] 版本 2.2.160 -> 2.2.161
+[config.toml] 版本跟随模板 2.2.161
+[README.md] 版本徽章和路线图更新为 2.2.161
+[.agents/provider-guide/SKILL.md] 版本字段 2.2.160 -> 2.2.161
+py_compile: 全部 10 个文件通过

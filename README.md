@@ -18,8 +18,8 @@
 
 <div align="center">
 
-![Status](https://img.shields.io/badge/status-v2.2.160-blue)
-![Version](https://img.shields.io/badge/version-2.2.160-blue)
+![Status](https://img.shields.io/badge/status-v2.2.161-blue)
+![Version](https://img.shields.io/badge/version-2.2.161-blue)
 ![Python](https://img.shields.io/badge/python-3.8+-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Platforms](https://img.shields.io/badge/platforms-16+-orange)
@@ -1257,7 +1257,10 @@ fix(gateway): 修复并发竞速时 token 计数错误
 
 ## 🗺️ 路线图
 
-### 当前版本：v2.2.160
+### 当前版本：v2.2.161
+
+✅ 已完成（v2.2.161）：
+- 新增 zen 平台适配器 — OpenCode.ai API，Bearer 认证，SSE 流式，reasoning→thinking 映射，自动模型获取
 
 ✅ 已完成（v2.2.160）：
 - 恢复静态资源 no-cache 缓存策略，撤销 max-age=3600 以避免浏览器缓存旧版 JS/CSS
