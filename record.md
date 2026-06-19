@@ -381,6 +381,7 @@ src/webui/static/chat/chat.js
 src/webui/static/config/actions.js
 src/webui/static/config/render.js
 src/webui/static/core/api.js
+src/webui/static/core/lazy.js
 src/webui/static/core/motion.js
 src/webui/static/core/router.js
 src/webui/static/core/state.js
@@ -2122,3 +2123,19 @@ pytest: (pending)
 [README.md] 版本徽章和路线图更新为 2.2.152
 [.agents/provider-guide/SKILL.md] 版本字段 2.2.151 -> 2.2.152
 纯前端 JS 变更，无需 py_compile
+
+2026-06-19 23:55:00
+
+[src/webui/static/core/lazy.js] 新增 LazyLoader 懒加载模块，支持按标签页动态加载 JS/CSS
+[src/webui/static/core/state.js] switchTab 集成懒加载，新增 _initTab 分发函数
+[src/webui/static/index.html] 移除 15 个预加载标签（xterm CDN、终端/文件/聊天/统计专用资源）
+[src/webui/static/ui/bootstrap.js] 拆分为立即执行和 5 个按标签页延迟初始化函数
+[src/webui/static/config/actions.js] renderConfig 添加 typeof 防护适配懒加载
+[src/webui/middleware/static_nocache.py] 静态资源缓存策略从 no-cache 改为 public max-age=3600
+[src/webui/static/ui/styles.css] 新增懒加载指示器样式
+[template/template_config.toml] 版本 2.2.152 -> 2.2.153
+[config.toml] 版本跟随模板 2.2.153
+[README.md] 版本徽章和路线图更新为 2.2.153
+[.agents/provider-guide/SKILL.md] 版本字段 2.2.152 -> 2.2.153
+py_compile: src/webui/middleware/static_nocache.py 通过
+纯前端 JS 变更 + 1 个 Python 中间件变更

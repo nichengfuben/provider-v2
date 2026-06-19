@@ -319,7 +319,9 @@ function scheduleConfigSave() {
   }, state.configSaveDebounceMs);
 }
 
-function switchTab(nextTab) {
+var _initializedTabs = new Set();
+
+async function switchTab(nextTab) {
   state.activeTab = nextTab;
   localStorage.setItem('provider.webui.activeTab', nextTab);
   document.querySelectorAll('.tab-button[data-tab]').forEach(function(node) {
@@ -331,6 +333,51 @@ function switchTab(nextTab) {
     node.classList.toggle('active', isActive);
     node.classList.toggle('hidden', !isActive);
   });
+
+  // Lazy-load tab resources if needed (non-blocking for UI — panel is already visible)
+  if (typeof LazyLoader !== 'undefined' && !LazyLoader.isTabLoaded(nextTab)) {
+    var panel = document.getElementById('tab-' + nextTab);
+    var loaderEl = null;
+    if (panel) {
+      loaderEl = document.createElement('div');
+      loaderEl.className = 'tab-loading-indicator';
+      loaderEl.textContent = '加载中...';
+      panel.appendChild(loaderEl);
+    }
+    try {
+      await LazyLoader.loadTabResources(nextTab);
+    } finally {
+      if (loaderEl) loaderEl.remove();
+    }
+  }
+
+  _initTab(nextTab);
+}
+
+function _initTab(tabName) {
+  if (_initializedTabs.has(tabName)) return;
+  _initializedTabs.add(tabName);
+
+  switch (tabName) {
+    case 'chat':
+      typeof _initChatTab === 'function' && _initChatTab();
+      break;
+    case 'stats':
+      typeof _initStatsTab === 'function' && _initStatsTab();
+      break;
+    case 'autoupdate':
+      typeof _initAutoupdateTab === 'function' && _initAutoupdateTab();
+      break;
+    case 'config':
+      typeof _initConfigTab === 'function' && _initConfigTab();
+      break;
+    case 'terminal':
+      typeof _initTerminalTab === 'function' && _initTerminalTab();
+      break;
+    // files — no special init needed (uses Router.register activate)
+    default:
+      break;
+  }
 }
 
 async function fetchJson(url, options) {

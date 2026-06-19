@@ -63,6 +63,7 @@ input[type="radio"] {
 body { margin: 0; font-family: Arial, sans-serif;
   background: linear-gradient(180deg, var(--bg) 0%, var(--panel-soft) 100%); color: var(--text); }
 .tab-panel.active { display: grid; gap: 14px; contain: layout style; }
+.tab-loading-indicator { padding: 24px; text-align: center; color: var(--muted); font-size: 14px; }
 .tab-button.active { background: var(--accent); color: #fff; border-color: transparent; }
 .webui-body { display: grid; grid-template-columns: 180px 1fr; gap: 0; align-items: start; }
 .webui-layout { display: block; min-height: 60vh; contain: layout style; }

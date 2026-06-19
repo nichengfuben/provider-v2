@@ -105,7 +105,7 @@ async function refreshAll() {
     if (summaryResult.status === 'fulfilled') {
       state.summary = summaryResult.value;
       renderOverview(summaryResult.value);
-      renderConfig(summaryResult.value);
+      if (typeof renderConfig === 'function') renderConfig(summaryResult.value);
       renderModels(summaryResult.value.models || []);
       renderPlatforms(summaryResult.value.platforms || {});
     } else {

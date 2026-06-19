@@ -18,8 +18,8 @@
 
 <div align="center">
 
-![Status](https://img.shields.io/badge/status-v2.2.152-blue)
-![Version](https://img.shields.io/badge/version-2.2.152-blue)
+![Status](https://img.shields.io/badge/status-v2.2.153-blue)
+![Version](https://img.shields.io/badge/version-2.2.153-blue)
 ![Python](https://img.shields.io/badge/python-3.8+-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Platforms](https://img.shields.io/badge/platforms-16+-orange)
@@ -1257,7 +1257,12 @@ fix(gateway): 修复并发竞速时 token 计数错误
 
 ## 🗺️ 路线图
 
-### 当前版本：v2.2.152
+### 当前版本：v2.2.153
+
+✅ 已完成（v2.2.153）：
+- WebUI 静态资源懒加载：按标签页延迟加载 JS/CSS，初始负载从 ~335KB 降至 ~100KB
+- 新增 LazyLoader 模块，xterm.js CDN 从预加载改为按需加载
+- 静态资源缓存策略优化（no-cache → 1 小时缓存）
 
 ✅ 已完成（v2.2.152）：
 - 聊天历史加载添加调试日志和逐条错误处理，定位首条助手消息消失问题

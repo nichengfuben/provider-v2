@@ -84,71 +84,8 @@ document.querySelectorAll('.tab-button[data-tab]').forEach(function(node) {
   });
 });
 
-// Autoupdate tab event listeners
-if (document.getElementById('autoupdateCheckBtn')) {
-  document.getElementById('autoupdateCheckBtn').addEventListener('click', triggerAutoupdateCheck);
-}
-if (document.getElementById('autoupdateSaveBtn')) {
-  document.getElementById('autoupdateSaveBtn').addEventListener('click', saveAutoupdateSettings);
-}
-if (document.getElementById('autoupdateApplyBtn')) {
-  document.getElementById('autoupdateApplyBtn').addEventListener('click', applyAutoupdate);
-}
-if (document.getElementById('autoupdateAddMirrorBtn')) {
-  document.getElementById('autoupdateAddMirrorBtn').addEventListener('click', function() {
-    var mirrors = _getMirrorsFromUI();
-    mirrors.push('');
-    _renderMirrors(mirrors);
-    var inputs = document.querySelectorAll('#autoupdateMirrorsList .mirror-url');
-    if (inputs.length) inputs[inputs.length - 1].focus();
-  });
-}
-
-// Chat InputBox initialization
-var chatClearBtn = document.getElementById('chatClearBtn');
-var chatRunTestsBtn = document.getElementById('chatRunTestsBtn');
-var chatBatchToggleBtn = document.getElementById('chatBatchToggleBtn');
-
-// Batch test section toggle
-if (chatBatchToggleBtn) {
-  chatBatchToggleBtn.addEventListener('click', function() {
-    var section = document.getElementById('batchTestSection');
-    if (section) {
-      section.classList.toggle('hidden');
-      chatBatchToggleBtn.textContent = section.classList.contains('hidden') ? '批量测试' : '收起批量测试';
-    }
-  });
-}
-
-if (typeof InputBox !== 'undefined' && document.getElementById('chatInputBox')) {
-  var voiceSettings = {};
-  try { voiceSettings = JSON.parse(localStorage.getItem('provider.webui.voice') || '{}'); } catch(e) {}
-  window._chatInputBox = InputBox.create('#chatInputBox', {
-    placeholder: '输入消息... (Shift+Enter 换行, Enter 发送)',
-    buttons: { file: true, voice: true, send: true },
-    voice: {
-      sttModel: voiceSettings.sttModel || '',
-      ttsModel: voiceSettings.ttsModel || '',
-      ttsPrompt: voiceSettings.ttsPrompt || '',
-    },
-    onSend: function(text, files) {
-      sendChatMessage(text, files);
-    },
-    onVoiceStart: function() { toast('录音中...', 'info'); },
-    onVoiceEnd: function() {},
-  });
-}
-
-if (chatClearBtn) {
-  chatClearBtn.addEventListener('click', function() {
-    clearChatMessages();
-    chatConversationHistory = [];
-    toast('对话已清空', 'ok');
-  });
-}
-if (chatRunTestsBtn) {
-  chatRunTestsBtn.addEventListener('click', runChatTests);
-}
+// Autoupdate & chat initialization moved to lazy per-tab init functions
+// (_initAutoupdateTab, _initChatTab) — called by state.js _initTab()
 
 applyTheme();
 applyCompact();
@@ -190,8 +127,6 @@ scheduleRefresh();
 switchTab(initialTab);
 connectLogsSocket();
 refreshAll();
-loadAutoupdateSettings();
-if (typeof _loadTools === 'function') _loadTools();
 
 // ========================= MotionKit Integration =========================
 // Initialize motion effects after DOM is ready
@@ -200,10 +135,7 @@ if (typeof initAllMotionEffects === 'function') {
   setTimeout(initAllMotionEffects, 100);
 }
 
-// Load models list for chat test
-if (typeof loadModelsList === 'function') {
-  loadModelsList();
-}
+// Load models list moved to _initChatTab() (lazy)
 
 // Load voice model lists for STT/TTS dropdowns
 (async function loadVoiceModels() {
@@ -274,10 +206,7 @@ if (ttsRestoreBtn) {
   });
 }
 
-// Restore chat history from localStorage
-if (typeof loadChatState === 'function') {
-  loadChatState();
-}
+// Restore chat history moved to _initChatTab() (lazy)
 
 // Override switchTab to scroll to top of content container
 var originalSwitchTab = window.switchTab;
@@ -365,6 +294,107 @@ _refreshRecordingDevices();
     });
   }
 })();
+
+// ========================= Lazy Per-Tab Init Functions =========================
+// Called by state.js _initTab() the first time each tab is shown.
+
+function _initChatTab() {
+  // Chat InputBox initialization
+  var chatClearBtn = document.getElementById('chatClearBtn');
+  var chatRunTestsBtn = document.getElementById('chatRunTestsBtn');
+  var chatBatchToggleBtn = document.getElementById('chatBatchToggleBtn');
+
+  if (chatBatchToggleBtn) {
+    chatBatchToggleBtn.addEventListener('click', function() {
+      var section = document.getElementById('batchTestSection');
+      if (section) {
+        section.classList.toggle('hidden');
+        chatBatchToggleBtn.textContent = section.classList.contains('hidden') ? '批量测试' : '收起批量测试';
+      }
+    });
+  }
+
+  if (typeof InputBox !== 'undefined' && document.getElementById('chatInputBox')) {
+    var voiceSettings = {};
+    try { voiceSettings = JSON.parse(localStorage.getItem('provider.webui.voice') || '{}'); } catch(e) {}
+    window._chatInputBox = InputBox.create('#chatInputBox', {
+      placeholder: '输入消息... (Shift+Enter 换行, Enter 发送)',
+      buttons: { file: true, voice: true, send: true },
+      voice: {
+        sttModel: voiceSettings.sttModel || '',
+        ttsModel: voiceSettings.ttsModel || '',
+        ttsPrompt: voiceSettings.ttsPrompt || '',
+      },
+      onSend: function(text, files) { sendChatMessage(text, files); },
+      onVoiceStart: function() { toast('录音中...', 'info'); },
+      onVoiceEnd: function() {},
+    });
+  }
+
+  if (chatClearBtn) {
+    chatClearBtn.addEventListener('click', function() {
+      clearChatMessages();
+      chatConversationHistory = [];
+      toast('对话已清空', 'ok');
+    });
+  }
+  if (chatRunTestsBtn) {
+    chatRunTestsBtn.addEventListener('click', runChatTests);
+  }
+  if (typeof loadModelsList === 'function') loadModelsList();
+  if (typeof loadChatState === 'function') loadChatState();
+  if (typeof _loadTools === 'function') _loadTools();
+}
+
+function _initAutoupdateTab() {
+  if (document.getElementById('autoupdateCheckBtn')) {
+    document.getElementById('autoupdateCheckBtn').addEventListener('click', triggerAutoupdateCheck);
+  }
+  if (document.getElementById('autoupdateSaveBtn')) {
+    document.getElementById('autoupdateSaveBtn').addEventListener('click', saveAutoupdateSettings);
+  }
+  if (document.getElementById('autoupdateApplyBtn')) {
+    document.getElementById('autoupdateApplyBtn').addEventListener('click', applyAutoupdate);
+  }
+  if (document.getElementById('autoupdateAddMirrorBtn')) {
+    document.getElementById('autoupdateAddMirrorBtn').addEventListener('click', function() {
+      var mirrors = _getMirrorsFromUI();
+      mirrors.push('');
+      _renderMirrors(mirrors);
+      var inputs = document.querySelectorAll('#autoupdateMirrorsList .mirror-url');
+      if (inputs.length) inputs[inputs.length - 1].focus();
+    });
+  }
+  loadAutoupdateSettings();
+}
+
+function _initStatsTab() {
+  if (typeof StatsFeature !== 'undefined') StatsFeature.init();
+  if (typeof RequestInspector !== 'undefined') RequestInspector.init();
+  var statsRefreshBtn = document.getElementById('statsRefreshBtn');
+  var statsResetBtn = document.getElementById('statsResetBtn');
+  if (statsRefreshBtn) statsRefreshBtn.addEventListener('click', function() { StatsFeature.refresh(); });
+  if (statsResetBtn) statsResetBtn.addEventListener('click', async function() {
+    try {
+      await Api.post('/v1/webui/stats/reset');
+      toast('统计已重置', 'ok');
+      StatsFeature.refresh();
+    } catch(e) { toast('重置失败: ' + e.message, 'error'); }
+  });
+}
+
+function _initTerminalTab() {
+  var localBtn = document.getElementById('terminalEmptyLocalBtn');
+  var sshBtn = document.getElementById('terminalEmptySSHBtn');
+  if (localBtn) localBtn.addEventListener('click', function() { TerminalManager.createTab('local'); });
+  if (sshBtn) sshBtn.addEventListener('click', function() { TerminalManager.showSSHDialog(); });
+}
+
+function _initConfigTab() {
+  if (typeof renderConfig === 'function' && state.summary) {
+    renderConfig(state.summary);
+  }
+}
 
 // ========================= Tab Layout Toggle =========================
 var _tabLayoutConfig = { layout: 'horizontal', sidebarCompressed: false };
