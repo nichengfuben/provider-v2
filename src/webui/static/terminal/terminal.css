@@ -192,6 +192,21 @@
 /* Bold */
 .term-bold { font-weight: bold; }
 
+/* Clickable file paths detected in terminal output */
+.term-path {
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  text-underline-offset: 2px;
+  cursor: pointer;
+  color: #569cd6;
+  pointer-events: auto;
+}
+
+.term-path:hover {
+  color: #9cdcfe;
+  text-decoration-style: solid;
+}
+
 /* Foreground colors (standard 8) */
 .term-fg-30 { color: #1e1e1e; }
 .term-fg-31 { color: #f44747; }

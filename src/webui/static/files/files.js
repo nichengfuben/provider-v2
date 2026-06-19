@@ -16,6 +16,15 @@ var FileManager = (function () {
   var _activeTabId = null;
   var _tabCounter = 0;
   var _contextMenu = null;
+  var _clipboard = { action: null, paths: [] }; // action: 'copy' or 'cut'
+  var _lastSelectedPath = null; // last right-clicked entry path for keyboard shortcuts
+
+  // Search state
+  var _searchInput = null;
+  var _searchResults = null;
+  var _searchDebounceTimer = null;
+  var _searchActiveIdx = -1;
+  var _searchAbortCtrl = null;
 
   // DOM references
   var _container = null;
@@ -31,6 +40,84 @@ var FileManager = (function () {
     if (!_container || !_tabBar || !_body) return;
 
     document.addEventListener('click', function () { _hideContextMenu(); });
+
+    // Keyboard shortcuts for clipboard operations
+    document.addEventListener('keydown', function (e) {
+      if (!e.ctrlKey && !e.metaKey) return;
+      // Skip when focus is in an input, textarea, or editable element
+      var tag = (e.target.tagName || '').toLowerCase();
+      if (tag === 'input' || tag === 'textarea' || e.target.isContentEditable) return;
+      // Only handle when files tab is active
+      if (typeof switchTab === 'function' && typeof getActiveTab === 'function') {
+        if (getActiveTab() !== 'files') return;
+      }
+      var tab = _getActiveTab();
+      if (!tab) return;
+      if (!_lastSelectedPath) return;
+
+      if (e.key === 'c' || e.key === 'C') {
+        e.preventDefault();
+        _clipboardCopy([_lastSelectedPath]);
+        _renderContent();
+      } else if (e.key === 'x' || e.key === 'X') {
+        e.preventDefault();
+        _clipboardCut([_lastSelectedPath]);
+        _renderContent();
+      } else if (e.key === 'v' || e.key === 'V') {
+        if (_clipboard.paths.length > 0) {
+          e.preventDefault();
+          _clipboardPaste(tab);
+        }
+      }
+    });
+
+    // Hidden file input for uploads
+    if (!document.getElementById('filesUploadInput')) {
+      var fileInput = document.createElement('input');
+      fileInput.type = 'file';
+      fileInput.multiple = true;
+      fileInput.id = 'filesUploadInput';
+      fileInput.style.display = 'none';
+      document.body.appendChild(fileInput);
+      fileInput.addEventListener('change', function () {
+        var tab = _getActiveTab();
+        if (tab && fileInput.files.length > 0) {
+          _uploadFiles(tab, tab.path, fileInput.files);
+        }
+        // Reset so the same file can be selected again
+        fileInput.value = '';
+      });
+    }
+
+    // Search keyboard shortcuts
+    document.addEventListener('keydown', function (e) {
+      // Only handle when files tab is active
+      if (typeof switchTab === 'function' && typeof getActiveTab === 'function') {
+        if (getActiveTab() !== 'files') return;
+      }
+
+      // Ctrl+F or F3: focus search input
+      if ((e.key === 'f' && (e.ctrlKey || e.metaKey)) || e.key === 'F3') {
+        e.preventDefault();
+        _focusSearch();
+        return;
+      }
+
+      // Escape: clear and close search
+      if (e.key === 'Escape') {
+        if (_searchInput && document.activeElement === _searchInput) {
+          e.preventDefault();
+          _clearSearch();
+          _searchInput.blur();
+          return;
+        }
+        if (_searchResults && _searchResults.classList.contains('visible')) {
+          e.preventDefault();
+          _hideSearchResults();
+          return;
+        }
+      }
+    });
 
     // Register with Router
     if (typeof Router !== 'undefined') {
@@ -291,6 +378,10 @@ var FileManager = (function () {
     }
 
     _body.appendChild(listArea);
+
+    // Drag-and-drop upload support on the list area
+    _setupDragDrop(listArea, tab);
+
     _body.style.display = 'flex';
     _body.style.flexDirection = 'column';
   }
@@ -363,9 +454,112 @@ var FileManager = (function () {
 
     toolbar.appendChild(breadcrumb);
 
+    // Search input
+    var searchWrapper = document.createElement('div');
+    searchWrapper.className = 'files-search-wrapper';
+
+    _searchInput = document.createElement('input');
+    _searchInput.type = 'text';
+    _searchInput.className = 'files-search-input';
+    _searchInput.placeholder = '\u641C\u7D22\u6587\u4EF6...';
+    _searchInput.autocomplete = 'off';
+    _searchInput.spellcheck = false;
+
+    _searchInput.addEventListener('input', function () {
+      var val = _searchInput.value.trim();
+      if (val.length > 0) {
+        searchWrapper.classList.add('has-query');
+      } else {
+        searchWrapper.classList.remove('has-query');
+      }
+      _debounceSearch(val, tab);
+    });
+
+    _searchInput.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        // Navigate to first result or active result
+        var items = _searchResults ? _searchResults.querySelectorAll('.files-search-result') : [];
+        var idx = _searchActiveIdx >= 0 ? _searchActiveIdx : 0;
+        if (items.length > idx) {
+          items[idx].click();
+        }
+      } else if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        _navigateSearchResults(1);
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        _navigateSearchResults(-1);
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        _clearSearch();
+        _searchInput.blur();
+      }
+    });
+
+    _searchInput.addEventListener('focus', function () {
+      var val = _searchInput.value.trim();
+      if (val.length > 0 && _searchResults && _searchResults.children.length > 0) {
+        _searchResults.classList.add('visible');
+      }
+    });
+
+    var clearBtn = document.createElement('button');
+    clearBtn.className = 'files-search-clear';
+    clearBtn.type = 'button';
+    clearBtn.innerHTML = '&times;';
+    clearBtn.title = 'Clear search';
+    clearBtn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      _clearSearch();
+      _searchInput.focus();
+    });
+
+    _searchResults = document.createElement('div');
+    _searchResults.className = 'files-search-results';
+
+    searchWrapper.appendChild(_searchInput);
+    searchWrapper.appendChild(clearBtn);
+    searchWrapper.appendChild(_searchResults);
+    toolbar.appendChild(searchWrapper);
+
+    // Close search results when clicking outside
+    document.addEventListener('click', function (e) {
+      if (!searchWrapper.contains(e.target)) {
+        _hideSearchResults();
+      }
+    });
+
+    // Clipboard indicator
+    if (_clipboard.paths.length > 0) {
+      var clipIndicator = document.createElement('span');
+      clipIndicator.className = 'files-clipboard-indicator';
+      var clipLabel = _clipboard.action === 'cut' ? '\u5DF2\u526A\u5207' : '\u5DF2\u590D\u5236';
+      clipIndicator.textContent = clipLabel + ' ' + _clipboard.paths.length + ' \u9879';
+      clipIndicator.title = _clipboard.action === 'cut' ? 'Cut to clipboard' : 'Copied to clipboard';
+      var clipClearBtn = document.createElement('span');
+      clipClearBtn.className = 'files-clipboard-clear';
+      clipClearBtn.textContent = '\u00D7';
+      clipClearBtn.title = 'Clear clipboard';
+      clipClearBtn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        _clipboard = { action: null, paths: [] };
+        _renderContent();
+      });
+      clipIndicator.appendChild(clipClearBtn);
+      toolbar.appendChild(clipIndicator);
+    }
+
     // Actions
     var actions = document.createElement('div');
     actions.className = 'files-toolbar-actions';
+
+    var uploadBtn = document.createElement('button');
+    uploadBtn.className = 'files-toolbar-btn files-upload-btn';
+    uploadBtn.textContent = 'Upload';
+    uploadBtn.title = 'Upload files to current directory';
+    uploadBtn.addEventListener('click', function () { _triggerFilePicker(); });
+    actions.appendChild(uploadBtn);
 
     var newFolderBtn = document.createElement('button');
     newFolderBtn.className = 'files-toolbar-btn';
@@ -477,6 +671,11 @@ var FileManager = (function () {
       tr.dataset.path = entry.path;
       tr.dataset.type = entry.type;
 
+      // Mark cut items with reduced opacity
+      if (_clipboard.action === 'cut' && _clipboard.paths.indexOf(entry.path) !== -1) {
+        tr.className = 'files-row-cut';
+      }
+
       // Name cell
       var tdName = document.createElement('td');
       var nameCell = document.createElement('div');
@@ -555,6 +754,56 @@ var FileManager = (function () {
     return entries;
   }
 
+  // ========================= Cross-Module Integration =========================
+
+  function _openInTerminal(dirPath) {
+    if (typeof switchTab !== 'function') return;
+    switchTab('terminal');
+    setTimeout(function () {
+      if (typeof TerminalManager === 'undefined') return;
+      var tab = TerminalManager.createTab('local');
+      // Wait for WebSocket connection, then send cd command
+      var attempts = 0;
+      var maxAttempts = 30;
+      var pollInterval = setInterval(function () {
+        attempts++;
+        if (tab.ws && tab.ws.readyState === WebSocket.OPEN) {
+          clearInterval(pollInterval);
+          tab.ws.send(JSON.stringify({ type: 'input', data: 'cd "' + dirPath + '"\r\n' }));
+        } else if (attempts >= maxAttempts) {
+          clearInterval(pollInterval);
+        }
+      }, 100);
+    }, 500);
+  }
+
+  function _copyPathToClipboard(path) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(path).then(function () {
+        if (typeof toast === 'function') toast('路径已复制: ' + path, 'ok');
+      }).catch(function () {
+        _fallbackCopyText(path);
+      });
+    } else {
+      _fallbackCopyText(path);
+    }
+  }
+
+  function _fallbackCopyText(text) {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.cssText = 'position:fixed;left:-9999px;top:-9999px;';
+    document.body.appendChild(ta);
+    ta.select();
+    try {
+      document.execCommand('copy');
+      if (typeof toast === 'function') toast('路径已复制: ' + text, 'ok');
+    } catch (e) {
+      if (typeof toast === 'function') toast('复制失败', 'error');
+    }
+    document.body.removeChild(ta);
+  }
+
   // ========================= Context Menus =========================
 
   function _hideContextMenu() {
@@ -563,6 +812,7 @@ var FileManager = (function () {
 
   function _showEntryContextMenu(event, tab, entry) {
     _hideContextMenu();
+    _lastSelectedPath = entry.path;
     _contextMenu = document.createElement('div');
     _contextMenu.className = 'files-context-menu';
     _contextMenu.style.left = event.clientX + 'px';
@@ -572,11 +822,20 @@ var FileManager = (function () {
 
     if (entry.type === 'dir') {
       items.push({ label: 'Open', action: function () { _navigateTo(tab, entry.path); } });
+      items.push({ label: '\u5728\u7EC8\u7AEF\u4E2D\u6253\u5F00', action: function () { _openInTerminal(entry.path); } });
     } else {
       items.push({ label: 'Preview', action: function () { _previewFile(entry); } });
+      items.push({ label: 'Edit', action: function () { _previewFile(entry, true); } });
       items.push({ label: 'Download', action: function () { _downloadFile(entry.path); } });
     }
 
+    items.push({ separator: true });
+    items.push({ label: '\u590D\u5236\u8DEF\u5F84', action: function () { _copyPathToClipboard(entry.path); } });
+    items.push({ label: '\u590D\u5236', action: function () { _clipboardCopy([entry.path]); _renderContent(); } });
+    items.push({ label: '\u526A\u5207', action: function () { _clipboardCut([entry.path]); _renderContent(); } });
+    if (_clipboard.paths.length > 0) {
+      items.push({ label: '\u7C98\u8D34', action: function () { _clipboardPaste(tab); } });
+    }
     items.push({ separator: true });
     items.push({ label: 'Rename', action: function () { _showRenameDialog(tab, entry); } });
     items.push({ label: 'Delete', danger: true, action: function () { _deleteEntries(tab, [entry.path]); } });
@@ -614,9 +873,18 @@ var FileManager = (function () {
     _contextMenu.style.top = event.clientY + 'px';
 
     var items = [
+      { label: 'Upload files', action: function () { _triggerFilePicker(); } },
+      { separator: true },
       { label: 'New Folder', action: function () { _promptNewFolder(tab); } },
       { label: 'Refresh', action: function () { _loadDirectory(tab, tab.path); } },
+      { separator: true },
+      { label: '\u5728\u7EC8\u7AEF\u4E2D\u6253\u5F00', action: function () { _openInTerminal(tab.path); } },
     ];
+
+    if (_clipboard.paths.length > 0) {
+      items.push({ separator: true });
+      items.push({ label: '\u7C98\u8D34', action: function () { _clipboardPaste(tab); } });
+    }
 
     _populateMenu(_contextMenu, items);
     document.body.appendChild(_contextMenu);
@@ -658,6 +926,47 @@ var FileManager = (function () {
   }
 
   // ========================= File Operations =========================
+
+  function _clipboardCopy(paths) {
+    _clipboard = { action: 'copy', paths: paths.slice() };
+    if (typeof toast === 'function') toast('\u5DF2\u590D\u5236 ' + paths.length + ' \u9879', 'ok');
+  }
+
+  function _clipboardCut(paths) {
+    _clipboard = { action: 'cut', paths: paths.slice() };
+    if (typeof toast === 'function') toast('\u5DF2\u526A\u5207 ' + paths.length + ' \u9879', 'ok');
+  }
+
+  async function _clipboardPaste(tab) {
+    if (!_clipboard.action || _clipboard.paths.length === 0) return;
+
+    var destDir = tab.path || '/';
+    var endpoint = _clipboard.action === 'cut' ? '/v1/webui/files/move' : '/v1/webui/files/copy';
+    var actionLabel = _clipboard.action === 'cut' ? '\u79FB\u52A8' : '\u590D\u5236';
+
+    // Process each path sequentially
+    var successCount = 0;
+    for (var i = 0; i < _clipboard.paths.length; i++) {
+      var srcPath = _clipboard.paths[i];
+      try {
+        await Api.post(endpoint, { source: srcPath, dest: destDir });
+        successCount++;
+      } catch (e) {
+        if (typeof toast === 'function') toast(actionLabel + ' \u5931\u8D25: ' + e.message, 'error');
+      }
+    }
+
+    if (successCount > 0) {
+      if (typeof toast === 'function') toast(actionLabel + ' ' + successCount + ' \u9879', 'ok');
+    }
+
+    // Clear clipboard after cut, keep for copy
+    if (_clipboard.action === 'cut') {
+      _clipboard = { action: null, paths: [] };
+    }
+
+    _loadDirectory(tab, tab.path);
+  }
 
   function _downloadFile(path) {
     var a = document.createElement('a');
@@ -767,9 +1076,111 @@ var FileManager = (function () {
     });
   }
 
+  // ========================= Upload =========================
+
+  function _triggerFilePicker() {
+    var input = document.getElementById('filesUploadInput');
+    if (input) input.click();
+  }
+
+  async function _uploadFiles(tab, dirPath, fileList) {
+    if (!fileList || fileList.length === 0) return;
+
+    var formData = new FormData();
+    formData.append('dir', dirPath);
+    for (var i = 0; i < fileList.length; i++) {
+      formData.append('files', fileList[i]);
+    }
+
+    // Show a brief upload indicator via toast
+    var count = fileList.length;
+    if (typeof toast === 'function') toast('Uploading ' + count + ' file(s)...', 'ok');
+
+    try {
+      var resp = await fetch('/v1/webui/files/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      var data;
+      try {
+        data = await resp.json();
+      } catch (_e) {
+        data = null;
+      }
+
+      if (!resp.ok) {
+        var errMsg = (data && data.error) ? data.error : ('HTTP ' + resp.status);
+        if (typeof toast === 'function') toast('Upload failed: ' + errMsg, 'error');
+        return;
+      }
+
+      var uploaded = (data && data.uploaded) || [];
+      if (typeof toast === 'function') toast(uploaded.length + ' file(s) uploaded', 'ok');
+      _loadDirectory(tab, tab.path);
+    } catch (e) {
+      if (typeof toast === 'function') toast('Upload failed: ' + e.message, 'error');
+    }
+  }
+
+  function _setupDragDrop(listArea, tab) {
+    var overlay = null;
+    var dragCounter = 0;
+
+    function showOverlay() {
+      if (overlay) return;
+      overlay = document.createElement('div');
+      overlay.className = 'files-drop-overlay';
+      overlay.textContent = 'Drop files to upload';
+      listArea.style.position = 'relative';
+      listArea.appendChild(overlay);
+    }
+
+    function hideOverlay() {
+      if (overlay) {
+        overlay.remove();
+        overlay = null;
+      }
+      dragCounter = 0;
+    }
+
+    listArea.addEventListener('dragenter', function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      dragCounter++;
+      if (e.dataTransfer && e.dataTransfer.types && e.dataTransfer.types.indexOf('Files') !== -1) {
+        showOverlay();
+      }
+    });
+
+    listArea.addEventListener('dragover', function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
+    });
+
+    listArea.addEventListener('dragleave', function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      dragCounter--;
+      if (dragCounter <= 0) {
+        hideOverlay();
+      }
+    });
+
+    listArea.addEventListener('drop', function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      hideOverlay();
+      if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        _uploadFiles(tab, tab.path, e.dataTransfer.files);
+      }
+    });
+  }
+
   // ========================= File Preview =========================
 
-  async function _previewFile(entry) {
+  async function _previewFile(entry, editMode) {
     var overlay = document.createElement('div');
     overlay.className = 'files-preview-overlay';
 
@@ -778,6 +1189,7 @@ var FileManager = (function () {
       '<div class="files-preview-header">' +
       '<div class="files-preview-title">' + _escapeHtml(entry.name) + '</div>' +
       '<div class="files-preview-actions">' +
+      '<button class="files-preview-btn" id="filesPreviewEdit">Edit</button>' +
       '<button class="files-preview-btn" id="filesPreviewDownload">Download</button>' +
       '<button class="files-preview-btn" id="filesPreviewClose">Close</button>' +
       '</div></div>' +
@@ -786,34 +1198,240 @@ var FileManager = (function () {
 
     document.body.appendChild(overlay);
 
-    overlay.querySelector('#filesPreviewClose').addEventListener('click', function () {
+    var dialog = overlay.querySelector('.files-preview-dialog');
+    var titleEl = overlay.querySelector('.files-preview-title');
+    var actionsEl = overlay.querySelector('.files-preview-actions');
+    var bodyEl = overlay.querySelector('.files-preview-body');
+
+    // State for edit mode
+    var editState = {
+      active: false,
+      dirty: false,
+      originalContent: '',
+    };
+
+    // Close overlay
+    function closeOverlay() {
       overlay.remove();
-    });
+      document.removeEventListener('keydown', onKey);
+    }
+
+    overlay.querySelector('#filesPreviewClose').addEventListener('click', closeOverlay);
     overlay.addEventListener('click', function (e) {
-      if (e.target === overlay) overlay.remove();
+      if (e.target === overlay) closeOverlay();
     });
     overlay.querySelector('#filesPreviewDownload').addEventListener('click', function () {
       _downloadFile(entry.path);
     });
 
-    // Escape key
+    // Edit button: enter edit mode (only shown for text files after load)
+    overlay.querySelector('#filesPreviewEdit').addEventListener('click', function () {
+      if (editState.active) return;
+      _enterEditMode();
+    });
+
+    // Unified Escape key handler
     function onKey(e) {
-      if (e.key === 'Escape') { overlay.remove(); document.removeEventListener('keydown', onKey); }
+      if (editState.active) {
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          e.stopPropagation();
+          _cancelEdit();
+        }
+        return;
+      }
+      if (e.key === 'Escape') {
+        closeOverlay();
+      }
     }
     document.addEventListener('keydown', onKey);
 
+    // Switch to preview mode: restore header buttons, show body, remove editor
+    function _exitEditMode() {
+      editState.active = false;
+      editState.dirty = false;
+      dialog.classList.remove('files-edit-mode');
+      titleEl.textContent = entry.name;
+
+      actionsEl.innerHTML =
+        '<button class="files-preview-btn" id="filesPreviewEdit">Edit</button>' +
+        '<button class="files-preview-btn" id="filesPreviewDownload">Download</button>' +
+        '<button class="files-preview-btn" id="filesPreviewClose">Close</button>';
+
+      actionsEl.querySelector('#filesPreviewEdit').addEventListener('click', function () {
+        if (editState.active) return;
+        _enterEditMode();
+      });
+      actionsEl.querySelector('#filesPreviewDownload').addEventListener('click', function () {
+        _downloadFile(entry.path);
+      });
+      actionsEl.querySelector('#filesPreviewClose').addEventListener('click', closeOverlay);
+
+      var editor = dialog.querySelector('.files-editor');
+      if (editor) editor.remove();
+      bodyEl.style.display = '';
+    }
+
+    // Switch to edit mode: change header buttons, hide body, show editor
+    function _enterEditMode() {
+      editState.active = true;
+      editState.dirty = false;
+      dialog.classList.add('files-edit-mode');
+      titleEl.textContent = entry.name + ' - Editing';
+
+      actionsEl.innerHTML =
+        '<button class="files-preview-btn files-preview-btn-save" id="filesEditorSave">Save</button>' +
+        '<button class="files-preview-btn" id="filesEditorCancel">Cancel</button>';
+
+      actionsEl.querySelector('#filesEditorSave').addEventListener('click', _saveEditedFile);
+      actionsEl.querySelector('#filesEditorCancel').addEventListener('click', _cancelEdit);
+
+      bodyEl.style.display = 'none';
+      _showEditor();
+    }
+
+    // Create editor DOM (line numbers gutter + textarea) and append to dialog
+    function _showEditor() {
+      var existing = dialog.querySelector('.files-editor');
+      if (existing) existing.remove();
+
+      var editorDiv = document.createElement('div');
+      editorDiv.className = 'files-editor';
+
+      var linesDiv = document.createElement('div');
+      linesDiv.className = 'files-editor-lines';
+
+      var textarea = document.createElement('textarea');
+      textarea.className = 'files-editor-textarea';
+      textarea.spellcheck = false;
+      textarea.value = editState.originalContent;
+
+      editorDiv.appendChild(linesDiv);
+      editorDiv.appendChild(textarea);
+      dialog.appendChild(editorDiv);
+
+      function updateLineNumbers() {
+        var count = (textarea.value.match(/\n/g) || []).length + 1;
+        var nums = [];
+        for (var i = 1; i <= count; i++) nums.push(i);
+        linesDiv.textContent = nums.join('\n');
+      }
+
+      // Sync scroll between textarea and line numbers
+      textarea.addEventListener('scroll', function () {
+        linesDiv.scrollTop = textarea.scrollTop;
+      });
+
+      // Keyboard shortcuts inside textarea
+      textarea.addEventListener('keydown', function (e) {
+        // Tab inserts spaces
+        if (e.key === 'Tab') {
+          e.preventDefault();
+          var start = textarea.selectionStart;
+          var end = textarea.selectionEnd;
+          textarea.value =
+            textarea.value.substring(0, start) + '    ' + textarea.value.substring(end);
+          textarea.selectionStart = textarea.selectionEnd = start + 4;
+          _markDirty();
+          updateLineNumbers();
+        }
+        // Ctrl+S saves
+        if (e.key === 's' && (e.ctrlKey || e.metaKey)) {
+          e.preventDefault();
+          _saveEditedFile();
+        }
+      });
+
+      textarea.addEventListener('input', function () {
+        _markDirty();
+        updateLineNumbers();
+      });
+
+      updateLineNumbers();
+      textarea.focus();
+    }
+
+    function _markDirty() {
+      if (!editState.dirty) {
+        editState.dirty = true;
+        titleEl.textContent = entry.name + ' - Editing *';
+      }
+    }
+
+    // Save edited content via API
+    async function _saveEditedFile() {
+      var textarea = dialog.querySelector('.files-editor-textarea');
+      if (!textarea) return;
+
+      var saveBtn = actionsEl.querySelector('#filesEditorSave');
+      if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.textContent = 'Saving...';
+      }
+
+      try {
+        await Api.post('/v1/webui/files/write', {
+          path: entry.path,
+          content: textarea.value,
+        });
+        editState.originalContent = textarea.value;
+        if (typeof toast === 'function') toast('File saved', 'ok');
+        // Refresh the read-only preview with updated content
+        _renderTextPreview(editState.originalContent);
+        _exitEditMode();
+      } catch (e) {
+        if (typeof toast === 'function') toast('Save failed: ' + e.message, 'error');
+        if (saveBtn) {
+          saveBtn.disabled = false;
+          saveBtn.textContent = 'Save';
+        }
+      }
+    }
+
+    // Cancel editing with dirty-state confirmation
+    function _cancelEdit() {
+      if (editState.dirty) {
+        if (!confirm('Discard unsaved changes?')) return;
+      }
+      _exitEditMode();
+      // Restore preview body from original content
+      bodyEl.innerHTML = '';
+      _renderTextPreview(editState.originalContent);
+      bodyEl.style.display = '';
+    }
+
+    // Render text content with line numbers into the preview body
+    function _renderTextPreview(content) {
+      var code = document.createElement('pre');
+      code.className = 'files-preview-code';
+      var lines = (content || '').split('\n');
+      if (lines.length > 0 && lines[lines.length - 1] === '') lines.pop();
+
+      for (var i = 0; i < lines.length; i++) {
+        var lineEl = document.createElement('span');
+        lineEl.className = 'line';
+        lineEl.textContent = lines[i] || ' ';
+        code.appendChild(lineEl);
+      }
+      bodyEl.innerHTML = '';
+      bodyEl.appendChild(code);
+    }
+
+    // Load file content from API
     try {
       var data = await Api.fetchJson('/v1/webui/files/read?path=' + encodeURIComponent(entry.path));
-      var body = overlay.querySelector('.files-preview-body');
 
       if (data.encoding === 'base64' && data.content) {
-        // Image preview
-        body.innerHTML =
+        // Image preview -- hide edit button
+        overlay.querySelector('#filesPreviewEdit').style.display = 'none';
+        bodyEl.innerHTML =
           '<div class="files-preview-image">' +
           '<img src="' + data.content + '" alt="' + _escapeAttr(entry.name) + '">' +
           '</div>';
       } else if (data.encoding === 'binary') {
-        body.innerHTML =
+        // Binary preview -- hide edit button
+        overlay.querySelector('#filesPreviewEdit').style.display = 'none';
+        bodyEl.innerHTML =
           '<div class="files-preview-binary">' +
           '<div style="font-size:48px;opacity:0.5;">&#128196;</div>' +
           '<div>Binary file (' + _formatSize(data.total_size) + ')</div>' +
@@ -822,25 +1440,14 @@ var FileManager = (function () {
           '</div>';
       } else {
         // Text preview with line numbers
-        var code = document.createElement('pre');
-        code.className = 'files-preview-code';
-        var lines = (data.content || '').split('\n');
-        // Remove trailing empty line from split
-        if (lines.length > 0 && lines[lines.length - 1] === '') lines.pop();
-
-        var startLine = (data.offset || 0) + 1;
-        for (var i = 0; i < lines.length; i++) {
-          var lineEl = document.createElement('span');
-          lineEl.className = 'line';
-          lineEl.textContent = lines[i] || ' ';
-          code.appendChild(lineEl);
-        }
-        body.innerHTML = '';
-        body.appendChild(code);
+        editState.originalContent = data.content || '';
+        _renderTextPreview(editState.originalContent);
+        // Auto-enter edit mode when opened via context menu "Edit"
+        if (editMode) _enterEditMode();
       }
     } catch (e) {
-      var body = overlay.querySelector('.files-preview-body');
-      body.innerHTML = '<div class="files-preview-binary"><div>Error loading file: ' + _escapeHtml(e.message) + '</div></div>';
+      overlay.querySelector('#filesPreviewEdit').style.display = 'none';
+      bodyEl.innerHTML = '<div class="files-preview-binary"><div>Error loading file: ' + _escapeHtml(e.message) + '</div></div>';
     }
   }
 
@@ -948,6 +1555,222 @@ var FileManager = (function () {
   function _escapeAttr(text) {
     return String(text).replace(/&/g, '&amp;').replace(/"/g, '&quot;')
       .replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  // ========================= File Search =========================
+
+  function _focusSearch() {
+    if (_searchInput) {
+      _searchInput.focus();
+      _searchInput.select();
+    }
+  }
+
+  function _clearSearch() {
+    if (_searchInput) {
+      _searchInput.value = '';
+    }
+    _hideSearchResults();
+    if (_searchDebounceTimer) {
+      clearTimeout(_searchDebounceTimer);
+      _searchDebounceTimer = null;
+    }
+    if (_searchAbortCtrl) {
+      _searchAbortCtrl.abort();
+      _searchAbortCtrl = null;
+    }
+    // Remove has-query class from wrapper
+    if (_searchInput && _searchInput.parentElement) {
+      _searchInput.parentElement.classList.remove('has-query');
+    }
+  }
+
+  function _hideSearchResults() {
+    if (_searchResults) {
+      _searchResults.classList.remove('visible');
+    }
+    _searchActiveIdx = -1;
+  }
+
+  function _debounceSearch(query, tab) {
+    if (_searchDebounceTimer) {
+      clearTimeout(_searchDebounceTimer);
+      _searchDebounceTimer = null;
+    }
+    if (_searchAbortCtrl) {
+      _searchAbortCtrl.abort();
+      _searchAbortCtrl = null;
+    }
+    if (!query || query.length === 0) {
+      _hideSearchResults();
+      if (_searchResults) _searchResults.innerHTML = '';
+      return;
+    }
+    _searchDebounceTimer = setTimeout(function () {
+      _performSearch(query, tab);
+    }, 300);
+  }
+
+  async function _performSearch(query, tab) {
+    if (!_searchResults) return;
+
+    // Show loading state
+    _searchResults.innerHTML = '<div class="files-search-loading">Searching...</div>';
+    _searchResults.classList.add('visible');
+    _searchActiveIdx = -1;
+
+    _searchAbortCtrl = new AbortController();
+    var dirPath = tab.path || '/';
+
+    try {
+      var url = '/v1/webui/files/search?dir=' + encodeURIComponent(dirPath) +
+        '&query=' + encodeURIComponent(query) + '&recursive=true&max_results=100';
+
+      var resp = await fetch(url, { signal: _searchAbortCtrl.signal });
+      var data = await resp.json();
+
+      if (!resp.ok) {
+        _searchResults.innerHTML = '<div class="files-search-empty">' + _escapeHtml(data.error || 'Search failed') + '</div>';
+        return;
+      }
+
+      var results = data.results || [];
+      _renderSearchResults(results, dirPath);
+    } catch (e) {
+      if (e.name === 'AbortError') return;
+      _searchResults.innerHTML = '<div class="files-search-empty">Search error: ' + _escapeHtml(e.message) + '</div>';
+    }
+  }
+
+  function _renderSearchResults(results, searchDir) {
+    if (!_searchResults) return;
+    _searchResults.innerHTML = '';
+    _searchActiveIdx = -1;
+
+    if (results.length === 0) {
+      _searchResults.innerHTML = '<div class="files-search-empty">No results found</div>';
+      _searchResults.classList.add('visible');
+      return;
+    }
+
+    for (var i = 0; i < results.length; i++) {
+      var entry = results[i];
+      var item = document.createElement('div');
+      item.className = 'files-search-result';
+      item.dataset.path = entry.path;
+      item.dataset.isDir = entry.is_dir ? '1' : '0';
+
+      var icon = document.createElement('span');
+      icon.className = 'files-search-result-icon';
+      icon.textContent = entry.is_dir ? '\uD83D\uDCC1' : _fileIcon(entry.name);
+      item.appendChild(icon);
+
+      var info = document.createElement('div');
+      info.className = 'files-search-result-info';
+
+      var nameEl = document.createElement('div');
+      nameEl.className = 'files-search-result-name';
+      nameEl.textContent = entry.name;
+      info.appendChild(nameEl);
+
+      // Show relative path from search directory
+      var relPath = _searchRelativePath(entry.path, searchDir);
+      if (relPath) {
+        var pathEl = document.createElement('div');
+        pathEl.className = 'files-search-result-path';
+        pathEl.textContent = relPath;
+        info.appendChild(pathEl);
+      }
+
+      item.appendChild(info);
+
+      (function (e) {
+        item.addEventListener('click', function (ev) {
+          ev.stopPropagation();
+          _handleSearchResultClick(e);
+        });
+      })(entry);
+
+      _searchResults.appendChild(item);
+    }
+
+    _searchResults.classList.add('visible');
+  }
+
+  function _searchRelativePath(filePath, searchDir) {
+    // Compute a display-friendly relative path from searchDir to the file's parent
+    var normDir = searchDir.replace(/\/$/, '') || '/';
+    var normPath = filePath.replace(/\/$/, '');
+
+    // Get parent directory of the result
+    var lastSlash = normPath.lastIndexOf('/');
+    var parentDir = lastSlash > 0 ? normPath.substring(0, lastSlash) : '/';
+
+    if (parentDir === normDir || parentDir === searchDir) return null;
+
+    // If parent starts with search dir, show relative
+    var dirPrefix = normDir === '/' ? '/' : normDir + '/';
+    if (normDir === '/' && parentDir !== '/') {
+      return parentDir;
+    }
+    if (parentDir.indexOf(dirPrefix) === 0) {
+      return parentDir.substring(dirPrefix.length);
+    }
+
+    return parentDir;
+  }
+
+  function _handleSearchResultClick(entry) {
+    var tab = _getActiveTab();
+    if (!tab) return;
+
+    _hideSearchResults();
+
+    if (entry.is_dir) {
+      // Navigate into the directory
+      _navigateTo(tab, entry.path);
+    } else {
+      // Navigate to parent directory, then highlight the file
+      var lastSlash = entry.path.lastIndexOf('/');
+      var parentDir = lastSlash > 0 ? entry.path.substring(0, lastSlash) : '/';
+      if (!parentDir) parentDir = '/';
+
+      _navigateTo(tab, parentDir);
+
+      // Highlight the file after directory loads (wait for render)
+      setTimeout(function () {
+        var rows = _body ? _body.querySelectorAll('.files-table tbody tr') : [];
+        for (var i = 0; i < rows.length; i++) {
+          if (rows[i].dataset.path === entry.path) {
+            rows[i].classList.add('selected');
+            rows[i].scrollIntoView({ block: 'nearest' });
+            break;
+          }
+        }
+      }, 200);
+    }
+
+    // Clear search after navigation
+    _clearSearch();
+  }
+
+  function _navigateSearchResults(direction) {
+    if (!_searchResults || !_searchResults.classList.contains('visible')) return;
+
+    var items = _searchResults.querySelectorAll('.files-search-result');
+    if (items.length === 0) return;
+
+    // Remove active from current
+    if (_searchActiveIdx >= 0 && _searchActiveIdx < items.length) {
+      items[_searchActiveIdx].classList.remove('active');
+    }
+
+    _searchActiveIdx += direction;
+    if (_searchActiveIdx < 0) _searchActiveIdx = items.length - 1;
+    if (_searchActiveIdx >= items.length) _searchActiveIdx = 0;
+
+    items[_searchActiveIdx].classList.add('active');
+    items[_searchActiveIdx].scrollIntoView({ block: 'nearest' });
   }
 
   return {

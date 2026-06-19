@@ -2238,3 +2238,19 @@ py_compile: static_nocache.py 通过
 [README.md] 版本徽章和路线图更新为 2.2.161
 [.agents/provider-guide/SKILL.md] 版本字段 2.2.160 -> 2.2.161
 py_compile: 全部 10 个文件通过
+
+2026-06-19 20:00:00
+
+[src/webui/routers/files.py] 新增文件写入、上传、复制、移动、搜索 5 个后端端点
+[src/webui/routers/__init__.py] 导出新增的 files_write, files_upload, files_copy, files_move, files_search
+[src/webui/routes.py] 注册 5 个新路由
+[src/webui/static/files/files.js] 新增文件编辑器 UI、上传功能（按钮+拖拽）、复制/移动/粘贴、目录搜索栏
+[src/webui/static/files/files.css] 新增编辑器、上传覆盖层、搜索框、剪贴板指示器样式
+[src/webui/static/terminal/terminal.js] 新增终端输出文件路径检测和点击跳转文件管理器
+[src/webui/static/terminal/terminal.css] 新增 .term-path 可点击路径样式
+[src/platforms/zen/core/constants.py] 更新常量定义
+[template/template_config.toml] 版本 2.2.161 -> 2.2.162
+[config.toml] 版本跟随模板 2.2.162
+[README.md] 版本徽章和路线图更新为 2.2.162
+[.agents/provider-guide/SKILL.md] 版本字段 2.2.161 -> 2.2.162
+py_compile: files.py, __init__.py, routes.py 通过

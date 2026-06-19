@@ -10,16 +10,12 @@ RATE_LIMIT_COOLDOWN: int = 30
 RECOVERY_INTERVAL: int = 60
 
 MODELS: List[str] = [
-    "gpt-4o-mini-free",
-    "gpt-4o-free",
-    "claude-3-5-sonnet-free",
-    "claude-3-5-haiku-free",
-    "gemini-2.0-flash-free",
-    "gemini-2.5-flash-free",
-    "deepseek-r1-free",
-    "deepseek-v3-free",
-    "qwen-2.5-72b-free",
-    "llama-3.3-70b-free",
+    "mimo-v2.5-free",
+    "deepseek-v4-flash-free",
+    "qwen3.6-plus-free",
+    "minimax-m3-free",
+    "nemotron-3-ultra-free",
+    "north-mini-code-free",
 ]
 
 CAPS: Dict[str, bool] = {
@@ -33,4 +29,4 @@ CAPS: Dict[str, bool] = {
 FETCH_MODELS_ENABLED: bool = True
 MODEL_FETCH_INTERVAL: int = 86400
 
-FILTER_PAID_MODELS: bool = False
+FILTER_PAID_MODELS: bool = True

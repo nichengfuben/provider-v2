@@ -18,8 +18,8 @@
 
 <div align="center">
 
-![Status](https://img.shields.io/badge/status-v2.2.161-blue)
-![Version](https://img.shields.io/badge/version-2.2.161-blue)
+![Status](https://img.shields.io/badge/status-v2.2.162-blue)
+![Version](https://img.shields.io/badge/version-2.2.162-blue)
 ![Python](https://img.shields.io/badge/python-3.8+-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Platforms](https://img.shields.io/badge/platforms-16+-orange)
@@ -1257,7 +1257,11 @@ fix(gateway): 修复并发竞速时 token 计数错误
 
 ## 🗺️ 路线图
 
-### 当前版本：v2.2.161
+### 当前版本：v2.2.162
+
+✅ 已完成（v2.2.162）：
+- WebUI 文件管理器全面增强：文件编辑（行号/Ctrl+S/脏跟踪）、上传（按钮+拖拽）、复制移动（剪贴板 Ctrl+C/X/V）、目录搜索（300ms 防抖）
+- 终端与文件管理器联动：右键在终端打开、终端输出路径可点击跳转文件管理器
 
 ✅ 已完成（v2.2.161）：
 - 新增 zen 平台适配器 — OpenCode.ai API，Bearer 认证，SSE 流式，reasoning→thinking 映射，自动模型获取

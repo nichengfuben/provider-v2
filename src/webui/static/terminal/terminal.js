@@ -36,6 +36,16 @@ function TerminalRenderer(container, cols, rows) {
   var _composing = false;
   var _renderPending = false;
 
+  // Path detection regex for clickable file/directory paths in terminal output
+  // Matches: absolute Windows paths (C:\foo\bar), absolute Unix paths (/home/user/...),
+  // and common relative paths with extensions (src/foo.py, ./bar.js, ../lib/utils.ts)
+  var _PATH_REGEX = /(?:[A-Z]:\\(?:[^\s<>|"*?]+\\)*[^\s<>|"*?]+)|(?:\/(?:[\w.-]+\/)*[\w.-]+(?:\.[\w]+)?)|(?:(?:\.{0,2}\/[\w.-]+)+\.[\w]+)/gi;
+
+  function _escapeAttr(text) {
+    return String(text).replace(/&/g, '&amp;').replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
   // DOM: wrapper div (focusable) > pre.terminal-output
   var _wrapper = document.createElement('div');
   _wrapper.style.cssText =
@@ -137,6 +147,24 @@ function TerminalRenderer(container, cols, rows) {
   // Focus management — click anywhere in terminal area to focus wrapper
   _wrapper.addEventListener('mousedown', function (e) {
     _wrapper.focus();
+  });
+
+  // Click handler for detected file paths — navigate to file manager
+  _wrapper.addEventListener('click', function (e) {
+    var pathEl = e.target.closest('.term-path');
+    if (!pathEl) return;
+    e.preventDefault();
+    e.stopPropagation();
+    var rawPath = pathEl.getAttribute('data-path');
+    if (!rawPath) return;
+    // Normalize path: convert Windows backslashes to forward slashes for file manager
+    var normalized = rawPath.replace(/\\/g, '/');
+    if (typeof switchTab === 'function') {
+      switchTab('files');
+    }
+    if (typeof FileManager !== 'undefined') {
+      FileManager.createTab(normalized);
+    }
   });
 
   // --- Public API ---
@@ -587,8 +615,46 @@ function TerminalRenderer(container, cols, rows) {
       return '<span class="term-space"> </span>';
     }
 
+    // Extract plain text for path detection
+    var plainText = '';
+    for (var i = 0; i < cols; i++) {
+      var cell = line[i];
+      plainText += (cell && cell.char) ? cell.char : ' ';
+    }
+
+    // Find path ranges in the plain text
+    var pathRanges = [];
+    var pathMatch;
+    _PATH_REGEX.lastIndex = 0;
+    while ((pathMatch = _PATH_REGEX.exec(plainText)) !== null) {
+      var matchStr = pathMatch[0];
+      // Trim trailing punctuation that is unlikely to be part of a path
+      var trimLen = matchStr.length;
+      while (trimLen > 0 && /[.,;:!?)\]}>]/.test(matchStr[trimLen - 1])) {
+        trimLen--;
+      }
+      matchStr = matchStr.substring(0, trimLen);
+      // Require minimum length and at least one path separator or drive letter
+      if (matchStr.length >= 4 && (matchStr.indexOf('/') !== -1 || matchStr.indexOf('\\') !== -1)) {
+        pathRanges.push({
+          start: pathMatch.index,
+          end: pathMatch.index + trimLen,
+          text: matchStr
+        });
+      }
+    }
+
+    // Check if a column index falls within a path range; return range index or -1
+    function _pathAt(col) {
+      for (var r = 0; r < pathRanges.length; r++) {
+        if (col >= pathRanges[r].start && col < pathRanges[r].end) return r;
+      }
+      return -1;
+    }
+
     var parts = [];
     var curFg = -1, curBg = -1, curBold = false;
+    var curPath = -2; // -2 = uninitialized, -1 = not in path, >= 0 = path range index
     var buf = '';
 
     for (var i = 0; i < cols; i++) {
@@ -602,21 +668,34 @@ function TerminalRenderer(container, cols, rows) {
         ch = cell.char || ' ';
       }
 
-      if (fg !== curFg || bg !== curBg || bold !== curBold) {
+      var pi = _pathAt(i);
+
+      if (fg !== curFg || bg !== curBg || bold !== curBold || pi !== curPath) {
         if (buf) {
-          parts.push(_wrapSpan(buf, curFg, curBg, curBold));
+          var html = _wrapSpan(buf, curFg, curBg, curBold);
+          if (curPath >= 0) {
+            var ptext = pathRanges[curPath].text;
+            html = '<span class="term-path" data-path="' + _escapeAttr(ptext) + '">' + html + '</span>';
+          }
+          parts.push(html);
         }
         buf = ch;
         curFg = fg;
         curBg = bg;
         curBold = bold;
+        curPath = pi;
       } else {
         buf += ch;
       }
     }
 
     if (buf) {
-      parts.push(_wrapSpan(buf, curFg, curBg, curBold));
+      var html = _wrapSpan(buf, curFg, curBg, curBold);
+      if (curPath >= 0) {
+        var ptext = pathRanges[curPath].text;
+        html = '<span class="term-path" data-path="' + _escapeAttr(ptext) + '">' + html + '</span>';
+      }
+      parts.push(html);
     }
 
     return parts.join('') || '<span class="term-space"> </span>';
