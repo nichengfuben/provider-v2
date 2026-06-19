@@ -36,74 +36,44 @@ function TerminalRenderer(container, cols, rows) {
   var _composing = false;
   var _renderPending = false;
 
-  // DOM: wrapper div > pre.terminal-output + textarea.terminal-input
+  // DOM: wrapper div (focusable) > pre.terminal-output
   var _wrapper = document.createElement('div');
-  _wrapper.style.cssText = 'width:100%;height:100%;position:relative;overflow:hidden;';
+  _wrapper.style.cssText =
+    'width:100%;height:100%;position:relative;overflow:hidden;outline:none;';
+  _wrapper.tabIndex = 0;
 
   var _pre = document.createElement('pre');
   _pre.className = 'terminal-output';
-  _pre.tabIndex = 0;
   _pre.style.cssText =
     'margin:0;padding:4px 8px;overflow:hidden;' +
     'font-family:"Cascadia Code","Fira Code","JetBrains Mono",Menlo,Monaco,monospace;' +
     'font-size:14px;line-height:16px;background:#1e1e1e;color:#d4d4d4;' +
     'white-space:pre;user-select:text;-webkit-user-select:text;' +
-    'width:100%;height:100%;box-sizing:border-box;';
-
-  var _input = document.createElement('textarea');
-  _input.className = 'terminal-input';
-  _input.setAttribute('autocapitalize', 'off');
-  _input.setAttribute('autocomplete', 'off');
-  _input.setAttribute('autocorrect', 'off');
-  _input.spellcheck = false;
-  _input.style.cssText =
-    'position:absolute;opacity:0.01;width:1px;height:1px;' +
-    'left:0;top:0;padding:0;border:none;resize:none;' +
-    'overflow:hidden;outline:none;z-index:10;';
+    'width:100%;height:100%;box-sizing:border-box;pointer-events:none;';
 
   _wrapper.appendChild(_pre);
-  _wrapper.appendChild(_input);
   container.appendChild(_wrapper);
 
-  // --- Input capture ---
+  // --- Keyboard capture (all keys handled at wrapper level) ---
 
-  _input.addEventListener('input', function () {
-    if (_composing) return;
-    var d = _input.value;
-    _input.value = '';
-    if (d && _onDataCb) _onDataCb(d);
-  });
-
-  // IME composition guards
-  _input.addEventListener('compositionstart', function () { _composing = true; });
-  _input.addEventListener('compositionend', function () {
-    _composing = false;
-    var d = _input.value;
-    _input.value = '';
-    if (d && _onDataCb) _onDataCb(d);
-  });
-
-  // Key handler for special keys (arrows, enter, backspace, ctrl combos, etc.)
-  _input.addEventListener('keydown', function (e) {
-    // Ctrl/Alt modifiers with letter keys
+  _wrapper.addEventListener('keydown', function (e) {
+    // Ctrl+key (A-Z)
     if (e.ctrlKey && !e.altKey && !e.metaKey && e.key.length === 1) {
       var c = e.key.toLowerCase();
       var code = c.charCodeAt(0);
-      // Ctrl+A..Z -> \x01..\x1a (skip C and V for copy/paste)
       if (code >= 97 && code <= 122 && c !== 'c' && c !== 'v') {
         e.preventDefault();
         if (_onDataCb) _onDataCb(String.fromCharCode(code - 96));
         return;
       }
     }
-    // Alt+key -> ESC prefix
+    // Alt+key
     if (e.altKey && !e.ctrlKey && !e.metaKey && e.key.length === 1) {
       e.preventDefault();
       if (_onDataCb) _onDataCb('\x1b' + e.key);
       return;
     }
 
-    // Special keys
     switch (e.key) {
       case 'Enter':
         e.preventDefault();
@@ -112,7 +82,7 @@ function TerminalRenderer(container, cols, rows) {
       case 'Backspace':
         e.preventDefault();
         if (e.ctrlKey) {
-          if (_onDataCb) _onDataCb('\x17'); // Ctrl+W: delete word
+          if (_onDataCb) _onDataCb('\x17');
         } else {
           if (_onDataCb) _onDataCb('\x08');
         }
@@ -136,16 +106,21 @@ function TerminalRenderer(container, cols, rows) {
       case 'PageUp':  e.preventDefault(); if (_onDataCb) _onDataCb('\x1b[5~'); return;
       case 'PageDown': e.preventDefault(); if (_onDataCb) _onDataCb('\x1b[6~'); return;
     }
-    // Printable characters: do NOT preventDefault. Let the character appear
-    // in the textarea, then the 'input' event captures and forwards it.
+
+    // Regular printable character
+    if (!e.ctrlKey && !e.altKey && !e.metaKey && e.key.length === 1) {
+      e.preventDefault();
+      if (_onDataCb) _onDataCb(e.key);
+      return;
+    }
   });
 
-  // Focus delegation
-  _pre.addEventListener('click', function () { _input.focus(); });
-  _wrapper.addEventListener('click', function () { _input.focus(); });
-
-  // Measure character metrics once visible
-  _measureChar();
+  // Focus management
+  _wrapper.addEventListener('mousedown', function (e) {
+    _wrapper.focus();
+  });
+  _wrapper.addEventListener('touchstart', function () { _wrapper.focus(); });
+  setTimeout(function () { _wrapper.focus(); }, 50);
 
   // --- Public API ---
 
@@ -176,7 +151,7 @@ function TerminalRenderer(container, cols, rows) {
   };
 
   this.onData = function (cb) { _onDataCb = cb; };
-  this.focus = function () { _input.focus(); };
+  this.focus = function () { _wrapper.focus(); };
 
   this.clear = function () {
     _lines = [[]];

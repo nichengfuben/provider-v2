@@ -18,8 +18,8 @@
 
 <div align="center">
 
-![Status](https://img.shields.io/badge/status-v2.2.155-blue)
-![Version](https://img.shields.io/badge/version-2.2.155-blue)
+![Status](https://img.shields.io/badge/status-v2.2.156-blue)
+![Version](https://img.shields.io/badge/version-2.2.156-blue)
 ![Python](https://img.shields.io/badge/python-3.8+-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Platforms](https://img.shields.io/badge/platforms-16+-orange)
@@ -1257,7 +1257,10 @@ fix(gateway): 修复并发竞速时 token 计数错误
 
 ## 🗺️ 路线图
 
-### 当前版本：v2.2.155
+### 当前版本：v2.2.156
+
+✅ 已完成（v2.2.156）：
+- 修复终端键盘输入：移除 textarea 输入层，改用 wrapper div keydown 直接捕获所有按键
 
 ✅ 已完成（v2.2.155）：
 - 修复终端 Enter 键在 Windows 下不执行命令的问题（CRLF 兼容）
