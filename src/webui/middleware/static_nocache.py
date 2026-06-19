@@ -14,8 +14,8 @@ async def static_nocache_middleware(
     request: aiohttp.web.Request,
     handler: _Handler,
 ) -> aiohttp.web.StreamResponse:
-    """对 /static/ 路径的响应设置缓存策略。index.html 由 pages.py 单独控制 no-cache。"""
+    """对 /static/ 路径的响应追加 no-cache 头，确保修改后浏览器立即获取新文件。"""
     response = await handler(request)
     if request.path.startswith("/static/"):
-        response.headers["Cache-Control"] = "public, max-age=3600"
+        response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
     return response

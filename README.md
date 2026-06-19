@@ -18,8 +18,8 @@
 
 <div align="center">
 
-![Status](https://img.shields.io/badge/status-v2.2.159-blue)
-![Version](https://img.shields.io/badge/version-2.2.159-blue)
+![Status](https://img.shields.io/badge/status-v2.2.160-blue)
+![Version](https://img.shields.io/badge/version-2.2.160-blue)
 ![Python](https://img.shields.io/badge/python-3.8+-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Platforms](https://img.shields.io/badge/platforms-16+-orange)
@@ -1257,7 +1257,10 @@ fix(gateway): 修复并发竞速时 token 计数错误
 
 ## 🗺️ 路线图
 
-### 当前版本：v2.2.159
+### 当前版本：v2.2.160
+
+✅ 已完成（v2.2.160）：
+- 恢复静态资源 no-cache 缓存策略，撤销 max-age=3600 以避免浏览器缓存旧版 JS/CSS
 
 ✅ 已完成（v2.2.159）：
 - persist_get 文件不存在时返回 200 null 而非 404，消除控制台报错

@@ -2201,3 +2201,12 @@ echotools 1.0.25 已发布到 PyPI，无需 py_compile
 [README.md] 版本徽章和路线图更新为 2.2.159
 [.agents/provider-guide/SKILL.md] 版本字段 2.2.158 -> 2.2.159
 py_compile: admin.py 通过
+
+2026-06-19 17:00:00
+
+[src/webui/middleware/static_nocache.py] 恢复 no-cache 缓存策略，撤销 max-age=3600 以避免浏览器缓存旧版 JS/CSS
+[template/template_config.toml] 版本 2.2.159 -> 2.2.160
+[config.toml] 版本跟随模板 2.2.160
+[README.md] 版本徽章和路线图更新为 2.2.160
+[.agents/provider-guide/SKILL.md] 版本字段 2.2.159 -> 2.2.160
+py_compile: static_nocache.py 通过
