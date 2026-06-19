@@ -1187,6 +1187,60 @@ function showBatchResultDialog(prompt, fullContent, resultDiv) {
 }
 
 // ========================= Tool Definition Section =========================
+var _toolsSaveTimer = null;
+
+function _saveTools() {
+  if (_toolsSaveTimer) clearTimeout(_toolsSaveTimer);
+  _toolsSaveTimer = setTimeout(function() {
+    var toolsList = document.getElementById("chatToolsList");
+    if (!toolsList) return;
+    var items = toolsList.querySelectorAll(".tool-item");
+    var tools = [];
+    for (var i = 0; i < items.length; i++) {
+      var item = items[i];
+      var name = item.querySelector(".tool-name-input");
+      var desc = item.querySelector(".tool-desc-input");
+      var params = item.querySelector(".tool-params-input");
+      if (name) {
+        tools.push({
+          name: name.value || '',
+          desc: desc ? desc.value : '',
+          params: params ? params.value : ''
+        });
+      }
+    }
+    if (typeof persistSave === 'function') {
+      persistSave('tools.json', { tools: tools });
+    }
+  }, 500);
+}
+
+function _loadTools() {
+  if (typeof persistLoad !== 'function') return;
+  persistLoad('tools.json').then(function(data) {
+    if (!data || !data.tools || !data.tools.length) return;
+    var toolsList = document.getElementById("chatToolsList");
+    var template = document.getElementById("chatToolTemplate");
+    if (!toolsList || !template) return;
+    for (var i = 0; i < data.tools.length; i++) {
+      var t = data.tools[i];
+      var clone = template.content.cloneNode(true);
+      var item = clone.querySelector(".tool-item");
+      var removeBtn = item.querySelector(".tool-remove-btn");
+      item.querySelector(".tool-name-input").value = t.name || '';
+      item.querySelector(".tool-desc-input").value = t.desc || '';
+      item.querySelector(".tool-params-input").value = t.params || '';
+      (function(itm) {
+        removeBtn.addEventListener("click", function() {
+          itm.remove();
+          _saveTools();
+        });
+      })(item);
+      toolsList.appendChild(clone);
+    }
+  }).catch(function() {});
+}
+
 (function() {
   var toolsList = document.getElementById("chatToolsList");
   var template = document.getElementById("chatToolTemplate");
@@ -1215,15 +1269,25 @@ function showBatchResultDialog(prompt, fullContent, resultDiv) {
 
     removeBtn.addEventListener("click", function() {
       item.remove();
+      _saveTools();
+    });
+
+    // Auto-save on input changes
+    item.querySelectorAll("input, textarea").forEach(function(el) {
+      el.addEventListener("input", _saveTools);
     });
 
     toolsList.appendChild(clone);
+    _saveTools();
   });
 
   clearBtn.addEventListener("click", function() {
     if (toolsList.children.length === 0) return;
     showConfirmDialog("确定要清空所有工具定义吗？").then(function(ok) {
-      if (ok) toolsList.innerHTML = "";
+      if (ok) {
+        toolsList.innerHTML = "";
+        _saveTools();
+      }
     });
   });
 })();

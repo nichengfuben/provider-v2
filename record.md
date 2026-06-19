@@ -2094,3 +2094,13 @@ pytest: (pending)
 [README.md] 版本徽章和路线图更新为 2.2.149
 [.agents/provider-guide/SKILL.md] 版本字段 2.2.148 -> 2.2.149
 纯前端 JS/CSS 变更，无需 py_compile
+
+2026-06-19 20:00:00
+
+[src/webui/static/chat/chat.js] 新增工具定义持久化：_saveTools/_loadTools 保存到 persist/webui/tools.json，500ms 防抖自动保存，输入变化自动保存
+[src/webui/static/ui/bootstrap.js] 初始化序列添加 _loadTools() 调用（在 persistLoad 可用后加载）
+[template/template_config.toml] 版本 2.2.149 -> 2.2.150
+[config.toml] 版本跟随模板 2.2.150
+[README.md] 版本徽章和路线图更新为 2.2.150
+[.agents/provider-guide/SKILL.md] 版本字段 2.2.149 -> 2.2.150
+纯前端 JS 变更，无需 py_compile

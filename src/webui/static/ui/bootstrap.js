@@ -191,6 +191,7 @@ switchTab(initialTab);
 connectLogsSocket();
 refreshAll();
 loadAutoupdateSettings();
+if (typeof _loadTools === 'function') _loadTools();
 
 // ========================= MotionKit Integration =========================
 // Initialize motion effects after DOM is ready
