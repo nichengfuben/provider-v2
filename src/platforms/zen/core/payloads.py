@@ -33,4 +33,8 @@ def build_payload(
         payload["max_tokens"] = kw["max_tokens"]
     if kw.get("stop"):
         payload["stop"] = kw["stop"]
+    if kw.get("tools"):
+        payload["tools"] = kw["tools"]
+    if kw.get("tool_choice"):
+        payload["tool_choice"] = kw["tool_choice"]
     return payload

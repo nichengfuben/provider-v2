@@ -18,8 +18,8 @@
 
 <div align="center">
 
-![Status](https://img.shields.io/badge/status-v2.2.162-blue)
-![Version](https://img.shields.io/badge/version-2.2.162-blue)
+![Status](https://img.shields.io/badge/status-v2.2.163-blue)
+![Version](https://img.shields.io/badge/version-2.2.163-blue)
 ![Python](https://img.shields.io/badge/python-3.8+-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Platforms](https://img.shields.io/badge/platforms-16+-orange)
@@ -1257,7 +1257,11 @@ fix(gateway): 修复并发竞速时 token 计数错误
 
 ## 🗺️ 路线图
 
-### 当前版本：v2.2.162
+### 当前版本：v2.2.163
+
+✅ 已完成（v2.2.163）：
+- 新增 native_tools 能力 — 平台可声明原生工具调用支持，跳过 inject_fncall 直接传递 tools
+- zen 平台声明 native_tools=True，流式 tool_calls delta 累积，语法高亮文件预览
 
 ✅ 已完成（v2.2.162）：
 - WebUI 文件管理器全面增强：文件编辑（行号/Ctrl+S/脏跟踪）、上传（按钮+拖拽）、复制移动（剪贴板 Ctrl+C/X/V）、目录搜索（300ms 防抖）

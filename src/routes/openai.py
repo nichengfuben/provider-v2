@@ -427,6 +427,7 @@ async def _stream_chat(
             stop=_sl(body.get("stop")),
             upload_files=upload_files if upload_files else None,
             protocol_id=proto_override,
+            tool_choice=body.get("tool_choice"),
         ):
             if isinstance(ch, str):
                 ctok += 1
@@ -705,6 +706,7 @@ async def chat_completions(
             stop=_sl(body.get("stop")),
             upload_files=upload_files if upload_files else None,
             protocol_id=proto_override,
+            tool_choice=body.get("tool_choice"),
         ):
             if isinstance(ch, str):
                 cp.append(ch)

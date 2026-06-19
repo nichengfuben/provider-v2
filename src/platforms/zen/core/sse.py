@@ -40,7 +40,7 @@ def parse_sse_line(data_str: str) -> Optional[Union[str, Dict[str, Any]]]:
 
     tc = delta.get("tool_calls")
     if tc:
-        return {"tool_calls_delta": tc}
+        return {"tool_calls": tc}
 
     usage = obj.get("usage")
     if usage and isinstance(usage, dict):

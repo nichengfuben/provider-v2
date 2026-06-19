@@ -290,6 +290,7 @@ class ZenClient:
                             "completion_tokens": usage.get("completion_tokens", 0),
                         }}
                 else:
+                    _tc_accumulator: Dict[int, Dict[str, Any]] = {}
                     async for line in resp.content:
                         text = line.decode("utf-8", errors="replace").strip()
                         if not text or not text.startswith("data:"):
@@ -298,8 +299,35 @@ class ZenClient:
                         if data_str == "[DONE]":
                             break
                         parsed = parse_sse_line(data_str)
-                        if parsed is not None:
+                        if parsed is None:
+                            continue
+                        if isinstance(parsed, dict) and "tool_calls" in parsed:
+                            # Accumulate streaming tool_calls deltas
+                            for tc_delta in parsed["tool_calls"]:
+                                idx = tc_delta.get("index", 0)
+                                if idx not in _tc_accumulator:
+                                    _tc_accumulator[idx] = {
+                                        "id": "",
+                                        "type": "function",
+                                        "function": {"name": "", "arguments": ""},
+                                    }
+                                acc = _tc_accumulator[idx]
+                                if tc_delta.get("id"):
+                                    acc["id"] = tc_delta["id"]
+                                if tc_delta.get("type"):
+                                    acc["type"] = tc_delta["type"]
+                                fn = tc_delta.get("function") or {}
+                                if fn.get("name"):
+                                    acc["function"]["name"] += fn["name"]
+                                if fn.get("arguments"):
+                                    acc["function"]["arguments"] += fn["arguments"]
+                        else:
                             yield parsed
+                    if _tc_accumulator:
+                        tool_calls = [
+                            v for _, v in sorted(_tc_accumulator.items())
+                        ]
+                        yield {"tool_calls": tool_calls}
                     ks.mark_success()
         except PlatformError:
             raise

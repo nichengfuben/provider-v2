@@ -26,6 +26,7 @@ ALL_CAPABILITIES: tuple = (
     "code_exec",
     "artifacts",
     "tools",
+    "native_tools",
     "upload",
     "continuation",
     "moderation",
@@ -75,6 +76,7 @@ class Candidate:
     chat: bool = False
     vision: bool = False
     tools: bool = False
+    native_tools: bool = False
     thinking: bool = False
     search: bool = False
     continuation: bool = False

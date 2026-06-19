@@ -18,6 +18,8 @@ var FileManager = (function () {
   var _contextMenu = null;
   var _clipboard = { action: null, paths: [] }; // action: 'copy' or 'cut'
   var _lastSelectedPath = null; // last right-clicked entry path for keyboard shortcuts
+  var _closedTabs = []; // history of closed tabs for Ctrl+Shift+T reopen
+  var _selectedIndex = -1; // keyboard-selected row index in sorted entries
 
   // Search state
   var _searchInput = null;
@@ -119,6 +121,106 @@ var FileManager = (function () {
       }
     });
 
+    // Keyboard shortcuts for file manager actions
+    document.addEventListener('keydown', function (e) {
+      // Only when files tab is active
+      var panel = document.getElementById('tab-files');
+      if (!panel || panel.classList.contains('hidden')) return;
+      if (typeof getActiveTab === 'function' && getActiveTab() !== 'files') return;
+
+      // Skip if focus is on input/textarea/select
+      var active = document.activeElement;
+      if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.tagName === 'SELECT')) return;
+
+      var tab = _getActiveTab();
+
+      // Ctrl+T: New tab
+      if ((e.key === 't' || e.key === 'T') && (e.ctrlKey || e.metaKey) && !e.shiftKey) {
+        e.preventDefault();
+        createTab('/');
+        return;
+      }
+
+      // Ctrl+W: Close current tab
+      if ((e.key === 'w' || e.key === 'W') && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        if (tab) closeTab(tab.id);
+        return;
+      }
+
+      // Ctrl+Shift+T: Reopen last closed tab
+      if ((e.key === 't' || e.key === 'T') && (e.ctrlKey || e.metaKey) && e.shiftKey) {
+        e.preventDefault();
+        _reopenLastTab();
+        return;
+      }
+
+      // F5: Refresh
+      if (e.key === 'F5') {
+        e.preventDefault();
+        if (tab) _loadDirectory(tab, tab.path);
+        return;
+      }
+
+      // Delete: Delete selected file(s)
+      if (e.key === 'Delete' && tab && _lastSelectedPath) {
+        e.preventDefault();
+        _deleteEntries(tab, [_lastSelectedPath]);
+        return;
+      }
+
+      // F2: Rename selected file
+      if (e.key === 'F2' && tab && _lastSelectedPath) {
+        e.preventDefault();
+        var entries = _sortEntries(tab);
+        for (var i = 0; i < entries.length; i++) {
+          if (entries[i].path === _lastSelectedPath) {
+            _showRenameDialog(tab, entries[i]);
+            break;
+          }
+        }
+        return;
+      }
+
+      // Enter: Open selected file/directory
+      if (e.key === 'Enter' && tab && _selectedIndex >= 0) {
+        e.preventDefault();
+        var sorted = _sortEntries(tab);
+        if (_selectedIndex < sorted.length) {
+          var entry = sorted[_selectedIndex];
+          if (entry.type === 'dir') {
+            _navigateTo(tab, entry.path);
+          } else {
+            _previewFile(entry);
+          }
+        }
+        return;
+      }
+
+      // Backspace or Alt+Up: Navigate to parent directory
+      if (e.key === 'Backspace' || (e.altKey && e.key === 'ArrowUp')) {
+        e.preventDefault();
+        if (tab) _goUp(tab);
+        return;
+      }
+
+      // ArrowUp / ArrowDown: Navigate entries
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        if (!tab) return;
+        e.preventDefault();
+        var sorted2 = _sortEntries(tab);
+        if (sorted2.length === 0) return;
+        if (e.key === 'ArrowDown') {
+          _selectedIndex = Math.min(_selectedIndex + 1, sorted2.length - 1);
+        } else {
+          _selectedIndex = Math.max(_selectedIndex - 1, 0);
+        }
+        _lastSelectedPath = sorted2[_selectedIndex].path;
+        _renderContent();
+        return;
+      }
+    }, true);
+
     // Register with Router
     if (typeof Router !== 'undefined') {
       Router.register('files', {
@@ -190,6 +292,10 @@ var FileManager = (function () {
     }
     if (idx === -1) return;
 
+    // Save for Ctrl+Shift+T reopen
+    _closedTabs.push({ path: _tabs[idx].path });
+    if (_closedTabs.length > 20) _closedTabs.shift();
+
     _tabs.splice(idx, 1);
 
     if (_activeTabId === tabId) {
@@ -205,6 +311,12 @@ var FileManager = (function () {
       _renderTabBar();
     }
     _saveSession();
+  }
+
+  function _reopenLastTab() {
+    if (_closedTabs.length === 0) return;
+    var info = _closedTabs.pop();
+    createTab(info.path);
   }
 
   function _getActiveTab() {
@@ -373,8 +485,13 @@ var FileManager = (function () {
     } else if (tab.entries.length === 0) {
       listArea.innerHTML = '<div class="files-empty"><div class="files-empty-text">Empty directory</div></div>';
     } else {
-      var table = _buildTable(tab);
-      listArea.appendChild(table);
+      if (tab.entries.length > _VS_THRESHOLD) {
+        var vsWrapper = _buildVirtualScroll(tab);
+        listArea.appendChild(vsWrapper);
+      } else {
+        var table = _buildTable(tab);
+        listArea.appendChild(table);
+      }
     }
 
     _body.appendChild(listArea);
@@ -707,8 +824,10 @@ var FileManager = (function () {
       tr.appendChild(tdMod);
 
       // Click handler
-      (function (e) {
+      (function (e, idx) {
         tr.addEventListener('click', function () {
+          _selectedIndex = idx;
+          _lastSelectedPath = e.path;
           if (e.type === 'dir') {
             _navigateTo(tab, e.path);
           } else {
@@ -719,7 +838,7 @@ var FileManager = (function () {
           ev.preventDefault();
           _showEntryContextMenu(ev, tab, e);
         });
-      })(entry);
+      })(entry, i);
 
       tbody.appendChild(tr);
     }
@@ -752,6 +871,174 @@ var FileManager = (function () {
     });
 
     return entries;
+  }
+
+  // ========================= Virtual Scrolling =========================
+
+  var _VS_ROW_HEIGHT = 36;
+  var _VS_THRESHOLD = 200;
+  var _VS_BUFFER = 10;
+
+  function _buildRow(entry, idx, tab) {
+    var tr = document.createElement('tr');
+    tr.dataset.path = entry.path;
+    tr.dataset.type = entry.type;
+
+    if (_clipboard.action === 'cut' && _clipboard.paths.indexOf(entry.path) !== -1) {
+      tr.className = 'files-row-cut';
+    }
+    if (idx === _selectedIndex) {
+      tr.className = (tr.className ? tr.className + ' ' : '') + 'files-row-selected';
+    }
+
+    var tdName = document.createElement('td');
+    var nameCell = document.createElement('div');
+    nameCell.className = 'file-name-cell';
+
+    var icon = document.createElement('span');
+    icon.className = 'file-icon';
+    icon.textContent = entry.type === 'dir' ? '\uD83D\uDCC1' : _fileIcon(entry.name);
+    nameCell.appendChild(icon);
+
+    var nameSpan = document.createElement('span');
+    nameSpan.className = 'file-name' + (entry.type === 'dir' ? ' dir-name' : '');
+    nameSpan.textContent = entry.name;
+    nameCell.appendChild(nameSpan);
+
+    tdName.appendChild(nameCell);
+    tr.appendChild(tdName);
+
+    var tdSize = document.createElement('td');
+    tdSize.className = 'file-size';
+    tdSize.textContent = entry.type === 'file' ? _formatSize(entry.size) : '-';
+    tr.appendChild(tdSize);
+
+    var tdMod = document.createElement('td');
+    tdMod.className = 'file-modified';
+    tdMod.textContent = _formatDate(entry.modified);
+    tr.appendChild(tdMod);
+
+    (function (e, i) {
+      tr.addEventListener('click', function () {
+        _selectedIndex = i;
+        _lastSelectedPath = e.path;
+        if (e.type === 'dir') {
+          _navigateTo(tab, e.path);
+        } else {
+          _previewFile(e);
+        }
+      });
+      tr.addEventListener('contextmenu', function (ev) {
+        ev.preventDefault();
+        _showEntryContextMenu(ev, tab, e);
+      });
+    })(entry, idx);
+
+    return tr;
+  }
+
+  function _buildVirtualScroll(tab) {
+    var entries = _sortEntries(tab);
+    var totalHeight = entries.length * _VS_ROW_HEIGHT;
+
+    var wrapper = document.createElement('div');
+    wrapper.className = 'files-virtual-wrap';
+
+    // Static header table
+    var headerTable = document.createElement('table');
+    headerTable.className = 'files-table';
+
+    var thead = document.createElement('thead');
+    var headerRow = document.createElement('tr');
+    var cols = [
+      { key: 'name', label: 'Name', cls: '' },
+      { key: 'size', label: 'Size', cls: 'file-size' },
+      { key: 'modified', label: 'Modified', cls: 'file-modified' },
+    ];
+
+    for (var c = 0; c < cols.length; c++) {
+      var th = document.createElement('th');
+      th.className = cols[c].cls;
+      th.textContent = cols[c].label;
+
+      if (tab.sortCol === cols[c].key) {
+        var arrow = document.createElement('span');
+        arrow.className = 'sort-arrow';
+        arrow.textContent = tab.sortAsc ? '\u25B2' : '\u25BC';
+        th.appendChild(arrow);
+      }
+
+      (function (colKey) {
+        th.addEventListener('click', function () {
+          if (tab.sortCol === colKey) {
+            tab.sortAsc = !tab.sortAsc;
+          } else {
+            tab.sortCol = colKey;
+            tab.sortAsc = true;
+          }
+          _selectedIndex = -1;
+          _renderContent();
+        });
+      })(cols[c].key);
+
+      headerRow.appendChild(th);
+    }
+    thead.appendChild(headerRow);
+    headerTable.appendChild(thead);
+    wrapper.appendChild(headerTable);
+
+    // Scrollable container for virtual rows
+    var scrollContainer = document.createElement('div');
+    scrollContainer.className = 'files-virtual-scroll';
+
+    var inner = document.createElement('div');
+    inner.className = 'files-virtual-scroll-inner';
+    inner.style.height = totalHeight + 'px';
+
+    var bodyTable = document.createElement('table');
+    bodyTable.className = 'files-table';
+    var tbody = document.createElement('tbody');
+    bodyTable.appendChild(tbody);
+    inner.appendChild(bodyTable);
+    scrollContainer.appendChild(inner);
+    wrapper.appendChild(scrollContainer);
+
+    var _rafPending = false;
+
+    function renderVisibleRows() {
+      var scrollTop = scrollContainer.scrollTop;
+      var containerHeight = scrollContainer.clientHeight || 500;
+      var startIndex = Math.max(0, Math.floor(scrollTop / _VS_ROW_HEIGHT) - _VS_BUFFER);
+      var visibleCount = Math.ceil(containerHeight / _VS_ROW_HEIGHT) + _VS_BUFFER * 2;
+      var endIndex = Math.min(entries.length, startIndex + visibleCount);
+
+      tbody.innerHTML = '';
+
+      for (var i = startIndex; i < endIndex; i++) {
+        var tr = _buildRow(entries[i], i, tab);
+        tr.className = (tr.className ? tr.className + ' ' : '') + 'files-virtual-row';
+        tr.style.top = (i * _VS_ROW_HEIGHT) + 'px';
+        tr.style.height = _VS_ROW_HEIGHT + 'px';
+        tbody.appendChild(tr);
+      }
+    }
+
+    scrollContainer.addEventListener('scroll', function () {
+      if (!_rafPending) {
+        _rafPending = true;
+        requestAnimationFrame(function () {
+          _rafPending = false;
+          renderVisibleRows();
+        });
+      }
+    });
+
+    // Initial render after the container is in the DOM and has dimensions
+    requestAnimationFrame(function () {
+      renderVisibleRows();
+    });
+
+    return wrapper;
   }
 
   // ========================= Cross-Module Integration =========================
@@ -1402,8 +1689,12 @@ var FileManager = (function () {
 
     // Render text content with line numbers into the preview body
     function _renderTextPreview(content) {
-      var code = document.createElement('pre');
-      code.className = 'files-preview-code';
+      var pre = document.createElement('pre');
+      pre.className = 'files-preview-code';
+
+      var codeEl = document.createElement('code');
+      codeEl.className = 'language-' + _detectLanguage(entry.name);
+
       var lines = (content || '').split('\n');
       if (lines.length > 0 && lines[lines.length - 1] === '') lines.pop();
 
@@ -1411,10 +1702,17 @@ var FileManager = (function () {
         var lineEl = document.createElement('span');
         lineEl.className = 'line';
         lineEl.textContent = lines[i] || ' ';
-        code.appendChild(lineEl);
+        codeEl.appendChild(lineEl);
       }
+
+      pre.appendChild(codeEl);
       bodyEl.innerHTML = '';
-      bodyEl.appendChild(code);
+      bodyEl.appendChild(pre);
+
+      // Apply syntax highlighting if highlight.js is available
+      if (typeof hljs !== 'undefined') {
+        hljs.highlightElement(codeEl);
+      }
     }
 
     // Load file content from API
@@ -1544,6 +1842,21 @@ var FileManager = (function () {
       'gif': '\uD83D\uDDBC', 'svg': '\uD83D\uDDBC',
     };
     return map[ext] || '\uD83D\uDCC4';
+  }
+
+  function _detectLanguage(filename) {
+    var ext = (filename || '').split('.').pop().toLowerCase();
+    var map = {
+      'py': 'python', 'js': 'javascript', 'ts': 'typescript',
+      'html': 'html', 'css': 'css', 'json': 'json',
+      'toml': 'ini', 'yaml': 'yaml', 'yml': 'yaml',
+      'md': 'markdown', 'sh': 'bash', 'bash': 'bash',
+      'sql': 'sql', 'xml': 'xml', 'java': 'java',
+      'go': 'go', 'rs': 'rust', 'rb': 'ruby',
+      'php': 'php', 'c': 'c', 'cpp': 'cpp', 'h': 'c',
+      'cs': 'csharp', 'swift': 'swift', 'kt': 'kotlin',
+    };
+    return map[ext] || 'plaintext';
   }
 
   function _escapeHtml(text) {

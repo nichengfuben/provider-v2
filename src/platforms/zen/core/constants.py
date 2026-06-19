@@ -22,6 +22,7 @@ CAPS: Dict[str, bool] = {
     "chat": True,
     "vision": True,
     "tools": True,
+    "native_tools": True,
     "thinking": True,
     "search": False,
 }

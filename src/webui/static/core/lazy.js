@@ -11,6 +11,8 @@ var LazyLoader = (function() {
       { type: 'js',  url: '/static/terminal/terminal.js' },
     ],
     files: [
+      { type: 'css', url: 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css' },
+      { type: 'js',  url: 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js' },
       { type: 'css', url: '/static/files/files.css' },
       { type: 'js',  url: '/static/files/files.js' },
     ],

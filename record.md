@@ -2254,3 +2254,20 @@ py_compile: 全部 10 个文件通过
 [README.md] 版本徽章和路线图更新为 2.2.162
 [.agents/provider-guide/SKILL.md] 版本字段 2.2.161 -> 2.2.162
 py_compile: files.py, __init__.py, routes.py 通过
+
+2026-06-19 22:00:00
+
+[src/core/dispatch/candidate.py] 新增 native_tools 能力字段，平台可声明原生工具调用支持
+[src/core/dispatch/gateway.py] 网关新增 native_tools 旁路逻辑，跳过 inject_fncall 直接传递 tools
+[src/platforms/zen/core/client.py] 新增流式 tool_calls delta 累积器，流结束时 yield 完整 tool_calls
+[src/platforms/zen/core/constants.py] CAPS 添加 native_tools: True
+[src/platforms/zen/core/payloads.py] build_payload 转发 tools 和 tool_choice 参数
+[src/platforms/zen/core/sse.py] tool_calls_delta 键名改为 tool_calls 统一网关消费
+[src/routes/openai.py] 提取 tool_choice 参数并传递给 gateway.dispatch
+[src/webui/static/core/lazy.js] files tab 懒加载添加 highlight.js CDN 资源
+[src/webui/static/files/files.js] 文件预览新增语法高亮和语言自动检测
+[template/template_config.toml] 版本 2.2.162 -> 2.2.163
+[config.toml] 版本跟随模板 2.2.163
+[README.md] 版本徽章和路线图更新为 2.2.163
+[.agents/provider-guide/SKILL.md] 版本字段 2.2.162 -> 2.2.163
+py_compile: candidate.py, gateway.py, client.py, constants.py, payloads.py, sse.py, openai.py 全部通过
