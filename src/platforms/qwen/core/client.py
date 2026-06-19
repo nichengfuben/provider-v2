@@ -94,6 +94,7 @@ HTTP_TIMEOUT: int = 30
 _PROXY_AUTO_EXPIRY = 86400
 _RELOGIN_LOG_BUFFER_SECS = 60
 _RETRY_LOG_BUFFER_SECS = 30
+_LOGIN_FAIL_LOG_BUFFER_SECS = 60
 
 
 class WAFBlockedError(Exception):
@@ -134,6 +135,8 @@ class QwenClient:
         self._relogin_flush_task: Optional[asyncio.Task] = None
         self._retry_log_buffer: List[str] = []
         self._retry_log_flush_task: Optional[asyncio.Task] = None
+        self._login_fail_buffer: List[Tuple[str, str]] = []  # (username_prefix, error_msg)
+        self._login_fail_flush_task: Optional[asyncio.Task] = None
 
     def get_models(self) -> List[str]:
         """返回当前模型列表副本。"""
@@ -303,6 +306,11 @@ class QwenClient:
             self._retry_log_flush_task = None
         if hasattr(self, '_flush_retry_log_buffer_now'):
             self._flush_retry_log_buffer_now()
+        if hasattr(self, '_login_fail_flush_task') and self._login_fail_flush_task and not self._login_fail_flush_task.done():
+            self._login_fail_flush_task.cancel()
+            self._login_fail_flush_task = None
+        if hasattr(self, '_flush_login_fail_buffer_now'):
+            self._flush_login_fail_buffer_now()
         for task in self._bg_tasks:
             task.cancel()
         for task in self._bg_tasks:
@@ -572,6 +580,45 @@ class QwenClient:
             logger.debug("Qwen 重试: %s (共 %d 条)", buffer[0], len(buffer))
 
     # =========================================================================
+    # 登录失败日志聚合
+    # =========================================================================
+
+    def _log_login_failure(self, username_prefix: str, error_msg: str) -> None:
+        """缓冲「登录失败」日志，60 秒后聚合输出，避免刷屏。"""
+        self._login_fail_buffer.append((username_prefix, error_msg))
+
+        if self._login_fail_flush_task is None or self._login_fail_flush_task.done():
+            self._login_fail_flush_task = asyncio.create_task(
+                self._flush_login_fail_buffer()
+            )
+
+    async def _flush_login_fail_buffer(self) -> None:
+        """等待缓冲窗口后聚合输出登录失败日志。"""
+        await asyncio.sleep(_LOGIN_FAIL_LOG_BUFFER_SECS)
+        self._flush_login_fail_buffer_now()
+
+    def _flush_login_fail_buffer_now(self) -> None:
+        """立即聚合输出缓冲区中的登录失败日志（同步）。"""
+        buffer = self._login_fail_buffer
+        self._login_fail_buffer = []
+        self._login_fail_flush_task = None
+
+        if not buffer:
+            return
+
+        first_prefix, first_error = buffer[0]
+        if len(buffer) == 1:
+            logger.warning(
+                "Qwen 初始登录失败 [%s***]: %s",
+                first_prefix, first_error,
+            )
+        else:
+            logger.warning(
+                "Qwen 初始登录失败 [%s*** and %d other account(s)]: %s",
+                first_prefix, len(buffer) - 1, first_error,
+            )
+
+    # =========================================================================
     # 登录与 Token 管理（统一轮询式）
     # =========================================================================
 
@@ -606,16 +653,24 @@ class QwenClient:
                 "Qwen 初始登录: %d 个账号需要登录，本次处理 %d 个",
                 len(need_login), len(batch),
             )
+            _network_breaker_hit = False
             for acc in batch:
-                if self._closing:
+                if self._closing or _network_breaker_hit:
                     break
                 try:
                     await self._login_and_configure(acc)
                 except Exception as e:
-                    logger.warning(
-                        "Qwen 初始登录失败 [%s***]: %s",
-                        acc.username[:6], e,
-                    )
+                    err_str = str(e)
+                    self._log_login_failure(acc.username[:6], err_str)
+                    if not _network_breaker_hit and (
+                        "Cannot connect" in err_str
+                        or "远程计算机拒绝" in err_str
+                        or "连接" in err_str
+                    ):
+                        _network_breaker_hit = True
+                        logger.info(
+                            "Qwen 登录端点不可达，跳过本批次剩余账号"
+                        )
 
             self._rebuild_candidates()
             self._save_persist()
@@ -659,16 +714,24 @@ class QwenClient:
                     logger.debug(
                         "Qwen 登录轮询: 选中 %d 个账号", len(batch),
                     )
+                    _network_breaker_hit = False
                     for acc in batch:
-                        if self._closing:
+                        if self._closing or _network_breaker_hit:
                             break
                         try:
                             await self._login_and_configure(acc)
                         except Exception as e:
-                            logger.warning(
-                                "Qwen 轮询登录失败 [%s***]: %s",
-                                acc.username[:6], e,
-                            )
+                            err_str = str(e)
+                            self._log_login_failure(acc.username[:6], err_str)
+                            if not _network_breaker_hit and (
+                                "Cannot connect" in err_str
+                                or "远程计算机拒绝" in err_str
+                                or "连接" in err_str
+                            ):
+                                _network_breaker_hit = True
+                                logger.info(
+                                    "Qwen 登录端点不可达，跳过本批次剩余账号"
+                                )
 
                     self._rebuild_candidates()
                     self._save_persist()
