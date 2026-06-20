@@ -80,16 +80,16 @@ class _KeyState:
         if status in (401, 403):
             self.valid = False
             logger.warning(
-                "zen Key无效 (HTTP{}): {}...", status, self.key[:20]
+                "zen Key无效 (HTTP%s): %s...", status, self.key[:20]
             )
         elif status == 429:
             self.rate_limit_until = time.time() + RATE_LIMIT_COOLDOWN
-            logger.warning("zen Key限速: {}...", self.key[:20])
+            logger.warning("zen Key限速: %s...", self.key[:20])
         elif status in (500, 502, 503, 504):
             self.consecutive_failures += 1
             self.error_count += 1
         elif status in (400, 404, 422):
-            logger.debug("zen 请求参数或模型错误，保留 key 可用状态: {}", status)
+            logger.debug("zen 请求参数或模型错误，保留 key 可用状态: %s", status)
         else:
             self.consecutive_failures += 1
             self.error_count += 1
@@ -108,7 +108,7 @@ class ZenClient:
         self._session = session
         self._keys = [_KeyState(k) for k in API_KEYS if k and k.strip()]
         logger.info(
-            "zen客户端初始化完成, {}个APIKey", len(self._keys)
+            "zen客户端初始化完成, %s个APIKey", len(self._keys)
         )
 
     async def background_setup(self) -> None:
@@ -118,7 +118,7 @@ class ZenClient:
             if models:
                 self.update_models(models)
         except Exception as e:
-            logger.warning("zen后台拉取模型失败: {}", e)
+            logger.warning("zen后台拉取模型失败: %s", e)
 
     async def fetch_remote_models(self) -> List[str]:
         """从Zen API拉取可用模型列表。
@@ -145,7 +145,7 @@ class ZenClient:
             ) as resp:
                 if resp.status != 200:
                     logger.warning(
-                        "zen拉取模型列表失败, HTTP{}", resp.status
+                        "zen拉取模型列表失败, HTTP%s", resp.status
                     )
                     return []
                 data = await resp.json()
@@ -164,7 +164,7 @@ class ZenClient:
                     return all_models
                 return []
         except Exception as e:
-            logger.warning("zen拉取模型列表异常: {}", e)
+            logger.warning("zen拉取模型列表异常: %s", e)
             return []
 
     def update_models(self, models: List[str]) -> None:
@@ -231,7 +231,7 @@ class ZenClient:
             except Exception as e:
                 last_exc = e
                 logger.warning(
-                    "zen重试 {}/{}: {}", attempt + 1, MAX_RETRIES, e
+                    "zen重试 %s/%s: %s", attempt + 1, MAX_RETRIES, e
                 )
         if last_exc:
             raise last_exc

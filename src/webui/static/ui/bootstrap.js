@@ -399,28 +399,29 @@ function _initConfigTab() {
 // ========================= Tab Layout Toggle =========================
 var _tabLayoutConfig = { layout: 'horizontal', sidebarCompressed: false };
 
+/**
+ * Global registry for TabBar instances.
+ * Modules (terminal, files) register their TabBar instances here
+ * so that layout toggle changes can be propagated.
+ */
+window._tabBars = {};
+
 function _applyTabLayout(layout) {
   var isVertical = (layout === 'vertical');
   var termContainer = document.getElementById('terminalContainer');
   var filesContainer = document.getElementById('filesContainer');
-  var termTabBar = document.getElementById('terminalTabBar');
-  var filesTabBar = document.getElementById('filesTabBar');
 
-  // Toggle vertical class on containers
+  // Toggle vertical class on containers (for container-level flex-direction)
   if (termContainer) termContainer.classList.toggle('tab-layout-vertical', isVertical);
   if (filesContainer) filesContainer.classList.toggle('tab-layout-vertical', isVertical);
 
-  // Ensure sidebar toggle buttons exist in tab bars
-  if (isVertical) {
-    _ensureSidebarToggle(termTabBar, 'terminal');
-    _ensureSidebarToggle(filesTabBar, 'files');
-    _applySidebarCompressed(_tabLayoutConfig.sidebarCompressed);
-  } else {
-    // Remove sidebar toggles and compressed state
-    _removeSidebarToggle(termTabBar);
-    _removeSidebarToggle(filesTabBar);
-    if (termTabBar) termTabBar.classList.remove('tab-bar-compressed');
-    if (filesTabBar) filesTabBar.classList.remove('tab-bar-compressed');
+  // Delegate layout + collapsed state to registered TabBar instances
+  var bars = window._tabBars;
+  var keys = Object.keys(bars);
+  for (var i = 0; i < keys.length; i++) {
+    if (bars[keys[i]] && typeof bars[keys[i]].setLayout === 'function') {
+      bars[keys[i]].setLayout(layout, _tabLayoutConfig.sidebarCompressed);
+    }
   }
 
   // Update select value
@@ -428,47 +429,6 @@ function _applyTabLayout(layout) {
   if (select) select.value = layout;
   var dd = window._dropdowns && window._dropdowns['tabLayoutSelect'];
   if (dd) dd.setValue(layout);
-}
-
-function _ensureSidebarToggle(tabBar, type) {
-  if (!tabBar) return;
-  var existing = tabBar.querySelector('.tab-sidebar-toggle');
-  if (existing) return;
-  var btn = document.createElement('button');
-  btn.type = 'button';
-  btn.className = 'tab-sidebar-toggle';
-  btn.textContent = _tabLayoutConfig.sidebarCompressed ? '\u25B6' : '\u25C0';
-  btn.title = _tabLayoutConfig.sidebarCompressed ? '展开侧边栏' : '压缩侧边栏';
-  btn.addEventListener('click', async function() {
-    _tabLayoutConfig.sidebarCompressed = !_tabLayoutConfig.sidebarCompressed;
-    _applySidebarCompressed(_tabLayoutConfig.sidebarCompressed);
-    var existing = await persistLoad('config.toml') || {};
-    existing.layout = _tabLayoutConfig.layout;
-    existing.sidebarCompressed = _tabLayoutConfig.sidebarCompressed;
-    persistSave('config.toml', existing);
-  });
-  tabBar.insertBefore(btn, tabBar.firstChild);
-}
-
-function _removeSidebarToggle(tabBar) {
-  if (!tabBar) return;
-  var existing = tabBar.querySelector('.tab-sidebar-toggle');
-  if (existing) existing.remove();
-}
-
-function _applySidebarCompressed(compressed) {
-  var termTabBar = document.getElementById('terminalTabBar');
-  var filesTabBar = document.getElementById('filesTabBar');
-  if (termTabBar) termTabBar.classList.toggle('tab-bar-compressed', compressed);
-  if (filesTabBar) filesTabBar.classList.toggle('tab-bar-compressed', compressed);
-  // Update toggle button text/title
-  [termTabBar, filesTabBar].forEach(function(bar) {
-    if (!bar) return;
-    var btn = bar.querySelector('.tab-sidebar-toggle');
-    if (!btn) return;
-    btn.textContent = compressed ? '\u25B6' : '\u25C0';
-    btn.title = compressed ? '展开侧边栏' : '压缩侧边栏';
-  });
 }
 
 // Initialize tab layout from saved config

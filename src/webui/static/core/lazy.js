@@ -8,15 +8,19 @@ var LazyLoader = (function() {
   var TAB_RESOURCES = {
     terminal: [
       { type: 'css', url: 'https://cdn.jsdelivr.net/npm/@xterm/xterm@5.5.0/css/xterm.css' },
+      { type: 'css', url: '/static/core/tabbar.css' },
       { type: 'css', url: '/static/terminal/terminal.css' },
       { type: 'js',  url: 'https://cdn.jsdelivr.net/npm/@xterm/xterm@5.5.0/lib/xterm.js' },
       { type: 'js',  url: 'https://cdn.jsdelivr.net/npm/@xterm/addon-fit@0.10.0/lib/addon-fit.js' },
+      { type: 'js',  url: '/static/core/tabbar.js' },
       { type: 'js',  url: '/static/terminal/terminal.js' },
     ],
     files: [
       { type: 'css', url: 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css' },
       { type: 'js',  url: 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js' },
+      { type: 'css', url: '/static/core/tabbar.css' },
       { type: 'css', url: '/static/files/files.css' },
+      { type: 'js',  url: '/static/core/tabbar.js' },
       { type: 'js',  url: '/static/files/files.js' },
     ],
     chat: [

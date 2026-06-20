@@ -6,7 +6,7 @@
  *
  * Features:
  * - xterm.js for full VT100/xterm emulation (ANSI, cursor, scrollback, etc.)
- * - Horizontal tab bar with add/close/rename
+ * - Unified TabBar for tab rendering (horizontal/vertical/compressed layouts)
  * - Local terminal via WebSocket to backend (ConPTY or pipe mode)
  * - SSH remote terminal via paramiko on backend
  * - ResizeObserver-based resize propagation to backend
@@ -17,6 +17,7 @@
  * Requires (loaded by LazyLoader before this script):
  * - @xterm/xterm v5.5.0  (global: Terminal)
  * - @xterm/addon-fit v0.10.0  (global: FitAddon)
+ * - TabBar (global: TabBar)
  */
 
 // ========================= TerminalManager =========================
@@ -30,17 +31,56 @@ var TerminalManager = (function () {
 
   // DOM references (set in init)
   var _container = null;
-  var _tabBar = null;
+  var _tabBarEl = null;
   var _body = null;
+
+  // TabBar instance
+  var _bar = null;
 
   // ========================= Initialization =========================
 
   function init() {
     _container = document.getElementById('terminalContainer');
-    _tabBar = document.getElementById('terminalTabBar');
+    _tabBarEl = document.getElementById('terminalTabBar');
     _body = document.getElementById('terminalBody');
 
-    if (!_container || !_tabBar || !_body) return;
+    if (!_container || !_tabBarEl || !_body) return;
+
+    // Create the unified TabBar instance
+    if (typeof TabBar !== 'undefined') {
+      _bar = TabBar.create(_container, {
+        tabBarEl: _tabBarEl,
+        bodyEl: _body,
+        layout: 'horizontal',
+        collapsed: false,
+        closeAllThreshold: 6,
+        onSwitch: function (id) { _switchToTab(id); },
+        onClose: function (id) { closeTab(id); },
+        onContextMenu: function (id, event) { _showContextMenu(event, id); },
+        onAdd: function (e) { _showAddMenu(e); },
+        onCloseAll: function () { closeAllTabs(); },
+        onToggleCollapsed: function (collapsed) {
+          // Persist collapsed state
+          _tabLayoutConfig.sidebarCompressed = collapsed;
+          (async function () {
+            var existing = await persistLoad('config.toml') || {};
+            existing.layout = _tabLayoutConfig.layout;
+            existing.sidebarCompressed = collapsed;
+            persistSave('config.toml', existing);
+          })();
+        },
+      });
+
+      // Register in global registry for bootstrap.js layout toggle
+      if (window._tabBars) {
+        window._tabBars.terminal = _bar;
+      }
+
+      // Apply current layout from _tabLayoutConfig (may have been loaded from persist)
+      if (typeof _tabLayoutConfig !== 'undefined') {
+        _bar.setLayout(_tabLayoutConfig.layout || 'horizontal', _tabLayoutConfig.sidebarCompressed || false);
+      }
+    }
 
     // Click on terminal body to focus the active xterm instance
     _body.addEventListener('click', function () {
@@ -49,15 +89,6 @@ var TerminalManager = (function () {
         tab.xterm.focus();
       }
     });
-
-    // Add tab button
-    var addBtn = document.getElementById('terminalAddBtn');
-    if (addBtn) {
-      addBtn.addEventListener('click', function (e) {
-        e.stopPropagation();
-        _showAddMenu(e);
-      });
-    }
 
     // Close context menu and add menu on click outside
     document.addEventListener('click', function () {
@@ -141,8 +172,22 @@ var TerminalManager = (function () {
     };
 
     _tabs.push(tab);
-    _renderTabBar();
-    _switchToTab(tabId);
+
+    // Add tab to TabBar
+    if (_bar) {
+      _bar.addTab({
+        id: tabId,
+        type: 'terminal',
+        icon: '&#9002;_',
+        title: name,
+        closable: true,
+        status: 'connecting',
+      });
+      _bar.setActive(tabId);
+    }
+
+    _activeTabId = tabId;
+    _showTabPane(tabId);
     _initTerminal(tab);
     return tab;
   }
@@ -167,7 +212,7 @@ var TerminalManager = (function () {
         '<div style="color:#f44747;padding:16px;font-family:monospace;">' +
         'xterm.js \u52A0\u8F7D\u5931\u8D25\uFF0C\u8BF7\u68C0\u67E5\u7F51\u7EDC\u8FDE\u63A5\u540E\u5237\u65B0\u9875\u9762\u3002</div>';
       tab.status = 'disconnected';
-      _renderTabBar();
+      if (_bar) _bar.setStatus(tab.id, 'disconnected');
       return;
     }
 
@@ -279,7 +324,7 @@ var TerminalManager = (function () {
         if (msg.type === 'ready') {
           tab.sessionId = msg.session_id;
           tab.status = 'connected';
-          _renderTabBar();
+          if (_bar) _bar.setStatus(tab.id, 'connected');
           // Send initial dimensions after backend is ready
           _sendResize(tab);
         } else if (msg.type === 'mode') {
@@ -297,7 +342,7 @@ var TerminalManager = (function () {
             tab.xterm.write('\r\n\x1b[31m\u9519\u8BEF: ' + msg.message + '\x1b[0m');
           }
           tab.status = 'disconnected';
-          _renderTabBar();
+          if (_bar) _bar.setStatus(tab.id, 'disconnected');
         } else if (msg.type === 'exit') {
           if (tab.xterm) {
             tab.xterm.write(
@@ -306,7 +351,7 @@ var TerminalManager = (function () {
             );
           }
           tab.status = 'disconnected';
-          _renderTabBar();
+          if (_bar) _bar.setStatus(tab.id, 'disconnected');
         }
       } catch (e) {
         // ignore JSON parse errors
@@ -315,12 +360,12 @@ var TerminalManager = (function () {
 
     ws.onclose = function () {
       tab.status = 'disconnected';
-      _renderTabBar();
+      if (_bar) _bar.setStatus(tab.id, 'disconnected');
     };
 
     ws.onerror = function () {
       tab.status = 'disconnected';
-      _renderTabBar();
+      if (_bar) _bar.setStatus(tab.id, 'disconnected');
       if (tab.xterm) {
         tab.xterm.write('\r\n\x1b[31m[WebSocket \u8FDE\u63A5\u9519\u8BEF]\x1b[0m');
       }
@@ -339,7 +384,7 @@ var TerminalManager = (function () {
 
   function _switchToTab(tabId) {
     _activeTabId = tabId;
-    _renderTabBar();
+    if (_bar) _bar.setActive(tabId);
     _showTabPane(tabId);
 
     // Fit the active terminal and send resize to backend
@@ -400,6 +445,9 @@ var TerminalManager = (function () {
     // Remove from array
     _tabs.splice(idx, 1);
 
+    // Remove from TabBar
+    if (_bar) _bar.removeTab(tabId);
+
     // Switch to another tab if needed
     if (_activeTabId === tabId) {
       if (_tabs.length > 0) {
@@ -410,8 +458,6 @@ var TerminalManager = (function () {
         _showTabPane(null);
       }
     }
-
-    _renderTabBar();
   }
 
   function closeAllTabs() {
@@ -432,7 +478,7 @@ var TerminalManager = (function () {
     var tab = _getTabById(tabId);
     if (tab && newName) {
       tab.name = newName;
-      _renderTabBar();
+      if (_bar) _bar.setTitle(tabId, newName);
     }
   }
 
@@ -445,93 +491,6 @@ var TerminalManager = (function () {
 
   function _getActiveTab() {
     return _getTabById(_activeTabId);
-  }
-
-  // ========================= Tab Bar Rendering =========================
-
-  function _renderTabBar() {
-    if (!_tabBar) return;
-
-    // Save sidebar toggle button before clearing
-    var sidebarToggle = _tabBar.querySelector('.tab-sidebar-toggle');
-    var addBtn = document.getElementById('terminalAddBtn');
-
-    // Clear existing tabs
-    _tabBar.innerHTML = '';
-
-    for (var i = 0; i < _tabs.length; i++) {
-      var tab = _tabs[i];
-      var el = document.createElement('div');
-      el.className = 'terminal-tab' + (tab.id === _activeTabId ? ' active' : '');
-      el.dataset.tabId = tab.id;
-
-      var statusClass = tab.status === 'connected'
-        ? 'connected'
-        : (tab.status === 'disconnected' ? 'disconnected' : '');
-      el.innerHTML =
-        '<span class="terminal-tab-status ' + statusClass + '"></span>' +
-        '<span class="terminal-tab-name">' + _escapeHtml(tab.name) + '</span>' +
-        '<span class="terminal-tab-close">&times;</span>';
-
-      // Click to switch or close
-      (function (tid) {
-        el.addEventListener('click', function (e) {
-          if (e.target.classList.contains('terminal-tab-close')) {
-            closeTab(tid);
-          } else {
-            _switchToTab(tid);
-          }
-        });
-
-        // Right-click context menu
-        el.addEventListener('contextmenu', function (e) {
-          e.preventDefault();
-          _showContextMenu(e, tid);
-        });
-      })(tab.id);
-
-      _tabBar.appendChild(el);
-    }
-
-    // Re-add sidebar toggle button
-    if (sidebarToggle) {
-      _tabBar.insertBefore(sidebarToggle, _tabBar.firstChild);
-    }
-
-    // Re-add the add button
-    if (addBtn) {
-      _tabBar.appendChild(addBtn);
-    } else {
-      var newAddBtn = document.createElement('div');
-      newAddBtn.className = 'terminal-tab-add';
-      newAddBtn.id = 'terminalAddBtn';
-      newAddBtn.innerHTML = '+';
-      newAddBtn.addEventListener('click', function (e) {
-        e.stopPropagation();
-        _showAddMenu(e);
-      });
-      _tabBar.appendChild(newAddBtn);
-    }
-
-    // Show/hide floating close-all button when tabs > 5
-    var closeAllBtn = document.getElementById('terminalCloseAllBtn');
-    if (_tabs.length > 5) {
-      if (!closeAllBtn) {
-        closeAllBtn = document.createElement('div');
-        closeAllBtn.id = 'terminalCloseAllBtn';
-        closeAllBtn.className = 'tab-close-all-btn';
-        closeAllBtn.innerHTML = '&times; \u5168\u90E8\u5173\u95ED';
-        closeAllBtn.title = '\u5173\u95ED\u6240\u6709\u6807\u7B7E';
-        closeAllBtn.addEventListener('click', function (e) {
-          e.stopPropagation();
-          closeAllTabs();
-        });
-        _container.appendChild(closeAllBtn);
-      }
-      closeAllBtn.style.display = '';
-    } else if (closeAllBtn) {
-      closeAllBtn.style.display = 'none';
-    }
   }
 
   // ========================= Context Menu =========================
@@ -619,6 +578,7 @@ var TerminalManager = (function () {
     }
 
     tab.status = 'connecting';
+    if (_bar) _bar.setStatus(tabId, 'connecting');
 
     // Create fresh xterm.js instance in the existing pane
     var pane = document.getElementById('terminal-pane-' + tabId);
@@ -675,7 +635,6 @@ var TerminalManager = (function () {
       }
     }
 
-    _renderTabBar();
     _connectWebSocket(tab);
   }
 
