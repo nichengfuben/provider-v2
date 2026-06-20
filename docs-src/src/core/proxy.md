@@ -6,7 +6,7 @@
 
 1. **全局代理** — 通过 `config.toml` 或环境变量配置
 2. **平台级代理切换** — 每个平台可独立启用/关闭代理
-3. **Qwen WAF 自动切换** — 检测到 WAF 自动启用 24 小时
+3. **ProxySelector 智能选择** — 根据历史指标自动选择代理或直连
 
 ## 全局代理
 
@@ -79,38 +79,6 @@ adapter.is_proxy_enabled()         # 当前是否启用
 ### 限制
 
 **不在 `enabled_platforms` 列表中的平台，无论如何调用 `set_proxy_enabled()` 都无效。**
-
-## Qwen WAF 自动切换
-
-### 触发条件
-
-`_do_request` 中检测到响应 `Content-Type` 包含 `text/html` → 抛出 `WAFBlockedError`
-
-### 自动行为
-
-1. `complete()` 重试循环捕获 `WAFBlockedError`
-2. 检查平台是否在 `enabled_platforms` 中
-3. 调用 `set_proxy_enabled(True, auto=True)`
-4. 保存持久化到 `persist/qwen/usage.json`
-5. 重试请求（此时使用代理）
-
-### 24 小时过期
-
-- `_proxy_auto_enabled_at` 记录启用时间戳
-- 每次 `_get_proxy_kwarg()` 时检查是否超过 86400 秒
-- 过期后自动关闭代理
-- 再次遇到 WAF 时再次启用
-
-### 持久化格式
-
-```json
-{
-  "proxy": {
-    "enabled": true,
-    "auto_enabled_at": 1718000000.0
-  }
-}
-```
 
 ## 依赖
 

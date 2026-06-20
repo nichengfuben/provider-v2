@@ -444,19 +444,18 @@ class QwenAdapter(PlatformAdapter):
         if self._client is not None:
             await self._client.close()
 
-    def set_proxy_enabled(self, enabled: bool, *, auto: bool = False) -> None:
+    def set_proxy_enabled(self, enabled: bool) -> None:
         """设置 Qwen 平台的代理覆盖开关。
 
         只有在配置中允许的平台才能真正生效。
 
         Args:
             enabled: True 强制使用代理，False 强制不使用。
-            auto: 是否为自动启用（用于 24 小时过期逻辑）。
         """
         if not self.is_proxy_allowed():
             return
         if self._client is not None:
-            self._client.set_proxy_enabled(enabled, auto=auto)
+            self._client.set_proxy_enabled(enabled)
 
     def is_proxy_allowed(self) -> bool:
         """返回 Qwen 平台是否被允许使用代理切换。"""

@@ -480,7 +480,19 @@ async def terminal_ws(request: aiohttp.web.Request) -> aiohttp.web.WebSocketResp
                         await ws.send_json({"type": "mode", "mode": mode})
                         initialized = True
                     else:
-                        # Error already sent via callback (_broadcast_error)
+                        # No callback was attached yet (attach_client runs only
+                        # on success), so _broadcast_error was never called.
+                        # Send an explicit error directly to the WebSocket.
+                        if kind == "ssh":
+                            await ws.send_json({
+                                "type": "error",
+                                "message": "Failed to start SSH terminal. Check connection settings and that the remote host is reachable.",
+                            })
+                        else:
+                            await ws.send_json({
+                                "type": "error",
+                                "message": "Failed to start local terminal. Check that a shell is available and PTY is supported.",
+                            })
                         _sessions.pop(session_id, None)
 
             elif msg_type == "input" and session:

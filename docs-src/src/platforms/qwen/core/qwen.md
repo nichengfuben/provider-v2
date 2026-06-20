@@ -42,12 +42,11 @@ QwenAdapter (adaptercore.py)
 
 ## 代理切换
 
-Qwen 平台是唯一支持 **WAF 自动代理切换** 的平台：
+Qwen 平台支持手动代理切换和 **ProxySelector 智能选择**：
 
-1. `_do_request` 检测到响应 `Content-Type: text/html` → 抛出 `WAFBlockedError`
-2. `complete()` 重试循环捕获该异常 → 自动启用代理 24 小时
+1. 手动切换：通过 `set_proxy_enabled(True/False)` 强制开启/关闭代理
+2. 智能选择：`ProxySelector` 根据历史成功率、延迟等指标自动选择代理或直连
 3. 代理状态持久化到 `persist/qwen/usage.json`
-4. 24 小时后自动关闭 → 若再次遇到 WAF → 再次启用
 
 ### 前提条件
 
@@ -58,7 +57,7 @@ Qwen 必须在 `config.toml` 的 `[platforms_proxy].enabled_platforms` 中：
 enabled_platforms = ["qwen"]
 ```
 
-不在列表中时，WAF 自动触发和手动 `set_proxy_enabled()` 均无效。
+不在列表中时，手动 `set_proxy_enabled()` 无效。
 
 ### 持久化格式
 
@@ -67,8 +66,7 @@ enabled_platforms = ["qwen"]
   "accounts": { ... },
   "cookies": { ... },
   "proxy": {
-    "enabled": true,
-    "auto_enabled_at": 1718000000.0
+    "enabled": true
   },
   "updated": 1718000000.0
 }

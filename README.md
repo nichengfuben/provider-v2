@@ -18,11 +18,11 @@
 
 <div align="center">
 
-![Status](https://img.shields.io/badge/status-v2.2.180-blue)
-![Version](https://img.shields.io/badge/version-2.2.180-blue)
+![Status](https://img.shields.io/badge/status-v2.2.191-blue)
+![Version](https://img.shields.io/badge/version-2.2.191-blue)
 ![Python](https://img.shields.io/badge/python-3.8+-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
-![Platforms](https://img.shields.io/badge/platforms-16+-orange)
+![Platforms](https://img.shields.io/badge/platforms-17+-orange)
 
 [![GitHub stars](https://img.shields.io/github/stars/nichengfuben/provider-v2)](https://github.com/nichengfuben/provider-v2/stargazers)
 [![GitHub issues](https://img.shields.io/github/issues/nichengfuben/provider-v2)](https://github.com/nichengfuben/provider-v2/issues)
@@ -154,6 +154,7 @@
 | CodeBuddy | ✅ | chat |
 | NVIDIA | ✅ | chat |
 | NoobKeys | ✅ | chat |
+| OpenCode | ✅ | chat, tools, vision, native_tools |
 | 更多平台 | 🚧 | 持续开发中 |
 
 ---
@@ -1257,7 +1258,41 @@ fix(gateway): 修复并发竞速时 token 计数错误
 
 ## 🗺️ 路线图
 
-### 当前版本：v2.2.180
+### 当前版本：v2.2.191
+
+✅ 已完成（v2.2.191）：
+- Ollama 平台新增 FILTER_CLOUD_MODELS 常量（默认 True），服务器扫描时过滤 :cloud 后缀的付费云端模型，过滤发生在注册表构建前
+
+✅ 已完成（v2.2.190）：
+- WebUI 文件面板懒加载：后端 offset/limit 分页 + os.scandir 性能优化，前端滚动触发按批次加载（每批 200 条），CSS 加载指示器动画
+
+✅ 已完成（v2.2.189）：
+- opencode HTTP 429 改为可重试，触发 TAS 代理切换重试
+- opencode 支持从 accounts.py 注入本地代理（LOCAL_PROXIES），启动和每次刷新时合并到代理池参与 TAS 选择
+
+✅ 已完成（v2.2.187）：
+- opencode 连接重试修复：连接断开/负载截断时不再中止，所有连接错误均触发 TAS 选择新代理重试；仅 PlatformError 为不可重试异常
+- echotools 升级到 1.0.30：自动更新合并冲突自修复（merge abort 检测）、hard reset 回退、暂存恢复（stash pop）、祖先检查（ancestry check）
+
+✅ 已完成（v2.2.186）：
+- opencode 平台改为单候选项模式，代理选择完全由平台内部 TAS 处理（包括首次尝试）
+- 代理池抓取日志全部从 INFO 降为 DEBUG，减少运行时日志噪音
+
+✅ 已完成（v2.2.185）：
+- opencode 平台重试逻辑优化：每次重试用 TAS 选择器轮换到不同代理，排除上次失败的代理
+
+✅ 已完成（v2.2.184）：
+- opencode 平台重试逻辑重构：50 次重试、1 秒固定延迟、远程断开/负载截断时立即中止，MAX_RETRIES 常量移至 constants.py
+
+✅ 已完成（v2.2.183）：
+- 新增 opencode 平台适配器 — proxy-pool 架构，无需 API Key，TAS 式代理评分选择器，6 个 free 模型，native_tools 支持
+
+✅ 已完成（v2.2.182）：
+- 终端 WebSocket 修复：本地/SSH 终端启动失败时向客户端发送明确错误信息
+
+✅ 已完成（v2.2.181）：
+- 自动更新修复：应用更新时改用镜像源拉取并支持本地未提交变更自动暂存恢复
+- 日志级别调整：zen 平台初始化与 Worker 启动日志降为 DEBUG
 
 ✅ 已完成（v2.2.180）：
 - 架构审计修复：裸 except 块添加 debug 日志 + 创建 PROJECT_DECISIONS.md（5 条 ADR）

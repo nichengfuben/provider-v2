@@ -93,7 +93,7 @@ class PlatformAdapter(ABC):
     async def close(self) -> None: ...
 
     # 可选方法
-    def set_proxy_enabled(self, enabled: bool, *, auto: bool = False) -> None: ...
+    def set_proxy_enabled(self, enabled: bool) -> None: ...
     def is_proxy_allowed(self) -> bool: ...
     def is_proxy_enabled(self) -> bool: ...
     def context_length(self) -> Optional[int]: ...  # 默认 128k
@@ -116,6 +116,6 @@ class PlatformAdapter(ABC):
 |------|------|
 | 全局代理 | `config.toml [proxy]` 或环境变量 `HTTP_PROXY`/`HTTPS_PROXY`/`ALL_PROXY` |
 | 平台切换 | `adapter.set_proxy_enabled(bool)` — 仅对 `platforms_proxy.enabled_platforms` 中的平台有效 |
-| Qwen 自动 | WAF 检测 → 自动启用 24 小时 → 自动关闭 → 再次 WAF 再次启用 |
+| Qwen 智能 | ProxySelector 根据历史成功率、延迟等指标自动选择代理或直连 |
 
 详见 `proxy.md`。

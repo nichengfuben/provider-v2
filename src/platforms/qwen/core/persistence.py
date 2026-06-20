@@ -38,7 +38,6 @@ def load_persist(
     if isinstance(proxy_state, dict):
         proxy.load(
             proxy_state.get("enabled"),
-            proxy_state.get("auto_enabled_at"),
         )
     loaded = sum(1 for account in account_states.values() if account.token)
     logger.debug("Qwen: 从持久化恢复 %d 个账号 token", loaded)

@@ -248,7 +248,7 @@ class Client:
 | `supported_models` | `[]` | 支持的模型列表（建议合并内置+客户端+持久化）|
 | `default_capabilities` | `{"chat": True}` | 平台能力字典 |
 | `context_length` | `131072` | 上下文长度 |
-| `set_proxy_enabled(enabled, *, auto=False)` | no-op | 代理切换开关 |
+| `set_proxy_enabled(enabled)` | no-op | 代理切换开关 |
 | `is_proxy_allowed()` | `False` | 是否允许代理切换（受全局配置约束）|
 | `is_proxy_enabled()` | `False` | 当前是否启用代理 |
 | `fetch_remote_models()` | `[]` | 拉取远程模型列表 |
@@ -422,19 +422,15 @@ async def _bg_persist(self) -> None:
 
 ```python
 class ProxyState:
-    """三态：True=强制开启 / False=强制关闭 / None=跟随全局。
-
-    含 "自动启用 24h 后过期" 的时间逻辑。
-    """
+    """三态：True=强制开启 / False=强制关闭 / None=跟随全局。"""
     def __init__(self) -> None:
         self.override: Optional[bool] = None
-        self.auto_enabled_at: Optional[float] = None
 
-    def set_enabled(self, enabled: bool, *, auto: bool = False) -> None: ...
+    def set_enabled(self, enabled: bool) -> None: ...
     def is_enabled(self) -> bool: ...
     def get_proxy_url(self) -> Optional[str]: ...
     def to_dict(self) -> dict: ...
-    def load(self, override, auto_enabled_at) -> None: ...
+    def load(self, override) -> None: ...
 ```
 
 ### 11.2 在请求中应用
@@ -464,11 +460,11 @@ enabled_platforms = ["qwen"]
 Adapter 侧的判断必须前置：
 
 ```python
-def set_proxy_enabled(self, enabled: bool, *, auto: bool = False) -> None:
+def set_proxy_enabled(self, enabled: bool) -> None:
     if not self.is_proxy_allowed():
         return
     if self._client is not None:
-        self._client.set_proxy_enabled(enabled, auto=auto)
+        self._client.set_proxy_enabled(enabled)
 
 def is_proxy_allowed(self) -> bool:
     from src.core.config import get_config  # noqa: PLC0415
@@ -543,7 +539,7 @@ async with self._session.post(url, **post_kw) as resp:
 
 - 顶层 `complete()` 是重试入口，**指数退避**：`sleep(2 ** (attempt - 1))`
 - 默认 `MAX_RETRIES = 3`
-- **WAF 拦截** 触发 `set_proxy_enabled(True, auto=True)` 并立即重试
+- **WAF 拦截** 触发重试（代理由 ProxySelector 智能选择决定）
 - **Token 过期**（401 或返回体含 `Token has expired`）触发账号
   `is_login=False` + 重建候选项 + 持久化保存
 

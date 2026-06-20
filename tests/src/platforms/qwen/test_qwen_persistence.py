@@ -16,7 +16,7 @@ def test_qwen_persistence_roundtrip(tmp_path, monkeypatch) -> None:
     }
     cookies = {"ssxmod_itna": "cookie-a"}
     proxy = ProxyState()
-    proxy.set_enabled(True, auto=True)
+    proxy.set_enabled(True)
     save_persist(accounts, cookies, proxy)
     data = json.loads(persist_path.read_text(encoding="utf-8"))
     assert data["accounts"]["user@example.com"]["token"] == "token-1"

@@ -199,19 +199,18 @@ class DeepseekAdapter(PlatformAdapter):
         if self._client is not None:
             await self._client.close()
 
-    def set_proxy_enabled(self, enabled: bool, *, auto: bool = False) -> None:
+    def set_proxy_enabled(self, enabled: bool) -> None:
         """设置 DeepSeek 平台的代理覆盖开关。
 
         只有在配置中允许的平台才能真正生效。
 
         Args:
             enabled: True 强制使用代理，False 强制不使用。
-            auto: 保留参数（DeepSeek 不使用自动逻辑）。
         """
         if not self.is_proxy_allowed():
             return
         if self._client is not None:
-            self._client.set_proxy_enabled(enabled, auto=auto)
+            self._client.set_proxy_enabled(enabled)
 
     def is_proxy_allowed(self) -> bool:
         """返回 DeepSeek 平台是否被允许使用代理切换。"""

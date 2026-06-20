@@ -424,7 +424,7 @@ class PlatformAdapter(ABC):
 
     # ── 代理切换方法（可选，默认无操作）──────────────
 
-    def set_proxy_enabled(self, enabled: bool, *, auto: bool = False) -> None:
+    def set_proxy_enabled(self, enabled: bool) -> None:
         """设置此平台的代理覆盖开关（可选，默认无操作）。
 
         只有在 config.toml 的 [platforms_proxy].enabled_platforms 列表中
@@ -432,7 +432,6 @@ class PlatformAdapter(ABC):
 
         Args:
             enabled: True 强制使用代理，False 强制不使用。
-            auto: 是否为自动启用（用于 24 小时过期逻辑）。
         """
         pass
 

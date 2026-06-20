@@ -34,7 +34,9 @@ config.toml
 *.zip
 
 # File names
+SELF.cmd
 .DS_Store
+PROJECT_DECISIONS.md
 RAW.md
 raw.md
 agents.md

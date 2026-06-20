@@ -142,12 +142,11 @@ class DeepseekClient:
         self._rebuild_candidates()
         logger.info("deepseek 客户端已初始化（等待后台登录）")
 
-    def set_proxy_enabled(self, enabled: bool, *, auto: bool = False) -> None:
+    def set_proxy_enabled(self, enabled: bool) -> None:
         """设置此平台的代理覆盖开关。
 
         Args:
             enabled: True 强制使用代理，False 强制不使用。
-            auto: 保留参数以匹配基类接口，DeepSeek 暂不支持自动代理。
         """
         self._proxy_override = bool(enabled)
 
