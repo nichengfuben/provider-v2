@@ -216,14 +216,30 @@ function appendChatMessage(role, content, options) {
   var msg = document.createElement("div");
   msg.className = "chat-message chat-message-" + role;
   if (options.toolCalls && options.toolCalls.length > 0) {
-    var toolHtml = '<div style="margin-bottom:6px;">';
+    var msgUid = ++_toolIdCounter;
+    var toolHtml = '<div class="chat-tools-container">';
     for (var i = 0; i < options.toolCalls.length; i++) {
       var tc = options.toolCalls[i];
       var name = (tc.function && tc.function.name) || "unknown";
+      var args = (tc.function && tc.function.arguments) || "";
+      var toolId = "tool-" + msgUid + "-" + i;
+      var formattedArgs = "";
+      try {
+        formattedArgs = JSON.stringify(JSON.parse(args), null, 2);
+      } catch(e) {
+        formattedArgs = args || "{}";
+      }
+      toolHtml += '<div class="chat-tool-dropdown">';
+      toolHtml += '<div class="chat-tool-dropdown-trigger" data-target="' + toolId + '">';
       toolHtml += '<span class="chat-tool-btn">' + escapeHtml(name) + '</span> ';
+      toolHtml += '<span class="chat-tool-dropdown-label">查看参数</span>';
+      toolHtml += '<svg class="chat-tool-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>';
+      toolHtml += '</div>';
+      toolHtml += '<pre class="chat-tool-args" id="' + toolId + '" style="display:none;">' + escapeHtml(formattedArgs) + '</pre>';
+      toolHtml += '</div>';
     }
     toolHtml += '</div>';
-    msg.innerHTML = toolHtml + renderWithCodeBlocks(content);
+    msg.innerHTML = toolHtml + '<div class="chat-assistant-text">' + renderWithCodeBlocks(content) + '</div>';
   } else if (role === "assistant") {
     msg.setAttribute("data-raw", content);
     msg.innerHTML = renderWithCodeBlocks(content);
@@ -633,6 +649,18 @@ async function loadModelsList() {
       if (models[i].id === "qwen3.7-max") autoSelect = models[i].id;
     }
     dropdown.setOptions(opts, false);
+    // Apply saved model from persist if it exists in the options
+    if (_savedChatModel) {
+      var found = false;
+      for (var j = 0; j < opts.length; j++) {
+        if (opts[j].value === _savedChatModel) { found = true; break; }
+      }
+      if (found) {
+        dropdown.setValue(_savedChatModel);
+        _savedChatModel = null;
+        return;
+      }
+    }
     if (autoSelect) dropdown.setValue(autoSelect);
     else if (opts.length > 0) dropdown.setValue(opts[0].value);
   } catch (error) {
@@ -645,6 +673,8 @@ async function loadModelsList() {
 var chatConversationHistory = [];
 var _chatAbortController = null;
 var _chatStateLoaded = null;
+var _savedChatModel = null;
+var _chatStateReady = false;
 
 function _setStreaming(isStreaming) {
   if (!window._chatInputBox) return;
@@ -669,14 +699,22 @@ function saveChatState() {
   try {
     var container = document.getElementById("chatMessagesContainer");
     var html = container ? container.innerHTML : "";
+    var modelSelect = document.getElementById("chatModelSelect");
+    var protocolSelect = document.getElementById("chatProtocolSelect");
+    var savedModel = modelSelect ? modelSelect.value : "";
+    var savedProtocol = protocolSelect ? protocolSelect.value : "xml";
     localStorage.setItem("provider.webui.chatHistory", JSON.stringify(chatConversationHistory));
     localStorage.setItem("provider.webui.chatDom", html);
     localStorage.setItem("provider.webui.userMsgCount", String(_userMsgCount));
+    localStorage.setItem("provider.webui.chatModel", savedModel);
+    localStorage.setItem("provider.webui.chatProtocol", savedProtocol);
     // Persist to backend
     if (typeof persistSave === 'function') {
       persistSave('chat.json', {
         history: chatConversationHistory,
-        userMsgCount: _userMsgCount
+        userMsgCount: _userMsgCount,
+        model: savedModel,
+        protocol: savedProtocol
       });
     }
   } catch (e) { /* quota exceeded or private mode */ }
@@ -692,6 +730,16 @@ async function loadChatState() {
         if (persisted && persisted.history && persisted.history.length > 0) {
           chatConversationHistory = persisted.history;
           _userMsgCount = persisted.userMsgCount || 0;
+          // Restore model and protocol selections
+          if (persisted.model) {
+            _savedChatModel = persisted.model;
+            var dd = window._dropdowns && window._dropdowns["chatModelSelect"];
+            if (dd) dd.setValue(persisted.model);
+          }
+          if (persisted.protocol) {
+            var protocolSelect = document.getElementById("chatProtocolSelect");
+            if (protocolSelect) protocolSelect.value = persisted.protocol;
+          }
           // Re-render messages from history
           var container = document.getElementById("chatMessagesContainer");
           if (container) {
@@ -701,7 +749,6 @@ async function loadChatState() {
               var msg = chatConversationHistory[i];
               if (msg.role === "tool") continue;
               try {
-                console.log('[loadChatState] rendering', i, msg.role, (msg.content || '').substring(0, 30), msg.tool_calls ? 'has_tools' : '');
                 appendChatMessage(msg.role, msg.content || '', {
                   toolCalls: msg.tool_calls,
                   files: msg.files || null
@@ -711,9 +758,22 @@ async function loadChatState() {
               }
             }
           }
+          _chatStateReady = true;
           return;
         }
       } catch (e) { /* ignore, fall back to localStorage */ }
+    }
+    // Fallback to localStorage for model/protocol
+    var savedModel = localStorage.getItem("provider.webui.chatModel");
+    var savedProtocol = localStorage.getItem("provider.webui.chatProtocol");
+    if (savedModel) {
+      _savedChatModel = savedModel;
+      var dd = window._dropdowns && window._dropdowns["chatModelSelect"];
+      if (dd) dd.setValue(savedModel);
+    }
+    if (savedProtocol) {
+      var protocolSelect = document.getElementById("chatProtocolSelect");
+      if (protocolSelect) protocolSelect.value = savedProtocol;
     }
     // Fallback to localStorage
     var hist = localStorage.getItem("provider.webui.chatHistory");
@@ -735,6 +795,7 @@ async function loadChatState() {
       }
     }
   } catch (e) { /* corrupt data */ }
+  _chatStateReady = true;
   })();
   return _chatStateLoaded;
 }
@@ -1359,4 +1420,12 @@ function getToolsDefinition() {
 
   return tools;
 }
+
+// ========================= Auto-save model/protocol on change =========================
+(function() {
+  var modelEl = document.getElementById("chatModelSelect");
+  var protocolEl = document.getElementById("chatProtocolSelect");
+  if (modelEl) modelEl.addEventListener("change", function() { if (_chatStateReady) saveChatState(); });
+  if (protocolEl) protocolEl.addEventListener("change", function() { if (_chatStateReady) saveChatState(); });
+})();
 
