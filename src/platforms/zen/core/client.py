@@ -107,7 +107,7 @@ class ZenClient:
         """立即初始化，不阻塞。"""
         self._session = session
         self._keys = [_KeyState(k) for k in API_KEYS if k and k.strip()]
-        logger.info(
+        logger.debug(
             "zen客户端初始化完成, %s个APIKey", len(self._keys)
         )
 

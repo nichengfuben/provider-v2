@@ -91,7 +91,6 @@ SETTINGS_TIMEOUT: int = 15
 OSS_UPLOAD_TIMEOUT: int = 120
 HTTP_TIMEOUT: int = 30
 
-_PROXY_AUTO_EXPIRY = 86400
 _RELOGIN_LOG_BUFFER_SECS = 60
 _RETRY_LOG_BUFFER_SECS = 30
 _LOGIN_FAIL_LOG_BUFFER_SECS = 60
@@ -129,7 +128,6 @@ class QwenClient:
         self._active_chats: Dict[str, str] = {}
         self._models_cache = ModelsCache("qwen", MODELS, fetch_enabled=False)
         self._proxy_override: Optional[bool] = None
-        self._proxy_auto_enabled_at: Optional[float] = None
         self._proxy_selector = ProxySelector(Path(PROXY_SELECTOR_PERSIST_PATH))
         self._relogin_log_buffer: List[str] = []
         self._relogin_flush_task: Optional[asyncio.Task] = None
@@ -146,34 +144,21 @@ class QwenClient:
     # 代理切换
     # =========================================================================
 
-    def set_proxy_enabled(self, enabled: bool, *, auto: bool = False) -> None:
+    def set_proxy_enabled(self, enabled: bool) -> None:
         """设置此平台的代理覆盖开关。
 
         Args:
             enabled: True 强制使用代理，False 强制不使用。
-            auto: 是否为自动启用（用于 24 小时过期逻辑）。
         """
         if enabled:
             self._proxy_override = True
-            if auto:
-                self._proxy_auto_enabled_at = time.time()
         else:
             self._proxy_override = False
-            self._proxy_auto_enabled_at = None
-
-    def _check_proxy_expiry(self) -> None:
-        """检查自动代理是否已过期，过期则清除状态。"""
-        if self._proxy_auto_enabled_at is not None:
-            if time.time() - self._proxy_auto_enabled_at > _PROXY_AUTO_EXPIRY:
-                self._proxy_override = None
-                self._proxy_auto_enabled_at = None
 
     def is_proxy_enabled(self) -> bool:
         """返回此平台当前是否启用代理。"""
         if self._proxy_override is None:
             return False
-        if self._proxy_override:
-            self._check_proxy_expiry()
         return bool(self._proxy_override)
 
     def _get_proxy_kwarg(self) -> Optional[str]:
@@ -193,9 +178,7 @@ class QwenClient:
         if not cfg.proxy.proxy_enabled:
             return None
 
-        self._check_proxy_expiry()
-
-        # Explicit override (set by WAF auto-enable or manual toggle)
+        # Explicit override (set by manual toggle)
         if self._proxy_override is True:
             if not cfg.platforms_proxy.is_platform_enabled("qwen"):
                 return None
@@ -2153,17 +2136,13 @@ class QwenClient:
                     yield chunk
                 return
             except WAFBlockedError:
-                if not self.is_proxy_enabled():
-                    # 检查是否被允许使用代理切换
-                    from src.core.config import get_config
-                    cfg = get_config()
-                    if cfg.platforms_proxy.is_platform_enabled("qwen"):
-                        logger.warning("Qwen: 检测到 WAF 拦截，自动启用代理 24 小时")
-                        self.set_proxy_enabled(True, auto=True)
-                        self._save_persist()
-                last_exc = None  # 清除 last_exc，让重试使用新代理
+                logger.warning(
+                    "Qwen: 检测到 WAF 拦截（第 %d/%d 次重试）",
+                    attempt + 1, MAX_RETRIES,
+                )
+                last_exc = None  # 清除 last_exc，让重试继续
                 self._log_retry(
-                    f"WAF 重试 {attempt + 1}/{MAX_RETRIES}（代理已启用）"
+                    f"WAF 重试 {attempt + 1}/{MAX_RETRIES}"
                 )
             except Exception as e:
                 last_exc = e

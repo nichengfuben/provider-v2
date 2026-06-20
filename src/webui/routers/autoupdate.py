@@ -262,7 +262,13 @@ async def autoupdate_apply(request: aiohttp.web.Request) -> aiohttp.web.Response
 
         cfg = get_config().autoupdate
         branch = cfg.branch
+        mirrors = list(cfg.mirrors) if cfg.mirrors else ["https://github.com/nichengfuben/provider-v2.git"]
         selected_files = body.get("files")  # None = all files
+
+        # Re-fetch from mirrors to ensure refs are current
+        fetch_ok, used_mirror = await _fetch_from_mirrors(branch, mirrors)
+        if not fetch_ok:
+            return aiohttp.web.json_response({"success": False, "error": "All mirrors failed during apply"})
 
         if cfg.diff_update and _last_check.get("changed_files"):
             # 差异更新：仅 checkout 选中的变更文件
@@ -278,10 +284,27 @@ async def autoupdate_apply(request: aiohttp.web.Request) -> aiohttp.web.Response
             _last_check["applied_files"] = files
             logger.info("差异更新完成: %d 个文件", len(files))
         else:
-            # 全量更新
-            ok, out, err = await _run_git("pull", "origin", branch, timeout=120)
+            # 全量更新：stash local changes, merge from fetched remote ref, pop stash
+            ok, dirty_out, _ = await _run_git("status", "--porcelain")
+            stashed = False
+            if ok and dirty_out.strip():
+                ok, _, stash_err = await _run_git("stash", "push", "-m", "autoupdate-stash")
+                if ok:
+                    stashed = True
+                else:
+                    logger.warning("stash before merge failed: %s", stash_err)
+
+            ok, out, err = await _run_git(
+                "merge", "origin/{}".format(branch), timeout=120
+            )
+
+            if stashed:
+                pop_ok, _, pop_err = await _run_git("stash", "pop")
+                if not pop_ok:
+                    logger.warning("stash pop after merge failed: %s", pop_err)
+
             if not ok:
-                return aiohttp.web.json_response({"success": False, "error": "git pull failed: " + err})
+                return aiohttp.web.json_response({"success": False, "error": "git merge failed: " + err})
             _last_check["applied"] = "full"
             logger.info("全量更新完成")
 

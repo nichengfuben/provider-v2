@@ -228,7 +228,7 @@ def _run_runner() -> None:
         last_restart_time = time.time()
 
         restart_count += 1
-        logger.info("启动 Worker 进程 [第 %d 次]", restart_count)
+        logger.debug("启动 Worker 进程 [第 %d 次]", restart_count)
 
         env = os.environ.copy()
         env["WORKER_PROCESS"] = "1"

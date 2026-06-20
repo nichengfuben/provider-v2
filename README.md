@@ -18,8 +18,8 @@
 
 <div align="center">
 
-![Status](https://img.shields.io/badge/status-v2.2.180-blue)
-![Version](https://img.shields.io/badge/version-2.2.180-blue)
+![Status](https://img.shields.io/badge/status-v2.2.181-blue)
+![Version](https://img.shields.io/badge/version-2.2.181-blue)
 ![Python](https://img.shields.io/badge/python-3.8+-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Platforms](https://img.shields.io/badge/platforms-16+-orange)
@@ -1257,7 +1257,11 @@ fix(gateway): 修复并发竞速时 token 计数错误
 
 ## 🗺️ 路线图
 
-### 当前版本：v2.2.180
+### 当前版本：v2.2.181
+
+✅ 已完成（v2.2.181）：
+- 自动更新修复：应用更新时改用镜像源拉取并支持本地未提交变更自动暂存恢复
+- 日志级别调整：zen 平台初始化与 Worker 启动日志降为 DEBUG
 
 ✅ 已完成（v2.2.180）：
 - 架构审计修复：裸 except 块添加 debug 日志 + 创建 PROJECT_DECISIONS.md（5 条 ADR）
