@@ -29,7 +29,7 @@ CAPS: Dict[str, bool] = {
     "search": False,
 }
 
-FETCH_MODELS_ENABLED: bool = False
+FETCH_MODELS_ENABLED: bool = True
 MODEL_FETCH_INTERVAL: int = 86400
 
 FILTER_PAID_MODELS: bool = True

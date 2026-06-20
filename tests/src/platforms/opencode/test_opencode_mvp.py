@@ -70,26 +70,103 @@ def test_proxy_pool_serialization() -> None:
 
 
 def test_proxy_pool_selector_scoring(tmp_path) -> None:
-    from src.platforms.opencode.core.proxyscore import ProxyPoolSelector
+    from src.platforms.opencode.core.proxyscore import DIRECT, ProxyPoolSelector
     persist = str(tmp_path / "test_score.json")
     selector = ProxyPoolSelector(persist)
     selector.update_pool(["1.2.3.4:8080", "5.6.7.8:3128"])
     selector.record_success("1.2.3.4:8080", latency_ms=100.0)
     selector.record_failure("5.6.7.8:3128")
     chosen = selector.select(["1.2.3.4:8080", "5.6.7.8:3128"])
-    assert chosen in ("1.2.3.4:8080", "5.6.7.8:3128")
+    assert chosen in ("1.2.3.4:8080", "5.6.7.8:3128", DIRECT)
 
 
 def test_proxy_pool_selector_empty() -> None:
-    from src.platforms.opencode.core.proxyscore import ProxyPoolSelector
+    from src.platforms.opencode.core.proxyscore import DIRECT, ProxyPoolSelector
     import tempfile
     import os
     fd, persist = tempfile.mkstemp(suffix=".json")
     os.close(fd)
     try:
         selector = ProxyPoolSelector(persist)
-        assert selector.select([]) is None
-        assert selector.select(["1.2.3.4:8080"]) == "1.2.3.4:8080"
+        # select([]) now returns DIRECT since DIRECT is always a candidate
+        assert selector.select([]) == DIRECT
+        # select with one proxy: could return the proxy or DIRECT
+        assert selector.select(["1.2.3.4:8080"]) in ("1.2.3.4:8080", DIRECT)
     finally:
         if os.path.exists(persist):
             os.unlink(persist)
+
+
+def test_direct_constant_value() -> None:
+    from src.platforms.opencode.core.proxyscore import DIRECT
+    assert DIRECT == "direct"
+
+
+def test_direct_in_score_table_after_update_pool(tmp_path) -> None:
+    from src.platforms.opencode.core.proxyscore import DIRECT, ProxyPoolSelector
+    persist = str(tmp_path / "test_score.json")
+    selector = ProxyPoolSelector(persist)
+    selector.update_pool(["1.2.3.4:8080", "5.6.7.8:3128"])
+    # DIRECT must always be present in the score table
+    assert DIRECT in selector._scores
+
+
+def test_direct_survives_stale_cleanup(tmp_path) -> None:
+    from src.platforms.opencode.core.proxyscore import DIRECT, ProxyPoolSelector
+    persist = str(tmp_path / "test_score.json")
+    selector = ProxyPoolSelector(persist)
+    # First update: add two proxies + DIRECT
+    selector.update_pool(["1.2.3.4:8080", "5.6.7.8:3128"])
+    assert "1.2.3.4:8080" in selector._scores
+    assert "5.6.7.8:3128" in selector._scores
+    assert DIRECT in selector._scores
+    # Second update: remove both proxies, DIRECT should survive
+    selector.update_pool([])
+    assert "1.2.3.4:8080" not in selector._scores
+    assert "5.6.7.8:3128" not in selector._scores
+    assert DIRECT in selector._scores
+
+
+def test_direct_record_success_and_failure(tmp_path) -> None:
+    from src.platforms.opencode.core.proxyscore import DIRECT, ProxyPoolSelector
+    persist = str(tmp_path / "test_score.json")
+    selector = ProxyPoolSelector(persist)
+    selector.update_pool([])
+    # record_success for DIRECT
+    selector.record_success(DIRECT, latency_ms=200.0)
+    rec = selector._scores[DIRECT]
+    assert rec.n_fails == 0
+    assert rec.n_calls == 1
+    assert rec.ema_latency == 200.0
+    # record_failure for DIRECT
+    selector.record_failure(DIRECT)
+    assert rec.n_fails == 1
+    # another success resets failure count
+    selector.record_success(DIRECT, latency_ms=300.0)
+    assert rec.n_fails == 0
+    assert rec.n_calls == 2
+
+
+def test_direct_can_be_selected(tmp_path) -> None:
+    from src.platforms.opencode.core.proxyscore import DIRECT, ProxyPoolSelector
+    persist = str(tmp_path / "test_score.json")
+    selector = ProxyPoolSelector(persist)
+    selector.update_pool([])
+    # With no proxies, select should return DIRECT
+    assert selector.select([]) == DIRECT
+
+
+def test_direct_candidate_in_candidates() -> None:
+    """Verify that the direct candidate appears in the client's candidates list."""
+    import asyncio
+    from src.platforms.opencode.core.client import OpencodeClient
+
+    client = OpencodeClient()
+    # Even with empty pool, candidates() should include the direct candidate
+    result = asyncio.run(client.candidates())
+    direct_cands = [c for c in result if c.resource_id == "direct"]
+    assert len(direct_cands) == 1
+    dc = direct_cands[0]
+    assert dc.meta["proxy_addr"] == ""
+    assert dc.meta["proxy_protocol"] == "direct"
+    assert dc.platform == "opencode"

@@ -29,7 +29,7 @@ from .constants import (
 from .headers import build_headers
 from .payloads import build_payload
 from .proxypool import ProxyPool, fetch_all_proxies
-from .proxyscore import ProxyPoolSelector
+from .proxyscore import DIRECT, ProxyPoolSelector
 from .sse import parse_sse_line
 
 logger = get_logger(__name__)
@@ -145,11 +145,9 @@ class OpencodeClient:
     # ------------------------------------------------------------------
 
     async def candidates(self) -> List[Candidate]:
-        """Build one Candidate per proxy in the pool."""
-        if self._pool.count == 0:
-            return []
+        """Build one Candidate per proxy in the pool, plus a direct candidate."""
         models = self._models
-        return [
+        result = [
             Candidate(
                 id=make_id("opencode", proxy.address),
                 platform="opencode",
@@ -164,6 +162,18 @@ class OpencodeClient:
             )
             for proxy in self._pool.proxies
         ]
+        # Always include a direct-connection candidate
+        direct_candidate = Candidate(
+            id=make_id("opencode", "direct"),
+            platform="opencode",
+            resource_id="direct",
+            models=list(models),
+            context_length=None,
+            meta={"proxy_addr": "", "proxy_protocol": "direct"},
+            **CAPS,
+        )
+        result.append(direct_candidate)
+        return result
 
     async def ensure_candidates(self, count: int) -> int:
         """If pool is empty trigger a fetch; otherwise no-op."""
@@ -220,32 +230,37 @@ class OpencodeClient:
         stream: bool,
         **kw: Any,
     ) -> AsyncGenerator[Union[str, Dict[str, Any]], None]:
-        """Execute a single HTTP request through the candidate's proxy."""
+        """Execute a single HTTP request through the candidate's proxy or direct."""
         proxy_addr = candidate.meta.get("proxy_addr", "")
-        if not proxy_addr:
-            raise PlatformError("opencode: no proxy address in candidate")
+        # Selector key: DIRECT sentinel for direct connection, proxy_addr otherwise
+        selector_key = proxy_addr if proxy_addr else DIRECT
 
         headers = build_headers(proxy_addr)
         payload = build_payload(messages, model, stream=stream, **kw)
         url = "{}{}".format(BASE_URL, CHAT_PATH)
-        proxy_url = "http://{}".format(proxy_addr)
+
+        # Build request kwargs -- only difference is the proxy= kwarg
+        request_kwargs: Dict[str, Any] = dict(
+            headers=headers,
+            json=payload,
+            ssl=False,
+            timeout=aiohttp.ClientTimeout(
+                connect=10,
+                total=600 if stream else 120,
+            ),
+        )
+        if proxy_addr:
+            request_kwargs["proxy"] = "http://{}".format(proxy_addr)
 
         t0 = time.time()
         try:
             async with self._session.post(
                 url,
-                headers=headers,
-                json=payload,
-                proxy=proxy_url,
-                ssl=False,
-                timeout=aiohttp.ClientTimeout(
-                    connect=10,
-                    total=600 if stream else 120,
-                ),
+                **request_kwargs,
             ) as resp:
                 if resp.status != 200:
                     body = await resp.text()
-                    self._selector.record_failure(proxy_addr)
+                    self._selector.record_failure(selector_key)
                     raise PlatformError(
                         "opencode HTTP{}: {}".format(resp.status, body[:200])
                     )
@@ -253,7 +268,7 @@ class OpencodeClient:
                 if not stream:
                     data = await resp.json()
                     latency_ms = (time.time() - t0) * 1000.0
-                    self._selector.record_success(proxy_addr, latency_ms)
+                    self._selector.record_success(selector_key, latency_ms)
                     choice = (data.get("choices") or [{}])[0]
                     msg = choice.get("message", {})
                     content = msg.get("content", "")
@@ -307,12 +322,12 @@ class OpencodeClient:
                         ]
                         yield {"tool_calls": tool_calls}
                     latency_ms = (time.time() - t0) * 1000.0
-                    self._selector.record_success(proxy_addr, latency_ms)
+                    self._selector.record_success(selector_key, latency_ms)
 
         except PlatformError:
             raise
         except Exception as e:
-            self._selector.record_failure(proxy_addr)
+            self._selector.record_failure(selector_key)
             raise PlatformError(
                 "opencode request failed: {}".format(e)
             ) from e

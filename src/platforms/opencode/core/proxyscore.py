@@ -24,6 +24,8 @@ from typing import Dict, List, Optional
 
 log = logging.getLogger("opencode.proxyscore")
 
+DIRECT: str = "direct"  # sentinel key for the direct-connection candidate
+
 
 @dataclass
 class _ProxyRecord:
@@ -95,15 +97,17 @@ class ProxyPoolSelector:
         """Synchronize the score table with the current proxy pool.
 
         New addresses get default (empty) scores. Existing addresses
-        retain their accumulated scores.
+        retain their accumulated scores. The DIRECT sentinel is always
+        present so that the direct-connection path is always a candidate.
         """
         current = set(addresses)
-        # Add new proxies
-        for addr in addresses:
+        current.add(DIRECT)  # DIRECT is always a candidate
+        # Add new proxies (including DIRECT on first call)
+        for addr in current:
             if addr not in self._scores:
                 self._scores[addr] = _ProxyRecord()
-        # Remove stale proxies no longer in the pool
-        stale = [k for k in self._scores if k not in current]
+        # Remove stale proxies no longer in the pool (never remove DIRECT)
+        stale = [k for k in self._scores if k not in current and k != DIRECT]
         for k in stale:
             del self._scores[k]
         self._save()
@@ -146,21 +150,30 @@ class ProxyPoolSelector:
     def select(self, candidates: List[str]) -> Optional[str]:
         """Select the best proxy from *candidates* using TAS-like logic.
 
+        The DIRECT sentinel is always added to the candidate list so that
+        the direct-connection path competes with proxy addresses.
+
         Returns:
-            A proxy address string, or None if candidates is empty.
+            A proxy address string, ``DIRECT`` for direct connection,
+            or None if candidates is empty and DIRECT has been removed.
         """
-        if not candidates:
+        # Build internal candidate list: caller's proxies + DIRECT
+        internal = list(candidates)
+        if DIRECT not in internal:
+            internal.append(DIRECT)
+
+        if not internal:
             return None
-        if len(candidates) == 1:
-            return candidates[0]
+        if len(internal) == 1:
+            return internal[0]
 
         # Cold start: return candidate with fewest calls
         call_counts = [
             (addr, self._scores.get(addr, _ProxyRecord()).n_calls)
-            for addr in candidates
+            for addr in internal
         ]
         if all(c == 0 for _, c in call_counts):
-            return candidates[0]
+            return internal[0]
 
         # 10% exploration: return least-used candidate
         if random.random() < self._EXPLORATION_RATE:
@@ -171,7 +184,7 @@ class ProxyPoolSelector:
         # Exploitation: return highest-scored candidate
         best_addr: Optional[str] = None
         best_score = float("-inf")
-        for addr in candidates:
+        for addr in internal:
             rec = self._scores.get(addr, _ProxyRecord())
             s = self._score(rec)
             if s > best_score:
