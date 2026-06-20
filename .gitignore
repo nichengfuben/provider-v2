@@ -35,6 +35,7 @@ config.toml
 
 # File names
 .DS_Store
+PROJECT_DECISIONS.md
 RAW.md
 raw.md
 agents.md

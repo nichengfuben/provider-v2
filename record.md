@@ -2498,3 +2498,14 @@ pytest: 488 passed, 54 failed, 16 skipped, 4 errors, 1 deselected（test_behind_
 [.agents/provider-guide/SKILL.md] 版本字段 2.2.180 -> 2.2.181
 py_compile: 4 files OK
 pytest: pre-existing failures; exit code 42 (1 test hung at ~56%, killed by timeout; not related to changes)
+
+2026-06-20 21:00:00
+
+[.gitignore] 更新忽略规则
+[src/webui/routers/terminal.py] 终端 WebSocket 启动失败时发送明确错误信息替代静默丢弃
+[template/template_config.toml] 版本 2.2.181 -> 2.2.182
+[config.toml] 版本跟随模板 2.2.182
+[README.md] 版本徽章和路线图更新为 2.2.182
+[.agents/provider-guide/SKILL.md] 版本字段 2.2.181 -> 2.2.182
+py_compile: 1 file OK
+pytest: pre-existing failures; exit code 42 (test suite interrupted at ~55%, all failures pre-existing and unrelated to terminal changes)

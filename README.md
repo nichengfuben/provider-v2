@@ -18,8 +18,8 @@
 
 <div align="center">
 
-![Status](https://img.shields.io/badge/status-v2.2.181-blue)
-![Version](https://img.shields.io/badge/version-2.2.181-blue)
+![Status](https://img.shields.io/badge/status-v2.2.182-blue)
+![Version](https://img.shields.io/badge/version-2.2.182-blue)
 ![Python](https://img.shields.io/badge/python-3.8+-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Platforms](https://img.shields.io/badge/platforms-16+-orange)
@@ -1257,7 +1257,10 @@ fix(gateway): 修复并发竞速时 token 计数错误
 
 ## 🗺️ 路线图
 
-### 当前版本：v2.2.181
+### 当前版本：v2.2.182
+
+✅ 已完成（v2.2.182）：
+- 终端 WebSocket 修复：本地/SSH 终端启动失败时向客户端发送明确错误信息
 
 ✅ 已完成（v2.2.181）：
 - 自动更新修复：应用更新时改用镜像源拉取并支持本地未提交变更自动暂存恢复
