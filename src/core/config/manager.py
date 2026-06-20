@@ -33,7 +33,7 @@ class ConfigManager:
             _loguru_set_color(self._config.debug.color)
         except Exception:
             pass
-        logger.info("配置已加载: %s", self._center.path)
+        logger.debug("配置已加载: %s", self._center.path)
         return self._config
 
     async def reload(self) -> bool:

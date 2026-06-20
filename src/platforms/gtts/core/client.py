@@ -41,7 +41,7 @@ class Client:
         self._session = session
         self._rebuild_candidates()
         self._build_services(session)
-        logger.info("gtts 初始化完成")
+        logger.debug("gtts 初始化完成")
 
     def _build_services(self, session: aiohttp.ClientSession) -> None:
         """构建子服务实例。

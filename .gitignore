@@ -18,6 +18,7 @@ env
 node_modules
 persist
 venv
+agent_log
 
 # Extensions
 *.dll
@@ -34,6 +35,8 @@ config.toml
 
 # File names
 .DS_Store
+RAW.md
+raw.md
 agents.md
 AGENTS.md
 CLAUDE.md
@@ -49,8 +52,8 @@ test.log
 test.py
 record.md
 RECORD.md
+record.md
 note.txt
-note (2).txt
 NOTE.txt
 nul
 server.log

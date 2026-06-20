@@ -90,7 +90,23 @@ def build_config_summary() -> Dict[str, Any]:
             "list_type": config.platforms_cfg.platform_list_type,
             "count": len(config.platforms_cfg.platform_list),
         },
-        "debug": {"level": config.debug.level},
+        "debug": {
+            "level": config.debug.level,
+            "color": config.debug.color,
+            "access_log": config.debug.access_log,
+        },
+        "fncall": {
+            "protocol": config.fncall.protocol,
+            "record_prompt": config.fncall.record_prompt,
+            "print_prompt": config.fncall.print_prompt,
+        },
+        "autoupdate": {
+            "enabled": config.autoupdate.enabled,
+            "branch": config.autoupdate.branch,
+            "interval": config.autoupdate.interval,
+            "diff_update": config.autoupdate.diff_update,
+            "mirrors": list(config.autoupdate.mirrors),
+        },
     }
 
 

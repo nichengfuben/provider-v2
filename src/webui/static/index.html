@@ -4,6 +4,15 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Provider-V2 WebUI</title>
+  <script>
+    (function() {
+      var _warn = console.warn;
+      console.warn = function() {
+        if (arguments[0] && typeof arguments[0] === 'string' && arguments[0].indexOf('cdn.tailwindcss.com') !== -1) return;
+        _warn.apply(console, arguments);
+      };
+    })();
+  </script>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -33,7 +42,7 @@
       }
     }
   </script>
-  <link rel="stylesheet" href="/static/css/styles.css">
+  <link rel="stylesheet" href="/static/ui/styles.css">
 </head>
 <body data-initial-tab="overview">
   <div class="max-w-[1440px] mx-auto p-3 md:p-4 grid gap-4">
@@ -65,8 +74,8 @@
         <div class="border border-border rounded-xl p-3.5 bg-panel-alt card-hover-lift"><div class="text-[13px] text-muted m-0 mb-2">服务状态</div><div class="text-2xl font-bold" id="healthValue">-</div></div>
       </div>
       <div class="flex flex-wrap gap-2 items-center">
-        <div class="border-l-4 border-accent px-3 py-2.5 bg-accent-soft rounded-xl leading-relaxed text-[14px]">该页面优先使用只读摘要接口，单个接口失败时会自动降级，不会导致整页失效。</div>
-        <div class="border-l-4 border-accent px-3 py-2.5 bg-accent-soft rounded-xl leading-relaxed text-[14px]" id="socketNotice">日志 WebSocket: /v1/webui/ws/logs</div>
+        <div class="px-3 py-2.5 bg-accent-soft rounded-xl leading-relaxed text-[14px]">该页面优先使用只读摘要接口，单个接口失败时会自动降级，不会导致整页失效。</div>
+        <div class="px-3 py-2.5 bg-accent-soft rounded-xl leading-relaxed text-[14px]" id="socketNotice">日志 WebSocket: /v1/webui/ws/logs</div>
       </div>
     </section>
 
@@ -77,9 +86,11 @@
       <button class="sidebar-nav-item tab-button" data-tab="platforms" type="button">平台</button>
       <button class="sidebar-nav-item tab-button" data-tab="models" type="button">模型</button>
       <button class="sidebar-nav-item tab-button" data-tab="config" type="button">配置</button>
-      <button class="sidebar-nav-item tab-button" data-tab="autoupdate" type="button">自动更新</button>
-      <button class="sidebar-nav-item tab-button" data-tab="chat" type="button">聊天测试</button>
+      <button class="sidebar-nav-item tab-button" data-tab="autoupdate" type="button">更新</button>
+      <button class="sidebar-nav-item tab-button" data-tab="chat" type="button">聊天</button>
       <button class="sidebar-nav-item tab-button" data-tab="logs" type="button">日志</button>
+      <button class="sidebar-nav-item tab-button" data-tab="terminal" type="button">终端</button>
+      <button class="sidebar-nav-item tab-button" data-tab="files" type="button">文件</button>
     </aside>
 
     <section class="bg-panel border border-border rounded-2xl shadow-panel grid gap-0 overflow-hidden" id="mainTabSection">
@@ -97,7 +108,7 @@
             <button class="tab-button cursor-pointer font-bold rounded-lg px-4 py-2.5 border border-border bg-panel text-text hover:bg-panel-alt transition" id="copySummaryButton" type="button">复制摘要</button>
           </div>
         </div>
-        <div class="border-l-4 border-accent px-3 py-2.5 bg-accent-soft rounded-xl leading-relaxed text-[14px]" id="overviewNotice">等待状态刷新后展示摘要提示。</div>
+        <div class="px-3 py-2.5 bg-accent-soft rounded-xl leading-relaxed text-[14px]" id="overviewNotice">等待状态刷新后展示摘要提示。</div>
         <div class="grid gap-3 grid-cols-[repeat(auto-fit,minmax(240px,1fr))]" id="overviewGrid"></div>
       </section>
 
@@ -114,6 +125,41 @@
         </div>
         <div class="grid gap-3 grid-cols-[repeat(auto-fit,minmax(200px,1fr))]" id="statsGrid">
           <div class="text-muted p-4 border border-dashed border-border rounded-xl text-center">点击刷新或等待自动加载…</div>
+        </div>
+        <!-- Request Inspector -->
+        <div class="mt-3">
+          <div class="flex justify-between items-center mb-2">
+            <h3 style="margin:0;font-size:15px;">请求日志</h3>
+            <span id="requestWsNotice" class="text-muted" style="font-size:12px;"></span>
+          </div>
+          <!-- Filter bar -->
+          <div class="flex flex-wrap gap-2 mb-2" id="requestFilterBar">
+            <input type="text" id="requestSearchInput" placeholder="搜索 model / platform..." class="config-input" style="width:200px;">
+            <select id="requestStatusFilter" class="config-input" style="width:120px;">
+              <option value="">全部状态</option>
+              <option value="200">200 OK</option>
+              <option value="4xx">4xx 错误</option>
+              <option value="5xx">5xx 错误</option>
+              <option value="pending">进行中</option>
+            </select>
+            <select id="requestTimeFilter" class="config-input" style="width:120px;">
+              <option value="0">全部时间</option>
+              <option value="300">最近 5 分钟</option>
+              <option value="900">最近 15 分钟</option>
+              <option value="3600">最近 1 小时</option>
+            </select>
+            <button type="button" id="requestClearBtn" class="text-[12px] text-muted hover:underline cursor-pointer" style="padding:4px 8px;">清空日志</button>
+          </div>
+          <div id="requestInspector" style="min-height:200px;">
+            <div id="requestList" class="border border-border rounded-xl bg-panel-alt"></div>
+            <div id="requestPagination" class="flex items-center gap-2 mt-2" style="display:none;font-size:13px;">
+              <button type="button" id="reqPagePrev" class="config-input" style="width:auto;padding:2px 8px;cursor:pointer;">&lt;</button>
+              <input type="number" id="reqPageInput" min="1" value="1" class="config-input" style="width:50px;text-align:center;">
+              <span id="reqPageTotal" class="text-muted">/1</span>
+              <button type="button" id="reqPageNext" class="config-input" style="width:auto;padding:2px 8px;cursor:pointer;">&gt;</button>
+              <span id="reqTotalCount" class="text-muted" style="margin-left:auto;font-size:12px;"></span>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -176,33 +222,63 @@
         <div class="flex flex-wrap justify-between items-end gap-3">
           <div>
             <h2>自动更新</h2>
-            <p class="m-0 text-muted leading-relaxed">监控远端 git 仓库新提交，自动拉取更新并重启服务。</p>
+            <p class="m-0 text-muted leading-relaxed">监控远端 git 仓库新提交，支持差异更新（仅覆盖变更文件）。</p>
           </div>
           <div class="flex flex-wrap gap-2">
             <button class="tab-button cursor-pointer font-bold rounded-lg px-4 py-2.5 border border-border bg-panel text-text hover:bg-panel-alt transition" id="autoupdateCheckBtn" type="button">立即检查</button>
             <button class="tab-button cursor-pointer font-bold rounded-lg px-4 py-2.5 border border-border bg-panel text-text hover:bg-panel-alt transition" id="autoupdateSaveBtn" type="button">保存设置</button>
+            <button class="tab-button cursor-pointer font-bold rounded-lg px-4 py-2.5 border border-accent text-accent bg-panel hover:bg-accent hover:text-white transition hidden" id="autoupdateApplyBtn" type="button">应用更新</button>
             <span id="autoupdateStatus" class="status-saved flex items-center">未启用</span>
           </div>
         </div>
-        <div class="grid gap-3 grid-cols-[repeat(auto-fit,minmax(240px,1fr))]" id="autoupdateGrid">
-          <div class="border border-border rounded-xl p-3.5 bg-panel card-hover-lift">
-            <div class="text-[13px] text-muted m-0 mb-2">启用状态</div>
-            <label class="flex items-center gap-2 cursor-pointer">
-              <input type="checkbox" id="autoupdateEnabled" class="w-4 h-4 rounded">
-              <span>启用自动更新</span>
-            </label>
+        <div class="grid gap-3 grid-cols-[repeat(auto-fit,minmax(240px,1fr))]">
+          <div class="border border-border rounded-xl p-3.5 bg-panel-alt card-hover-lift">
+            <div class="config-field"><span class="config-field-label">启用自动更新</span><label class="config-toggle"><input type="checkbox" id="autoupdateEnabled"><span class="toggle-slider"></span></label></div>
           </div>
-          <div class="border border-border rounded-xl p-3.5 bg-panel card-hover-lift">
+          <div class="border border-border rounded-xl p-3.5 bg-panel-alt card-hover-lift">
+            <div class="config-field"><span class="config-field-label">差异更新</span><label class="config-toggle"><input type="checkbox" id="autoupdateDiffUpdate" checked><span class="toggle-slider"></span></label></div>
+            <div class="text-[11px] text-muted mt-1">仅覆盖变更文件，保留本地未提交改动</div>
+          </div>
+          <div class="border border-border rounded-xl p-3.5 bg-panel-alt card-hover-lift">
             <div class="text-[13px] text-muted m-0 mb-2">目标分支</div>
-            <input id="autoupdateBranch" type="text" placeholder="main" class="w-full rounded-xl border border-border bg-panel-soft text-text px-3 py-2 text-[14px]">
+            <select id="autoupdateBranch" class="config-input w-full">
+              <option value="dev">dev</option>
+              <option value="main">main</option>
+              <option value="classical">classical</option>
+            </select>
           </div>
-          <div class="border border-border rounded-xl p-3.5 bg-panel card-hover-lift">
+          <div class="border border-border rounded-xl p-3.5 bg-panel-alt card-hover-lift">
             <div class="text-[13px] text-muted m-0 mb-2">检查间隔（秒）</div>
-            <input id="autoupdateInterval" type="number" min="30" step="30" placeholder="300" class="w-full rounded-xl border border-border bg-panel-soft text-text px-3 py-2 text-[14px]">
+            <input id="autoupdateInterval" type="number" min="30" step="30" placeholder="300" class="config-input w-full">
           </div>
-          <div class="border border-border rounded-xl p-3.5 bg-panel card-hover-lift">
-            <div class="text-[13px] text-muted m-0 mb-2">上次检查结果</div>
-            <div id="autoupdateLastCheck" class="text-2xl font-bold">--</div>
+        </div>
+        <!-- Mirror sources -->
+        <div class="border border-border rounded-xl p-3.5 bg-panel-alt card-hover-lift mt-3">
+          <div class="flex justify-between items-center mb-2">
+            <div class="text-[13px] text-muted">镜像源（按优先级排序）</div>
+            <button class="text-[12px] text-accent hover:underline cursor-pointer" id="autoupdateAddMirrorBtn" type="button">+ 添加镜像源</button>
+          </div>
+          <div id="autoupdateMirrorsList"></div>
+        </div>
+        <!-- Check results -->
+        <div id="autoupdateResults" class="mt-3 hidden">
+          <div class="border border-border rounded-xl p-3.5 bg-panel-alt card-hover-lift">
+            <div class="flex justify-between items-center mb-2">
+              <div class="text-[13px] font-semibold">检查结果</div>
+              <span id="autoupdateResultStatus" class="text-[12px]"></span>
+            </div>
+            <div id="autoupdateResultMeta" class="text-[12px] text-muted mb-2"></div>
+            <div class="flex flex-wrap gap-2 mb-2" id="autoupdateFileToolbar">
+              <input type="text" id="autoupdateSearchInput" placeholder="搜索文件..." class="config-input" style="width:180px;display:none;">
+              <button type="button" class="text-[12px] text-accent hover:underline cursor-pointer" id="autoupdateSelectAllBtn" style="padding:2px 6px;">全选</button>
+              <button type="button" class="text-[12px] text-muted hover:underline cursor-pointer" id="autoupdateSelectNoneBtn" style="padding:2px 6px;">取消全选</button>
+            </div>
+            <div id="autoupdateChangedFiles" class="text-[12px] font-mono" style="max-height:240px;overflow-y:auto;"></div>
+            <div class="flex gap-2 mt-3" id="autoupdateActionBtns" style="display:none;">
+              <button type="button" class="cursor-pointer font-bold rounded-lg px-4 py-2 border border-accent bg-accent text-white hover:opacity-90 transition text-[13px]" id="autoupdateConfirmBtn">确认更新</button>
+              <button type="button" class="cursor-pointer font-bold rounded-lg px-4 py-2 border border-border bg-panel text-text hover:bg-panel-alt transition text-[13px]" id="autoupdateCancelBtn">取消</button>
+              <span id="autoupdateSelectedCount" class="text-[12px] text-muted flex items-center ml-2"></span>
+            </div>
           </div>
         </div>
       </section>
@@ -215,7 +291,7 @@
           </div>
           <div class="flex flex-wrap gap-2">
             <button class="tab-button cursor-pointer font-bold rounded-lg px-4 py-2.5 border border-border bg-panel text-text hover:bg-panel-alt transition" id="chatClearBtn" type="button">清空对话</button>
-            <button class="tab-button cursor-pointer font-bold rounded-lg px-4 py-2.5 border border-border bg-panel text-text hover:bg-panel-alt transition" id="chatRunTestsBtn" type="button">批量测试</button>
+            <button class="tab-button cursor-pointer font-bold rounded-lg px-4 py-2.5 border border-border bg-panel text-text hover:bg-panel-alt transition" id="chatBatchToggleBtn" type="button">批量测试</button>
           </div>
         </div>
         <div class="grid gap-3 grid-cols-[repeat(auto-fit,minmax(200px,1fr))]">
@@ -232,6 +308,31 @@
               <option value="bracket">Bracket</option>
             </select>
           </label>
+        </div>
+        <div id="batchTestSection" class="hidden">
+          <div class="border border-border rounded-xl p-3.5 bg-panel-alt card-hover-lift">
+            <div class="text-[13px] text-muted m-0 mb-2">批量测试参数设置</div>
+            <div class="grid gap-3 grid-cols-[repeat(auto-fit,minmax(150px,1fr))]">
+              <label>
+                <div class="text-[11px] text-muted mb-1">Temperature</div>
+                <input id="batchTemperature" type="number" min="0" max="2" step="0.1" value="0.7" class="w-full rounded-lg border border-border bg-panel text-text px-2 py-1.5 text-[13px]">
+              </label>
+              <label>
+                <div class="text-[11px] text-muted mb-1">Max Tokens</div>
+                <input id="batchMaxTokens" type="number" min="1" max="8192" step="128" value="1024" class="w-full rounded-lg border border-border bg-panel text-text px-2 py-1.5 text-[13px]">
+              </label>
+            </div>
+            <label class="block mt-2">
+              <div class="text-[11px] text-muted mb-1">System Prompt（可选）</div>
+              <textarea id="batchSystemPrompt" rows="2" placeholder="你是一个有帮助的 AI 助手..." class="w-full rounded-lg border border-border bg-panel text-text px-2 py-1.5 text-[13px]" style="resize:vertical;font-family:inherit;"></textarea>
+            </label>
+          </div>
+          <div class="border border-border rounded-xl p-3.5 bg-panel-alt card-hover-lift mt-3">
+            <div class="text-[13px] text-muted m-0 mb-2">批量测试 Prompts（每行一个，留空则使用输入框内容）</div>
+            <textarea id="chatBatchPrompts" rows="3" placeholder="你好，请介绍一下你自己&#10;今天北京天气怎么样？&#10;请调用 echo 工具测试" class="w-full rounded-xl border border-border bg-panel text-text px-3 py-2.5 text-[14px]" style="resize:vertical;font-family:inherit;"></textarea>
+            <button class="mt-2 cursor-pointer font-bold rounded-lg px-4 py-2.5 border border-accent text-accent bg-panel hover:bg-accent hover:text-white transition" id="chatRunTestsBtn" type="button">开始测试</button>
+          </div>
+          <div id="chatTestReport" class="hidden mt-3"></div>
         </div>
         <div class="border border-border rounded-xl p-3.5 bg-panel-alt card-hover-lift" id="chatToolDefSection">
           <div class="flex flex-wrap justify-between items-center gap-2 mb-2">
@@ -260,33 +361,9 @@
             </div>
           </template>
         </div>
-        <div class="border border-border rounded-xl p-3.5 bg-panel-alt min-h-[300px] max-h-[500px] overflow-auto card-hover-lift" id="chatMessagesContainer"></div>
-        <div id="chatTestReport" class="hidden"></div>
-        <section class="w-full bg-panel border border-border rounded-2xl p-4 flex flex-col gap-3" id="chatInputSection">
-          <div class="relative w-full overflow-hidden" style="height: 96px;" id="chatInputViewport">
-            <textarea id="chatMessageInput" class="native-scroll-hidden chat-input" rows="4" placeholder="输入消息... (Shift+Enter 换行, Enter 发送)" spellcheck="true" autocomplete="off"></textarea>
-            <div class="custom-caret" id="chatCustomCaret"></div>
-            <div class="custom-scrollbar-root" id="chatCustomScrollbar">
-              <div class="custom-scrollbar-track"></div>
-              <div class="custom-scrollbar-thumb" id="chatCustomThumb"></div>
-            </div>
-          </div>
-          <div class="flex justify-between items-center h-11">
-            <div class="flex items-center gap-0.5">
-              <button type="button" class="tool-btn" title="文件" id="chatFileBtn">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12.75V12A2.25 2.25 0 0 1 4.5 9.75h15A2.25 2.25 0 0 1 21.75 12v.75m-8.69-6.44-2.12-2.12a1.5 1.5 0 0 0-1.061-.44H4.5A2.25 2.25 0 0 0 2.25 6v12a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9a2.25 2.25 0 0 0-2.25-2.25h-5.379a1.5 1.5 0 0 1-1.06-.44Z"/></svg>
-              </button>
-              <button type="button" class="tool-btn" title="语音输入" id="chatVoiceBtn">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 18.75a6 6 0 0 0 6-6v-1.5m-6 7.5a6 6 0 0 1-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 0 1-3-3V4.5a3 3 0 1 1 6 0v8.25a3 3 0 0 1-3 3Z"/></svg>
-              </button>
-            </div>
-            <div class="flex items-center gap-2">
-              <button id="chatSendBtn" type="button" class="bg-accent hover:opacity-90 text-white px-4 h-11 rounded-xl flex items-center justify-center gap-2 font-medium text-sm shadow-sm">
-                <span id="chatBtnText">发送</span>
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 12L3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5"/></svg>
-              </button>
-            </div>
-          </div>
+        <div class="border border-border rounded-xl p-3.5 bg-panel-alt overflow-y-auto card-hover-lift" style="max-height:calc(100vh - 340px);" id="chatMessagesContainer"></div>
+        <section class="w-full mt-2 sticky bottom-0 z-10 py-2" style="background:var(--panel);" id="chatInputSection">
+          <div id="chatInputBox"></div>
         </section>
       </section>
 
@@ -303,6 +380,43 @@
         <pre class="border border-border rounded-xl p-3.5 bg-panel-soft min-h-[200px] max-h-[400px] overflow-auto text-[13px] leading-relaxed font-mono card-hover-lift" id="logBox"></pre>
       </section>
 
+      <section class="tab-panel hidden" id="tab-terminal" aria-labelledby="tab-terminal-button">
+        <div class="flex flex-wrap justify-between items-end gap-3">
+          <div>
+            <h2>终端</h2>
+            <p class="m-0 text-muted leading-relaxed">本地终端与 SSH 远程终端，支持多标签管理。</p>
+          </div>
+        </div>
+        <div class="terminal-container" id="terminalContainer">
+          <div class="terminal-tab-bar" id="terminalTabBar">
+            <div class="terminal-tab-add" id="terminalAddBtn">+</div>
+          </div>
+          <div class="terminal-body" id="terminalBody">
+            <div class="terminal-empty-state" id="terminalEmptyState">
+              <div class="terminal-empty-state-icon">&#9002;_</div>
+              <div class="terminal-empty-state-text">暂无终端会话</div>
+              <div class="terminal-empty-state-actions">
+                <button type="button" id="terminalEmptyLocalBtn">+ 本地终端</button>
+                <button type="button" id="terminalEmptySSHBtn">+ 远程终端</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="tab-panel hidden" id="tab-files" aria-labelledby="tab-files-button">
+        <div class="flex flex-wrap justify-between items-end gap-3">
+          <div>
+            <h2>文件管理</h2>
+            <p class="m-0 text-muted leading-relaxed">浏览项目文件、创建目录、重命名、删除与预览。</p>
+          </div>
+        </div>
+        <div class="files-container" id="filesContainer">
+          <div class="files-tab-bar" id="filesTabBar"></div>
+          <div class="files-body" id="filesBody"></div>
+        </div>
+      </section>
+
         </main>
       </div>
     </section>
@@ -311,10 +425,9 @@
     <div class="fixed bottom-4 right-4 grid gap-2 z-[9999]" id="toastWrap"></div>
   </div>
 
-  <div id="portablePanel" style="display:none;position:fixed;inset:0;z-index:99999;">
-    <div id="portableBackdrop" style="position:absolute;inset:0;background:rgba(0,0,0,0.45);"></div>
-    <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:16px;">
-      <section class="bg-panel border border-border rounded-2xl shadow-panel p-5 grid gap-4" style="max-width:600px;width:100%;max-height:85vh;overflow-y:auto;">
+  <div id="portablePanel" class="confirm-overlay" style="display:none;">
+    <div id="portableBackdrop" style="position:absolute;inset:0;"></div>
+    <section class="confirm-dialog bg-panel border border-border rounded-2xl shadow-panel p-5 grid gap-4" style="max-width:600px;min-width:300px;max-height:85vh;overflow-y:auto;">
         <div class="flex flex-wrap justify-between items-end gap-3">
           <div>
             <h2>便携设置</h2>
@@ -322,7 +435,6 @@
           </div>
           <div class="flex flex-wrap gap-2 items-center">
             <button class="cursor-pointer font-bold rounded-xl w-10 h-10 border border-border bg-panel text-text hover:bg-panel-alt transition flex items-center justify-center" id="fabThemeButton" type="button" aria-label="切换主题"><span id="fabThemeIcon">&#9790;</span></button>
-            <button class="cursor-pointer font-bold rounded-xl w-10 h-10 border border-border bg-panel text-text hover:bg-panel-alt transition flex items-center justify-center" id="portableCloseBtn" type="button" aria-label="关闭">&times;</button>
           </div>
         </div>
         <div class="grid gap-3 grid-cols-[repeat(auto-fit,minmax(240px,1fr))]">
@@ -349,38 +461,45 @@
               <option value="1">开启</option>
             </select>
           </label>
+          <label class="border border-border rounded-xl p-3.5 bg-panel-alt card-hover-lift">
+            <div class="text-[13px] text-muted m-0 mb-2">标签栏布局</div>
+            <select id="tabLayoutSelect" class="rounded-xl border border-border bg-panel text-text px-3 py-2.5 text-[14px]">
+              <option value="horizontal">横向顶部</option>
+              <option value="vertical">竖向侧边</option>
+            </select>
+          </label>
+          <label class="border border-border rounded-xl p-3.5 bg-panel-alt card-hover-lift">
+            <div class="text-[13px] text-muted m-0 mb-2">STT 模型（语音转文字）</div>
+            <select id="voiceSttModel" class="w-full rounded-xl border border-border bg-panel text-text px-3 py-2.5 text-[14px]"><option value="">加载中...</option></select>
+          </label>
+          <label class="border border-border rounded-xl p-3.5 bg-panel-alt card-hover-lift">
+            <div class="text-[13px] text-muted m-0 mb-2">TTS 模型（文字转语音）</div>
+            <select id="voiceTtsModel" class="w-full rounded-xl border border-border bg-panel text-text px-3 py-2.5 text-[14px]"><option value="">加载中...</option></select>
+          </label>
+          <label class="border border-border rounded-xl p-3.5 bg-panel-alt card-hover-lift">
+            <div class="text-[13px] text-muted m-0 mb-2">录音设备</div>
+            <select id="recordingDeviceSelect" class="w-full rounded-xl border border-border bg-panel text-text px-3 py-2.5 text-[14px]"><option value="">默认设备</option></select>
+          </label>
+          <label class="border border-border rounded-xl p-3.5 bg-panel-alt card-hover-lift" style="grid-column: 1 / -1;">
+            <div class="flex justify-between items-center mb-2">
+              <div class="text-[13px] text-muted m-0">TTS 引导 Prompt</div>
+              <button type="button" id="voiceTtsPromptRestoreBtn" class="text-[12px] text-accent hover:underline cursor-pointer" title="恢复默认 Prompt">恢复默认</button>
+            </div>
+            <textarea id="voiceTtsPrompt" rows="2" placeholder="引导语音输出的风格和指令..." class="w-full rounded-xl border border-border bg-panel text-text px-3 py-2.5 text-[14px]" style="resize:vertical;"></textarea>
+          </label>
         </div>
         <p class="m-0 text-muted leading-relaxed">设置不写回服务端配置文件，避免对线上进程产生意外副作用。</p>
       </section>
-    </div>
   </div>
 
-  <script src="/static/js/core/api.js"></script>
-  <script src="/static/js/core/router.js"></script>
-  <script src="/static/js/motion.js"></script>
-  <script src="/static/js/state.js"></script>
-  <script src="/static/js/render.js"></script>
-  <script src="/static/js/actions.js"></script>
-  <script src="/static/js/chat.js"></script>
-  <script src="/static/js/dropdown.js"></script>
-  <script src="/static/js/bootstrap.js"></script>
-  <script src="/static/js/features/stats.js"></script>
-  <script>
-    // Initialize modular features
-    if (typeof StatsFeature !== 'undefined') {
-      StatsFeature.init();
-    }
-    // Wire stats tab buttons
-    var statsRefreshBtn = document.getElementById('statsRefreshBtn');
-    var statsResetBtn = document.getElementById('statsResetBtn');
-    if (statsRefreshBtn) statsRefreshBtn.addEventListener('click', function() { StatsFeature.refresh(); });
-    if (statsResetBtn) statsResetBtn.addEventListener('click', async function() {
-      try {
-        await Api.post('/v1/webui/stats/reset');
-        toast('统计已重置', 'ok');
-        StatsFeature.refresh();
-      } catch(e) { toast('重置失败: ' + e.message, 'error'); }
-    });
-  </script>
+  <script src="/static/core/api.js"></script>
+  <script src="/static/core/router.js"></script>
+  <script src="/static/core/lazy.js"></script>
+  <script src="/static/core/motion.js"></script>
+  <script src="/static/core/state.js"></script>
+  <script src="/static/dashboard/render.js"></script>
+  <script src="/static/config/actions.js"></script>
+  <script src="/static/ui/dropdown.js"></script>
+  <script src="/static/ui/bootstrap.js"></script>
 </body>
 </html>

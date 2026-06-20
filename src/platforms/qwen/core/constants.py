@@ -84,3 +84,18 @@ CAPS: Final[Dict[str, bool]] = {
 
 MODELS_PERSIST_PATH: Final[str] = "persist/qwen/models.json"
 """模型列表持久化文件路径。"""
+
+# ---------------------------------------------------------------------------
+# 智能代理选择
+# ---------------------------------------------------------------------------
+
+SMART_PROXY_ENABLED: Final[bool] = True
+"""是否启用智能代理选择器（ProxySelector）。
+
+为 True 时，当 _proxy_override 为 None（无显式覆盖），使用 TAS-like 算法
+根据历史性能数据自动选择代理或直连路径。
+为 False 时，回退到传统行为（仅依赖 _proxy_override 显式覆盖）。
+"""
+
+PROXY_SELECTOR_PERSIST_PATH: Final[str] = "persist/qwen/proxy.json"
+"""ProxySelector 持久化文件路径（独立于 usage.json）。"""

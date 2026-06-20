@@ -427,6 +427,7 @@ async def _stream_chat(
             stop=_sl(body.get("stop")),
             upload_files=upload_files if upload_files else None,
             protocol_id=proto_override,
+            tool_choice=body.get("tool_choice"),
         ):
             if isinstance(ch, str):
                 ctok += 1
@@ -487,6 +488,16 @@ async def _stream_chat(
 
                 safe_part, buffer = _safe_flush(buffer, platform_id=platform_id, protocol_id=proto_override)
                 if safe_part:
+                    _log_chunks = request.get("_req_log_chunks")
+                    if _log_chunks is not None:
+                        _log_chunks.append(safe_part)
+                    _log_id = request.get("_req_log_id")
+                    if _log_id:
+                        try:
+                            from src.webui.services.request_log import request_broker
+                            request_broker.push_event({"type": "request_chunk", "id": _log_id, "delta": safe_part})
+                        except Exception:
+                            pass
                     await _send_init()
                     chunk_data = {
                         "id": cid,
@@ -510,6 +521,8 @@ async def _stream_chat(
             elif isinstance(ch, dict):
                 if "_meta" in ch:
                     platform_id = ch["_meta"].get("platform", "")
+                    if platform_id:
+                        resp._platform = platform_id
                 elif "thinking" in ch:
                     await _send_init()
                     chunk_data = {
@@ -693,6 +706,7 @@ async def chat_completions(
             stop=_sl(body.get("stop")),
             upload_files=upload_files if upload_files else None,
             protocol_id=proto_override,
+            tool_choice=body.get("tool_choice"),
         ):
             if isinstance(ch, str):
                 cp.append(ch)

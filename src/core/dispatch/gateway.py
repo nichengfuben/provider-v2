@@ -9,7 +9,7 @@ from src.core.config import get_config
 from src.core.errors import NoCandidateError, ProviderError
 from src.core.fncall.registry import get_protocol
 from echotools.fncall.parsers.stream import FncallStreamParser
-from echotools.fncall.prompt.inject import inject_fncall
+from src.core.fncall.prompt.inject import inject_fncall
 from echotools.dispatch.usage import fallback_usage as _fallback_usage
 from echotools.dispatch.usage import normalize_usage as _normalize_usage
 from echotools.logger.manager import get_logger
@@ -236,18 +236,26 @@ async def _single(
     if not adapter:
         raise ProviderError("无适配器: {}".format(cand.platform))
 
-    # 按平台解析协议并注入工具定义
+    # 按平台解析协议并注入工具定义（native_tools 平台直接透传 tools）
     protocol = None
+    native = getattr(cand, 'native_tools', False)
     if tools:
-        if protocol_id:
-            protocol = get_protocol(protocol_id=protocol_id)
+        if native:
+            worker_msgs = msgs
         else:
-            protocol = get_protocol(platform_id=cand.platform)
-        worker_msgs = inject_fncall(msgs, tools, protocol, lang=fncall_lang)
+            if protocol_id:
+                protocol = get_protocol(protocol_id=protocol_id)
+            else:
+                protocol = get_protocol(platform_id=cand.platform)
+            worker_msgs = inject_fncall(msgs, tools, protocol, lang=fncall_lang)
     else:
         worker_msgs = msgs
 
-    fp = FncallStreamParser(tools=tools, protocol=protocol) if tools else None
+    fp = (
+        FncallStreamParser(tools=tools, protocol=protocol)
+        if tools and not native
+        else None
+    )
     start = time.monotonic()
     ft: Optional[float] = None
     tc = 0
@@ -258,9 +266,16 @@ async def _single(
     # Yield platform info so route can use correct protocol for cleaning
     yield {"_meta": {"platform": cand.platform}}
 
+    complete_kw: Dict[str, Any] = dict(kw)
+    if native and tools:
+        complete_kw["tools"] = tools
+        _tc = kw.get("tool_choice")
+        if _tc is not None:
+            complete_kw["tool_choice"] = _tc
+
     try:
         async for chunk in adapter.complete(
-            cand, worker_msgs, model, stream, thinking=thinking, search=search, **kw
+            cand, worker_msgs, model, stream, thinking=thinking, search=search, **complete_kw
         ):
             if isinstance(chunk, str):
                 tc += 1
@@ -356,20 +371,30 @@ async def _race(
             except Exception as e:
                 logger.debug("竞速 worker[%d] 发送错误消息失败: %s", idx, e)
             return
-        # 按平台解析协议并注入工具定义
+        # 按平台解析协议并注入工具定义（native_tools 平台直接透传 tools）
         worker_msgs = msgs
+        _native = getattr(c, 'native_tools', False)
         if tools:
-            if protocol_id:
-                protocol = get_protocol(protocol_id=protocol_id)
+            if _native:
+                worker_msgs = msgs
             else:
-                protocol = get_protocol(platform_id=c.platform)
-            worker_msgs = inject_fncall(
-                msgs, tools, protocol, lang=fncall_lang, dump_prompt=False
-            )
+                if protocol_id:
+                    protocol = get_protocol(protocol_id=protocol_id)
+                else:
+                    protocol = get_protocol(platform_id=c.platform)
+                worker_msgs = inject_fncall(
+                    msgs, tools, protocol, lang=fncall_lang, dump_prompt=False
+                )
+        _race_kw = dict(kw)
+        if _native and tools:
+            _race_kw["tools"] = tools
+            _tc = kw.get("tool_choice")
+            if _tc is not None:
+                _race_kw["tool_choice"] = _tc
         try:
             async for ch in a.complete(
                 c, worker_msgs, model, stream,
-                thinking=thinking, search=search, **kw
+                thinking=thinking, search=search, **_race_kw
             ):
                 if ev.is_set():
                     break
@@ -387,7 +412,9 @@ async def _race(
                 logger.debug("竞速 worker[%d] 发送错误消息失败: %s", idx, e2)
 
     # 并发竞速：worker 启动前统一转储一次 prompt，避免 N 个 worker 各写一份
-    if tools and cands:
+    # native_tools 平台无需协议转储
+    _any_native = any(getattr(c, 'native_tools', False) for c in cands)
+    if tools and cands and not _any_native:
         _dump_protocol = (
             get_protocol(protocol_id=protocol_id)
             if protocol_id
@@ -480,8 +507,9 @@ async def _race(
                     i["task"].cancel()
                 await _rec(reg, i, i["tok"] > 0, prompt_len)
 
-        # 获取 winner 的平台协议
-        if tools:
+        # 获取 winner 的平台协议（native_tools 平台无需协议和流式解析器）
+        _winner_native = getattr(winner["cand"], 'native_tools', False)
+        if tools and not _winner_native:
             winner_protocol = (
                 get_protocol(protocol_id=protocol_id)
                 if protocol_id
@@ -489,7 +517,11 @@ async def _race(
             )
         else:
             winner_protocol = None
-        fp = FncallStreamParser(tools=tools, protocol=winner_protocol) if tools else None
+        fp = (
+            FncallStreamParser(tools=tools, protocol=winner_protocol)
+            if tools and not _winner_native
+            else None
+        )
 
         # Yield platform info so route can use correct protocol for cleaning
         yield {"_meta": {"platform": winner["cand"].platform}}

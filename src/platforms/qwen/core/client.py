@@ -5,6 +5,7 @@ import asyncio
 import base64
 import json
 import os
+import random
 import time
 import uuid
 from pathlib import Path
@@ -14,9 +15,15 @@ import aiohttp
 
 from src.core.candidate import Candidate, make_id
 from src.core.models_cache import ModelsCache
+from src.core.proxy_selector import ProxySelector
 from src.logger import get_logger
 from src.platforms.qwen.accounts import ACCOUNTS, Account
-from src.platforms.qwen.core.constants import CAPS, MODELS
+from src.platforms.qwen.core.constants import (
+    CAPS,
+    MODELS,
+    PROXY_SELECTOR_PERSIST_PATH,
+    SMART_PROXY_ENABLED,
+)
 from src.platforms.qwen.core.shared import (
     AUTH_CHECK_PATH,
     BASE_URL,
@@ -27,8 +34,12 @@ from src.platforms.qwen.core.shared import (
     EXTENSION_TO_MIME,
     GENERATED_IMAGE_DIR,
     GENERATED_VIDEO_DIR,
-    LOGIN_BATCH,
-    LOGIN_CONCURRENCY,
+    INITIAL_LOGIN_MAX,
+    LOGIN_BATCH_SIZE,
+    LOGIN_POLL_INTERVAL,
+    LOGIN_POOL_SIZE,
+    LOGIN_SELECT_MAX,
+    LOGIN_SELECT_MIN,
     MODELS_PATH,
     NEW_CHAT_PATH,
     PERSIST_INTERVAL,
@@ -39,6 +50,8 @@ from src.platforms.qwen.core.shared import (
     STS_TOKEN_PATHS,
     STOP_CHAT_PATH,
     TASK_STATUS_PATH,
+    TASK_TIMERS_PATH,
+    TOKEN_EXPIRY_MARGIN,
     TTS_DIR,
     TTS_PATH,
     TTS_TIMEOUT,
@@ -79,6 +92,9 @@ OSS_UPLOAD_TIMEOUT: int = 120
 HTTP_TIMEOUT: int = 30
 
 _PROXY_AUTO_EXPIRY = 86400
+_RELOGIN_LOG_BUFFER_SECS = 60
+_RETRY_LOG_BUFFER_SECS = 30
+_LOGIN_FAIL_LOG_BUFFER_SECS = 60
 
 
 class WAFBlockedError(Exception):
@@ -114,6 +130,13 @@ class QwenClient:
         self._models_cache = ModelsCache("qwen", MODELS, fetch_enabled=False)
         self._proxy_override: Optional[bool] = None
         self._proxy_auto_enabled_at: Optional[float] = None
+        self._proxy_selector = ProxySelector(Path(PROXY_SELECTOR_PERSIST_PATH))
+        self._relogin_log_buffer: List[str] = []
+        self._relogin_flush_task: Optional[asyncio.Task] = None
+        self._retry_log_buffer: List[str] = []
+        self._retry_log_flush_task: Optional[asyncio.Task] = None
+        self._login_fail_buffer: List[Tuple[str, str]] = []  # (username_prefix, error_msg)
+        self._login_fail_flush_task: Optional[asyncio.Task] = None
 
     def get_models(self) -> List[str]:
         """返回当前模型列表副本。"""
@@ -154,15 +177,42 @@ class QwenClient:
         return bool(self._proxy_override)
 
     def _get_proxy_kwarg(self) -> Optional[str]:
-        """获取应传递给 session.request 的 proxy 值。"""
+        """获取应传递给 session.request 的 proxy 值。
+
+        优先级层次：
+        0. proxy_enabled = False → 全局禁用（绝对）
+        1. proxy_urls → 由 monkey-patch 层处理（此处不涉及）
+        2. platforms_proxy.enabled_platforms → 平台白名单检查
+        3. SMART_PROXY_ENABLED → 智能选择器（proxy vs direct）
+        """
+        from src.core.config import get_config
+
+        cfg = get_config()
+
+        # Level 0: global kill switch
+        if not cfg.proxy.proxy_enabled:
+            return None
+
         self._check_proxy_expiry()
+
+        # Explicit override (set by WAF auto-enable or manual toggle)
         if self._proxy_override is True:
-            from src.core.config import get_config
-            cfg = get_config()
             if not cfg.platforms_proxy.is_platform_enabled("qwen"):
                 return None
             from src.core.proxy import get_proxy_server
             return get_proxy_server()
+
+        if self._proxy_override is False:
+            return None
+
+        # _proxy_override is None: smart selector or fallback to monkey-patch
+        if SMART_PROXY_ENABLED:
+            if self._proxy_selector.select():
+                from src.core.proxy import get_proxy_server
+                return get_proxy_server()
+            return None
+
+        # SMART_PROXY_ENABLED is False: no override → monkey-patch decides
         return None
 
     # =========================================================================
@@ -192,14 +242,20 @@ class QwenClient:
         self._load_persist()
         self._rebuild_candidates()
 
-        logger.info(
+        logger.debug(
             "Qwen 客户端立即初始化完成，初始候选项: %d 个",
             len(self._candidates),
         )
 
     async def background_setup(self) -> None:
         """后台完善——在后台 Task 中执行。"""
-        await self._bg_login()
+        # Phase 1: 快速初始登录（验证持久化 token，登录过期账号）
+        await self._initial_login_pass()
+
+        # Phase 2: 启动后台循环
+        self._bg_tasks.append(
+            asyncio.ensure_future(self._login_poll_loop())
+        )
 
         # 模型定时刷新：立即一次，之后每 24h
         self._bg_tasks.append(
@@ -218,7 +274,7 @@ class QwenClient:
         self._bg_tasks.append(
             asyncio.ensure_future(self._bg_persist())
         )
-        logger.info("Qwen 后台任务已启动")
+        logger.debug("Qwen 后台任务已启动")
 
     def update_models(self, models: List[str]) -> None:
         """更新模型列表并刷新候选项（合并内置 + 传入，去重）。"""
@@ -240,6 +296,21 @@ class QwenClient:
     async def close(self) -> None:
         """关闭客户端：停止后台任务，保存持久化。"""
         self._closing = True
+        if hasattr(self, '_relogin_flush_task') and self._relogin_flush_task and not self._relogin_flush_task.done():
+            self._relogin_flush_task.cancel()
+            self._relogin_flush_task = None
+        if hasattr(self, '_flush_relogin_buffer_now'):
+            self._flush_relogin_buffer_now()
+        if hasattr(self, '_retry_log_flush_task') and self._retry_log_flush_task and not self._retry_log_flush_task.done():
+            self._retry_log_flush_task.cancel()
+            self._retry_log_flush_task = None
+        if hasattr(self, '_flush_retry_log_buffer_now'):
+            self._flush_retry_log_buffer_now()
+        if hasattr(self, '_login_fail_flush_task') and self._login_fail_flush_task and not self._login_fail_flush_task.done():
+            self._login_fail_flush_task.cancel()
+            self._login_fail_flush_task = None
+        if hasattr(self, '_flush_login_fail_buffer_now'):
+            self._flush_login_fail_buffer_now()
         for task in self._bg_tasks:
             task.cancel()
         for task in self._bg_tasks:
@@ -328,27 +399,46 @@ class QwenClient:
                 < COOKIE_REFRESH_INTERVAL
             ):
                 self._cookies = saved_cookies
-                logger.info("Qwen: 从持久化恢复 Cookie")
+                logger.debug("Qwen: 从持久化恢复 Cookie")
 
             loaded = sum(
                 1 for acc in self._account_states.values() if acc.token
             )
             logger.debug("Qwen: 从持久化恢复 %d 个账号 token", loaded)
-
-            proxy_state = data.get("proxy", {})
-            if proxy_state:
-                from src.core.config import get_config
-                cfg = get_config()
-                if cfg.platforms_proxy.is_platform_enabled("qwen"):
-                    self._proxy_override = proxy_state.get("enabled")
-                    auto_at = proxy_state.get("auto_enabled_at")
-                    if auto_at is not None:
-                        self._proxy_auto_enabled_at = float(auto_at)
-                        if time.time() - self._proxy_auto_enabled_at > _PROXY_AUTO_EXPIRY:
-                            self._proxy_override = None
-                            self._proxy_auto_enabled_at = None
         except Exception as e:
             logger.warning("Qwen 持久化加载失败: %s", e)
+
+    def _load_task_timers(self) -> Dict[str, float]:
+        """从磁盘加载后台任务的上次执行时间戳。
+
+        Returns:
+            任务名到时间戳的字典，加载失败返回空字典。
+        """
+        try:
+            if Path(TASK_TIMERS_PATH).exists():
+                data = json.loads(
+                    Path(TASK_TIMERS_PATH).read_text(encoding="utf-8")
+                )
+                return {k: float(v) for k, v in data.items()}
+        except Exception as e:
+            logger.debug("Qwen 任务计时器加载失败: %s", e)
+        return {}
+
+    def _save_task_timers(self, timers: Dict[str, float]) -> None:
+        """将后台任务的上次执行时间戳保存到磁盘。
+
+        Args:
+            timers: 任务名到时间戳的字典。
+        """
+        try:
+            Path(TASK_TIMERS_PATH).parent.mkdir(
+                parents=True, exist_ok=True
+            )
+            Path(TASK_TIMERS_PATH).write_text(
+                json.dumps(timers, indent=2), encoding="utf-8"
+            )
+        except Exception as e:
+            logger.debug("Qwen 任务计时器保存失败: %s", e)
 
     # =========================================================================
     # 模型刷新（ModelsCache）
@@ -390,10 +480,6 @@ class QwenClient:
                         **self._cookies,
                         "timestamp": time.time(),
                     },
-                    "proxy": {
-                        "enabled": self._proxy_override,
-                        "auto_enabled_at": self._proxy_auto_enabled_at,
-                    },
                     "updated": time.time(),
                 },
                 indent=2,
@@ -424,44 +510,321 @@ class QwenClient:
                 self._save_persist()
 
     # =========================================================================
-    # 登录与 Token 管理
+    # 排队重登日志聚合
     # =========================================================================
 
-    async def _bg_login(self) -> None:
-        """并发批量登录所有账号。"""
-        sem = asyncio.Semaphore(LOGIN_CONCURRENCY)
+    def _log_queued_relogin(self, username_prefix: str) -> None:
+        """缓冲「排队重登」日志，60 秒后聚合输出，避免刷屏。"""
+        self._relogin_log_buffer.append(username_prefix)
 
-        async def _do_one(acc: Account) -> None:
-            async with sem:
-                if self._closing:
-                    return
-                # is_login=False 的账号尝试重新登录
-                if not acc.is_login:
-                    acc.token = ""  # 清除旧 token
-                elif acc.token and await self._validate_token(acc):
-                    return
-                try:
-                    await self._login(acc)
-                except Exception as e:
-                    logger.error(
-                        "Qwen 登录失败 [%s***]: %s", acc.username[:6], e
-                    )
-
-        accounts_list = list(self._account_states.values())
-        for i in range(0, len(accounts_list), LOGIN_BATCH):
-            if self._closing:
-                break
-            batch = accounts_list[i: i + LOGIN_BATCH]
-            await asyncio.gather(
-                *[_do_one(acc) for acc in batch],
-                return_exceptions=True,
+        if self._relogin_flush_task is None or self._relogin_flush_task.done():
+            self._relogin_flush_task = asyncio.create_task(
+                self._flush_relogin_buffer()
             )
 
+    async def _flush_relogin_buffer(self) -> None:
+        """等待缓冲窗口后聚合输出排队重登日志。"""
+        await asyncio.sleep(_RELOGIN_LOG_BUFFER_SECS)
+        self._flush_relogin_buffer_now()
+
+    def _flush_relogin_buffer_now(self) -> None:
+        """立即聚合输出缓冲区中的排队重登日志（同步）。"""
+        buffer = self._relogin_log_buffer
+        self._relogin_log_buffer = []
+        self._relogin_flush_task = None
+
+        if not buffer:
+            return
+
+        if len(buffer) == 1:
+            logger.debug(
+                "Qwen 初始登录: token 无效 [%s***]，排队重登",
+                buffer[0],
+            )
+        else:
+            logger.debug(
+                "Qwen 初始登录: token 无效 [%s*** and %d other account(s)]，排队重登",
+                buffer[0], len(buffer) - 1,
+            )
+
+    # =========================================================================
+    # 重试日志聚合
+    # =========================================================================
+
+    def _log_retry(self, message: str) -> None:
+        """缓冲重试日志，30 秒后聚合输出，避免刷屏。"""
+        self._retry_log_buffer.append(message)
+
+        if self._retry_log_flush_task is None or self._retry_log_flush_task.done():
+            self._retry_log_flush_task = asyncio.create_task(
+                self._flush_retry_log_buffer()
+            )
+
+    async def _flush_retry_log_buffer(self) -> None:
+        """等待缓冲窗口后聚合输出重试日志。"""
+        await asyncio.sleep(_RETRY_LOG_BUFFER_SECS)
+        self._flush_retry_log_buffer_now()
+
+    def _flush_retry_log_buffer_now(self) -> None:
+        """立即聚合输出缓冲区中的重试日志（同步）。"""
+        buffer = self._retry_log_buffer
+        self._retry_log_buffer = []
+        self._retry_log_flush_task = None
+
+        if not buffer:
+            return
+
+        if len(buffer) == 1:
+            logger.debug("Qwen 重试: %s", buffer[0])
+        else:
+            logger.debug("Qwen 重试: %s (共 %d 条)", buffer[0], len(buffer))
+
+    # =========================================================================
+    # 登录失败日志聚合
+    # =========================================================================
+
+    def _log_login_failure(self, username_prefix: str, error_msg: str) -> None:
+        """缓冲「登录失败」日志，60 秒后聚合输出，避免刷屏。"""
+        self._login_fail_buffer.append((username_prefix, error_msg))
+
+        if self._login_fail_flush_task is None or self._login_fail_flush_task.done():
+            self._login_fail_flush_task = asyncio.create_task(
+                self._flush_login_fail_buffer()
+            )
+
+    async def _flush_login_fail_buffer(self) -> None:
+        """等待缓冲窗口后聚合输出登录失败日志。"""
+        await asyncio.sleep(_LOGIN_FAIL_LOG_BUFFER_SECS)
+        self._flush_login_fail_buffer_now()
+
+    def _flush_login_fail_buffer_now(self) -> None:
+        """立即聚合输出缓冲区中的登录失败日志（同步）。"""
+        buffer = self._login_fail_buffer
+        self._login_fail_buffer = []
+        self._login_fail_flush_task = None
+
+        if not buffer:
+            return
+
+        first_prefix, first_error = buffer[0]
+        if len(buffer) == 1:
+            logger.warning(
+                "Qwen 初始登录失败 [%s***]: %s",
+                first_prefix, first_error,
+            )
+        else:
+            logger.warning(
+                "Qwen 初始登录失败 [%s*** and %d other account(s)]: %s",
+                first_prefix, len(buffer) - 1, first_error,
+            )
+
+    # =========================================================================
+    # 登录与 Token 管理（统一轮询式）
+    # =========================================================================
+
+    async def _initial_login_pass(self) -> None:
+        """启动时快速初始登录批次。
+
+        验证从持久化恢复的 token，对无效或过期的账号执行重新登录。
+        最多处理 INITIAL_LOGIN_MAX 个账号，顺序执行（非并发）。
+        """
+        now = time.time()
+        need_login: List[Account] = []
+
+        for acc in self._account_states.values():
+            if acc.is_login and acc.token:
+                # 验证持久化恢复的 token 是否仍有效
+                if not await self._validate_token(acc):
+                    self._log_queued_relogin(acc.username[:6])
+                    acc.is_login = False
+                    acc.token = ""
+                    need_login.append(acc)
+            elif not acc.is_login:
+                need_login.append(acc)
+
+        # 按 token_expires 排序（最旧/过期的优先）
+        need_login.sort(key=lambda a: a.token_expires)
+
+        # 限制初始登录数量
+        batch = need_login[:INITIAL_LOGIN_MAX]
+
+        if batch:
+            logger.debug(
+                "Qwen 初始登录: %d 个账号需要登录，本次处理 %d 个",
+                len(need_login), len(batch),
+            )
+            _network_breaker_hit = False
+            for acc in batch:
+                if self._closing or _network_breaker_hit:
+                    break
+                try:
+                    await self._login_and_configure(acc)
+                except Exception as e:
+                    err_str = str(e)
+                    self._log_login_failure(acc.username[:6], err_str)
+                    if not _network_breaker_hit and (
+                        "Cannot connect" in err_str
+                        or "远程计算机拒绝" in err_str
+                        or "连接" in err_str
+                    ):
+                        _network_breaker_hit = True
+                        logger.info(
+                            "Qwen 登录端点不可达，跳过本批次剩余账号"
+                        )
+
+            self._rebuild_candidates()
+            self._save_persist()
+
         logged = sum(
-            1 for acc in self._account_states.values() if acc.token
+            1 for acc in self._account_states.values() if acc.is_login
         )
-        logger.info("Qwen 登录完成: %d/%d", logged, len(self._account_states))
-        self._save_persist()
+        logger.debug(
+            "Qwen 初始登录完成: %d/%d 账号已登录",
+            logged, len(self._account_states),
+        )
+
+    async def _login_poll_loop(self) -> None:
+        """后台登录轮询循环。
+
+        每 LOGIN_POLL_INTERVAL 秒执行一次：
+        1. 智能选择需要登录的账号批次
+        2. 顺序登录每个账号（含设置同步）
+        3. 批次完成后统一重建候选项和持久化
+
+        任务计时器持久化：首次循环从磁盘恢复上次执行时间，
+        计算剩余等待时间，避免重启后重置计时器。
+        """
+        # 恢复上次轮询时间，计算首次等待时长
+        timers = self._load_task_timers()
+        last_run = timers.get("login_poll", 0)
+        remaining = LOGIN_POLL_INTERVAL - (time.time() - last_run)
+
+        while not self._closing:
+            # 首次循环使用剩余时间，后续使用完整间隔
+            sleep_time = remaining if remaining > 0 else LOGIN_POLL_INTERVAL
+            remaining = -1  # 仅首次生效
+
+            await asyncio.sleep(sleep_time)
+            if self._closing:
+                break
+
+            try:
+                batch = self._select_login_batch()
+                if batch:
+                    logger.debug(
+                        "Qwen 登录轮询: 选中 %d 个账号", len(batch),
+                    )
+                    _network_breaker_hit = False
+                    for acc in batch:
+                        if self._closing or _network_breaker_hit:
+                            break
+                        try:
+                            await self._login_and_configure(acc)
+                        except Exception as e:
+                            err_str = str(e)
+                            self._log_login_failure(acc.username[:6], err_str)
+                            if not _network_breaker_hit and (
+                                "Cannot connect" in err_str
+                                or "远程计算机拒绝" in err_str
+                                or "连接" in err_str
+                            ):
+                                _network_breaker_hit = True
+                                logger.info(
+                                    "Qwen 登录端点不可达，跳过本批次剩余账号"
+                                )
+
+                    self._rebuild_candidates()
+                    self._save_persist()
+
+                    success = sum(1 for a in batch if a.is_login)
+                    logger.debug(
+                        "Qwen 登录轮询完成: %d/%d 成功",
+                        success, len(batch),
+                    )
+            except Exception as e:
+                logger.warning("Qwen 登录轮询异常: %s", e)
+
+            # 保存本次执行时间戳
+            timers["login_poll"] = time.time()
+            self._save_task_timers(timers)
+
+    def _select_login_batch(self) -> List[Account]:
+        """智能选择本轮需要登录的账号批次。
+
+        算法：
+        1. 筛选未登录或 token 即将过期的账号
+        2. 按 token_expires 升序排序（最旧/过期的优先）
+        3. 取前 LOGIN_POOL_SIZE 个作为候选池
+        4. 从候选池中随机选取 LOGIN_SELECT_MIN~LOGIN_SELECT_MAX 个
+        5. 从选取结果中取前 LOGIN_BATCH_SIZE 个作为最终批次
+        6. 随机打乱最终批次顺序
+
+        Returns:
+            本轮需要登录的账号列表。
+        """
+        now = time.time()
+        not_logged_in: List[Account] = []
+
+        for acc in self._account_states.values():
+            if not acc.is_login:
+                not_logged_in.append(acc)
+            elif acc.token and acc.token_expires > 0:
+                remaining = acc.token_expires - now
+                if remaining < TOKEN_EXPIRY_MARGIN:
+                    not_logged_in.append(acc)
+
+        if not not_logged_in:
+            return []
+
+        # 按 token_expires 升序排序（最旧/过期的优先）
+        not_logged_in.sort(key=lambda a: a.token_expires)
+
+        # 取前 LOGIN_POOL_SIZE 个
+        pool = not_logged_in[:LOGIN_POOL_SIZE]
+
+        # 随机选取数量
+        select_count = random.randint(LOGIN_SELECT_MIN, LOGIN_SELECT_MAX)
+        selected = pool[:select_count]
+
+        # 随机打乱
+        random.shuffle(selected)
+
+        # 取最终批次
+        batch = selected[:LOGIN_BATCH_SIZE]
+
+        # 对即将过期的账号清除 token，使其完全重新登录
+        for acc in batch:
+            if acc.is_login and acc.token:
+                acc.is_login = False
+                acc.token = ""
+
+        return batch
+
+    async def _login_and_configure(self, acc: Account) -> None:
+        """统一登录并配置单个账号。
+
+        流程：
+        1. 调用 _login() 执行 HTTP 登录
+        2. 登录成功后立即 await _update_settings()（非 fire-and-forget）
+        3. 设置同步成功后标记 memory_disabled=True
+
+        调用方负责在整批完成后调用 _rebuild_candidates() 和 _save_persist()。
+
+        Args:
+            acc: 账号对象。
+
+        Raises:
+            Exception: 登录失败。
+        """
+        await self._login(acc)
+
+        # 登录成功后同步设置（awaited，非 fire-and-forget）
+        try:
+            await self._update_settings(acc)
+        except Exception as e:
+            logger.warning(
+                "Qwen 设置同步异常 [%s***]: %s", acc.username[:6], e,
+            )
 
     async def _validate_token(self, acc: Account) -> bool:
         """验证账号 token 是否仍然有效。
@@ -485,18 +848,24 @@ class QwenClient:
                 "accept": "application/json",
             }
             url = "{}{}".format(BASE_URL, AUTH_CHECK_PATH)
-            async with self._session.get(
-                url,
-                headers=headers,
-                ssl=False,
-                timeout=aiohttp.ClientTimeout(total=10),
-            ) as resp:
+            proxy_kw = self._get_proxy_kwarg()
+            req_kw: Dict[str, Any] = {
+                "headers": headers,
+                "ssl": False,
+                "timeout": aiohttp.ClientTimeout(total=10),
+            }
+            if proxy_kw is not None:
+                req_kw["proxy"] = proxy_kw
+            async with self._session.get(url, **req_kw) as resp:
                 return resp.status == 200
         except Exception:
             return False
 
     async def _login(self, acc: Account) -> None:
-        """登录单个账号，成功后立即重建候选项。
+        """登录单个账号（纯 HTTP 登录，不触发候选项重建或设置同步）。
+
+        调用方（_login_and_configure）负责后续的设置同步和候选项重建。
+        支持代理：当平台启用代理时，登录请求也会走代理。
 
         Args:
             acc: 账号对象。
@@ -522,13 +891,18 @@ class QwenClient:
                 await asyncio.sleep(1.0 * (2 ** (attempt - 1)))
             try:
                 url = "{}{}".format(BASE_URL, SIGNIN_PATH)
-                async with self._session.post(
-                    url,
-                    headers=headers,
-                    json=payload,
-                    ssl=False,
-                    timeout=aiohttp.ClientTimeout(total=LOGIN_TIMEOUT),
-                ) as resp:
+                post_kw: Dict[str, Any] = {
+                    "headers": headers,
+                    "json": payload,
+                    "ssl": False,
+                    "timeout": aiohttp.ClientTimeout(total=LOGIN_TIMEOUT),
+                }
+                # 代理支持
+                proxy_kw = self._get_proxy_kwarg()
+                if proxy_kw is not None:
+                    post_kw["proxy"] = proxy_kw
+
+                async with self._session.post(url, **post_kw) as resp:
                     if resp.status != 200:
                         err = await resp.text()
                         # WAF detection: if response is HTML, the endpoint is blocked
@@ -553,16 +927,13 @@ class QwenClient:
                     acc.user_id = data.get("id", "")
                     acc.password_hash = pwd_hash
                     acc.token_expires = float(data.get("expires_at", 0))
-                    acc.memory_disabled = False
                     acc.is_login = True
-
-                    asyncio.ensure_future(self._update_settings(acc))
-                    self._rebuild_candidates()
                     return
             except Exception as e:
                 last_exc = e
 
         if last_exc:
+            acc.is_login = False
             raise last_exc
 
     async def _update_settings(self, acc: Account) -> None:
@@ -576,13 +947,17 @@ class QwenClient:
         headers = build_headers(acc.token, cookies=self._cookies)
         url = "{}{}".format(BASE_URL, SETTINGS_PATH)
         try:
-            async with self._session.post(
-                url,
-                headers=headers,
-                json=DEFAULT_FULL_SETTINGS,
-                ssl=False,
-                timeout=aiohttp.ClientTimeout(total=SETTINGS_TIMEOUT),
-            ) as resp:
+            post_kw: Dict[str, Any] = {
+                "headers": headers,
+                "json": DEFAULT_FULL_SETTINGS,
+                "ssl": False,
+                "timeout": aiohttp.ClientTimeout(total=SETTINGS_TIMEOUT),
+            }
+            proxy_kw = self._get_proxy_kwarg()
+            if proxy_kw is not None:
+                post_kw["proxy"] = proxy_kw
+
+            async with self._session.post(url, **post_kw) as resp:
                 if resp.status == 200:
                     acc.memory_disabled = True
                 else:
@@ -603,13 +978,30 @@ class QwenClient:
     # =========================================================================
 
     async def _bg_cookie_refresh(self) -> None:
-        """后台定期刷新指纹和 Cookie。"""
+        """后台定期刷新指纹和 Cookie。
+
+        任务计时器持久化：首次循环从磁盘恢复上次刷新时间，
+        计算剩余等待时间，避免重启后重置计时器。
+        """
+        # 恢复上次刷新时间，计算首次等待时长
+        timers = self._load_task_timers()
+        last_run = timers.get("cookie_refresh", 0)
+        remaining = COOKIE_REFRESH_INTERVAL - (time.time() - last_run)
+
         while not self._closing:
-            await asyncio.sleep(COOKIE_REFRESH_INTERVAL)
+            # 首次循环使用剩余时间，后续使用完整间隔
+            sleep_time = remaining if remaining > 0 else COOKIE_REFRESH_INTERVAL
+            remaining = -1  # 仅首次生效
+
+            await asyncio.sleep(sleep_time)
             if not self._closing:
                 self._fp = generate_fingerprint()
                 self._cookies = generate_cookies(self._fp)
                 logger.debug("Qwen: Cookie 已刷新")
+
+                # 保存本次刷新时间戳
+                timers["cookie_refresh"] = time.time()
+                self._save_task_timers(timers)
 
     # =========================================================================
     # 远程模型列表获取
@@ -652,7 +1044,7 @@ class QwenClient:
                     raw = await resp.json(content_type=None)
                     remote_models = extract_model_ids(raw)
                     if remote_models:
-                        logger.info(
+                        logger.debug(
                             "Qwen 远程模型获取成功: %d 个", len(remote_models)
                         )
                         return remote_models
@@ -1770,14 +2162,15 @@ class QwenClient:
                         self.set_proxy_enabled(True, auto=True)
                         self._save_persist()
                 last_exc = None  # 清除 last_exc，让重试使用新代理
-                logger.warning(
-                    "Qwen WAF 重试 %d/%d（代理已启用）", attempt + 1, MAX_RETRIES
+                self._log_retry(
+                    f"WAF 重试 {attempt + 1}/{MAX_RETRIES}（代理已启用）"
                 )
             except Exception as e:
                 last_exc = e
-                logger.warning(
-                    "Qwen 重试 %d/%d: %s", attempt + 1, MAX_RETRIES, e
+                self._log_retry(
+                    f"{attempt + 1}/{MAX_RETRIES}: {e}"
                 )
+        self._flush_retry_log_buffer_now()
         if last_exc:
             raise last_exc
 
@@ -1892,19 +2285,30 @@ class QwenClient:
                     connect=10, total=SSE_TIMEOUT
                 ),
             }
-            if self._proxy_override is not None:
-                post_kw["proxy"] = self._get_proxy_kwarg()
+            # Smart proxy selector: always ask for proxy decision.
+            # When override is set or SMART_PROXY_ENABLED is True,
+            # _get_proxy_kwarg() returns the proxy URL or None.
+            # When neither applies, "proxy" key is omitted so the
+            # global monkey-patch decides (Level 1: URL patterns).
+            proxy_kw = self._get_proxy_kwarg()
+            _used_smart_proxy: Optional[bool] = (proxy_kw is not None)
+            if proxy_kw is not None or self._proxy_override is not None:
+                post_kw["proxy"] = proxy_kw
+
+            _request_start = time.time()
+            _request_failed = True  # assume failure; cleared on success
 
             async with self._session.post(url, **post_kw) as resp:
                 if resp.status != 200:
                     err = await resp.text()
                     # 检测 token 过期或未授权错误
                     if resp.status == 401 or "Token has expired" in err or "unauthorized" in err.lower():
-                        username = candidate.meta.get("username", "")
-                        if username and username in self._account_states:
-                            acc = self._account_states[username]
-                            logger.warning("账号 [%s] token 已过期，设置 is_login=False", username)
+                        email = candidate.meta.get("email", "")
+                        if email and email in self._account_states:
+                            acc = self._account_states[email]
+                            logger.warning("账号 [%s***] token 已过期，反应式清除", email[:6])
                             acc.is_login = False
+                            acc.token = ""
                             self._rebuild_candidates()
                             self._save_persist()
                         raise Exception(
@@ -2178,15 +2582,36 @@ class QwenClient:
                 if tts and response_id:
                     await self.request_tts(chat_id, response_id, token)
 
+                _request_failed = False
+
         except (aiohttp.ClientPayloadError, aiohttp.http_exceptions.PayloadEncodingError) as e:
             # 传输中断（如 TransferEncodingError、ContentEncodingError 等），
             # 已 yield 的数据已发出，不向上抛出，避免重试循环
             logger.warning("Qwen 流式响应被截断，已收集部分数据: %s", e)
+            _request_failed = False  # partial success: data was already emitted
+            if _used_smart_proxy is not None and SMART_PROXY_ENABLED:
+                latency_ms = (time.time() - _request_start) * 1000
+                self._proxy_selector.record(
+                    _used_smart_proxy, True, latency_ms
+                )
+                _used_smart_proxy = None  # prevent double-recording in finally
         except Exception as e:
             # 其他未知异常，记录日志后向上传播
             logger.error("Qwen _do_request 未知异常: %s", e, exc_info=True)
+            if _used_smart_proxy is not None and SMART_PROXY_ENABLED:
+                self._proxy_selector.record(_used_smart_proxy, False)
+                _used_smart_proxy = None  # prevent double-recording in finally
             raise
         finally:
+            # Record proxy outcome for smart selector learning
+            if _used_smart_proxy is not None and SMART_PROXY_ENABLED:
+                if not _request_failed:
+                    latency_ms = (time.time() - _request_start) * 1000
+                    self._proxy_selector.record(
+                        _used_smart_proxy, True, latency_ms
+                    )
+                else:
+                    self._proxy_selector.record(_used_smart_proxy, False)
             self._active_chats.pop(candidate.id, None)
             asyncio.ensure_future(self._cleanup_chat(chat_id, token))
 

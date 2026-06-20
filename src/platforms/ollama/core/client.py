@@ -193,10 +193,26 @@ def _fetch_page(page: int) -> Optional[str]:
     try:
         import requests
 
+        proxies = None
+        try:
+            from src.core.config import get_config
+            cfg = get_config()
+            if cfg.proxy.proxy_enabled and cfg.proxy.proxy_server:
+                if not cfg.proxy.proxy_urls or any(
+                    re.match(p, BASE_URL) for p in cfg.proxy.proxy_urls
+                ):
+                    proxies = {
+                        "http": cfg.proxy.proxy_server,
+                        "https": cfg.proxy.proxy_server,
+                    }
+        except Exception:
+            pass
+
         r = requests.get(
             "{}?page={}&page_size={}".format(BASE_URL, page, PAGE_SIZE),
             timeout=TIMEOUT,
             verify=False,
+            proxies=proxies,
         )
         if r.ok:
             return r.text
@@ -572,7 +588,7 @@ class OllamaClient:
         except Exception as e:
             logger.warning("ollama缓存加载失败: %s", e)
             self._servers, self._registry = {}, {}
-        logger.info(
+        logger.debug(
             "ollama客户端初始化完成（缓存: %d服务器, %d模型）",
             len(self._servers),
             len(self._registry),
@@ -581,7 +597,7 @@ class OllamaClient:
     async def background_setup(self) -> None:
         """后台完善：执行服务器发现并启动定时刷新。"""
         if not DYNAMIC_DISCOVERY:
-            logger.info(
+            logger.debug(
                 "ollama动态发现已禁用，使用持久化缓存（%d服务器, %d模型）",
                 len(self._servers),
                 len(self._registry),
@@ -598,7 +614,7 @@ class OllamaClient:
             )
             self._servers = servers
             self._registry = registry
-            logger.info(
+            logger.debug(
                 "ollama发现完成: %d服务器, %d模型",
                 len(servers),
                 len(registry),
@@ -623,7 +639,7 @@ class OllamaClient:
                 )
                 self._servers = servers
                 self._registry = registry
-                logger.info("ollama刷新完成: %d服务器", len(servers))
+                logger.debug("ollama刷新完成: %d服务器", len(servers))
             except Exception as e:
                 logger.warning("ollama刷新失败: %s", e)
 
@@ -915,7 +931,19 @@ def _do_refresh(
     """
     if not force and not needs_refresh():
         return load_cache()
+
+    cached_servers, cached_registry = load_cache()
     servers = collect_servers(additional=additional, skip_network=skip_network)
     registry = build_registry(servers)
+
+    # 网络返回空结果但缓存有数据时，保留缓存不覆盖（网络故障保护）
+    if not servers and cached_servers and not skip_network:
+        logger.debug(
+            "ollama网络发现返回空结果，保留缓存（%d服务器, %d模型）",
+            len(cached_servers),
+            len(cached_registry),
+        )
+        return cached_servers, cached_registry
+
     save_cache(servers, registry)
     return servers, registry

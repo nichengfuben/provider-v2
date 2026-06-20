@@ -18,11 +18,11 @@
 
 <div align="center">
 
-![Status](https://img.shields.io/badge/status-v2.2.68-blue)
-![Version](https://img.shields.io/badge/version-2.2.68-blue)
+![Status](https://img.shields.io/badge/status-v2.2.180-blue)
+![Version](https://img.shields.io/badge/version-2.2.180-blue)
 ![Python](https://img.shields.io/badge/python-3.8+-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
-![Platforms](https://img.shields.io/badge/platforms-12+-orange)
+![Platforms](https://img.shields.io/badge/platforms-16+-orange)
 
 [![GitHub stars](https://img.shields.io/github/stars/nichengfuben/provider-v2)](https://github.com/nichengfuben/provider-v2/stargazers)
 [![GitHub issues](https://img.shields.io/github/issues/nichengfuben/provider-v2)](https://github.com/nichengfuben/provider-v2/issues)
@@ -1257,7 +1257,401 @@ fix(gateway): 修复并发竞速时 token 计数错误
 
 ## 🗺️ 路线图
 
-### 当前版本：v2.2.68
+### 当前版本：v2.2.180
+
+✅ 已完成（v2.2.180）：
+- 架构审计修复：裸 except 块添加 debug 日志 + 创建 PROJECT_DECISIONS.md（5 条 ADR）
+- 异常处理加固：terminal_sessions/terminal router/request_log 共 12 处裸 except 块缩窄为具体异常类型，Unexpected 兜底升为 WARNING
+- 聊天面板 JS 重构：工具调用 HTML 提取为 _buildToolCallsHtml、模型协议选择独立持久化、loadChatState try/finally 守卫
+
+✅ 已完成（v2.2.178）：
+- echotools 升级到 1.0.29：终端会话生命周期日志降级为 debug（ConPTY started/attached/killed）
+
+✅ 已完成（v2.2.177）：
+- 聊天面板持久化修复：工具调用参数刷新后可展开、模型与协议选择刷新后保留
+
+✅ 已完成（v2.2.176）：
+- echotools 升级到 1.0.28：修复 Linux/macOS 终端 WebSocket 连接失败（Unix PTY 启动移到线程池 + shell 候选链 + select 超时读取）
+
+✅ 已完成（v2.2.175）：
+- 终端 + 按钮重新设计：点击立即创建 chooser 标签页（类 Chrome 新标签），页内选本地/远程终端
+
+✅ 已完成（v2.2.174）：
+- 终端标签恢复加速：_restPreFetch 并行探测 + _discoveryProcessed 防竞态；每 tab attach 延迟去除
+- 终端 CSI 泄漏防御：_stripDecResponses 加 null-safe 守卫，覆盖所有 xterm.write 入口
+- 光标错位/双光标修复：_initTerminal 顶部完整 dispose 守卫 + 孤儿 DOM 清理 + fitAddon.dispose
+- 文件管理器 confirm() 替换为 showConfirmDialog 自定义对话框（_deleteEntries、_cancelEdit 两处）
+
+✅ 已完成（v2.2.173）：
+- 修复页面刷新后标签消失：终端从 existing_sessions 重建并 attach；文件标签用 activeTabIndex 鲁棒恢复
+
+✅ 已完成（v2.2.172）：
+- 修复终端字符交错双写与 CSI 响应泄漏：删除 terminal.py 重复回调，过滤 DEC private mode 响应
+- 恢复侧边栏压缩按钮为迁移前原始设计：全宽按钮置顶，替换 24x24 绝对定位小方块
+- 终端与文件侧边栏联动压缩：onToggleCollapsed 回调同步 window._tabBars 所有实例
+
+✅ 已完成（v2.2.171）：
+- 终端会话持久化与进程保活（Phase 0）：WS 断连不杀进程，主动关闭才终止；多客户端同时挂载；重启自动恢复存活会话
+- echotools 1.0.27：LocalTerminal 新增 detach/attach/kill API，离线输出缓冲，recover_sessions 重启挂载
+- 文件管理器迁移到统一 TabBar（Phase 1b），压缩态显示文件夹图标（修圆点痛点）
+
+✅ 已完成（v2.2.170）：
+- WebUI 文件管理器默认目录改为项目根（main.py 所在目录），保留任意目录导航能力
+
+✅ 已完成（v2.2.169）：
+- WebUI 终端前端全量重写：自定义 DOM ANSI 渲染器迁移到 @xterm/xterm 5.5.0 + @xterm/addon-fit
+- 删除 ~720 行自写 ANSI 解析、SGR、光标、DOM 渲染代码；删除 LOCAL_ECHO 与行回显剥离
+- xterm.js 通过 CDN 懒加载（lazy.js 注入 TAB_RESOURCES.terminal）
+- 键盘输入由 xterm.js 内部 textarea 原生捕获，不再依赖 document 级 keydown 捕获
+
+✅ 已完成（v2.2.168）：
+- WebUI 终端升级 ConPTY：echotools 1.0.26 新增 Windows ConPTY 后端，支持 cls/color/ANSI/resize
+- 终端前后端模式协商：后端发送 mode 消息，前端动态开关本地回显
+- 文件管理器 UI 全中文化：64 处英文标签统一为中文
+
+✅ 已完成（v2.2.167）：
+- WebUI 终端禁用路径超链接渲染：输出纯文本，与原生终端体验一致
+
+✅ 已完成（v2.2.166）：
+- Qwen 平台登录失败日志聚合：60 秒窗口缓冲，单条 WARNING 输出 "first*** and N other account(s)"
+- Qwen 登录端点不可达时熔断：跳过本批次剩余账号，避免刷屏
+
+✅ 已完成（v2.2.165）：
+- WebUI 文件管理器完全解锁：支持浏览整个文件系统，Windows 枚举盘符，Linux 直达根目录，新增项目根快捷按钮
+- WebUI 终端全量本地回显：修复 Windows PIPE I/O 下输入不可见，修正 Enter 行终止为 \r\n，修复提示符误染蓝色
+
+✅ 已完成（v2.2.164）：
+- 修正 zen 平台日志 format 字符串（{} → %d/%s），修复占位符原样输出 bug
+- ollama 平台空网络发现日志从 WARNING 降级为 DEBUG
+
+✅ 已完成（v2.2.163）：
+- 新增 native_tools 能力 — 平台可声明原生工具调用支持，跳过 inject_fncall 直接传递 tools
+- zen 平台声明 native_tools=True，流式 tool_calls delta 累积，语法高亮文件预览
+
+✅ 已完成（v2.2.162）：
+- WebUI 文件管理器全面增强：文件编辑（行号/Ctrl+S/脏跟踪）、上传（按钮+拖拽）、复制移动（剪贴板 Ctrl+C/X/V）、目录搜索（300ms 防抖）
+- 终端与文件管理器联动：右键在终端打开、终端输出路径可点击跳转文件管理器
+
+✅ 已完成（v2.2.161）：
+- 新增 zen 平台适配器 — OpenCode.ai API，Bearer 认证，SSE 流式，reasoning→thinking 映射，自动模型获取
+
+✅ 已完成（v2.2.160）：
+- 恢复静态资源 no-cache 缓存策略，撤销 max-age=3600 以避免浏览器缓存旧版 JS/CSS
+
+✅ 已完成（v2.2.159）：
+- persist_get 文件不存在时返回 200 null 而非 404，消除控制台报错
+- index.html 添加 console.warn 过滤器抑制 Tailwind CDN 生产环境警告
+
+✅ 已完成（v2.2.158）：
+- echotools 1.0.25：修复 Windows asyncio ProactorEventLoop ConnectionResetError（终端关闭时 [WinError 10054] 日志噪音）
+
+✅ 已完成（v2.2.157）：
+- 终端键盘捕获改为 document 级别 capture phase，不依赖元素焦点，只要终端标签页可见即捕获
+
+✅ 已完成（v2.2.156）：
+- 修复终端键盘输入：移除 textarea 输入层，改用 wrapper div keydown 直接捕获所有按键
+
+✅ 已完成（v2.2.155）：
+- 修复终端 Enter 键在 Windows 下不执行命令的问题（CRLF 兼容）
+
+✅ 已完成（v2.2.154）：
+- Qwen 重试日志改为缓冲聚合输出（DEBUG 级别）
+- WebUI 终端重写：移除 xterm.js，自研轻量终端渲染器
+- echotools 新增 terminal 模块（v1.0.24），终端逻辑下沉为通用组件
+
+✅ 已完成（v2.2.153）：
+- WebUI 静态资源懒加载：按标签页延迟加载 JS/CSS，初始负载从 ~335KB 降至 ~100KB
+- 新增 LazyLoader 模块，xterm.js CDN 从预加载改为按需加载
+- 静态资源缓存策略优化（no-cache → 1 小时缓存）
+
+✅ 已完成（v2.2.152）：
+- 聊天历史加载添加调试日志和逐条错误处理，定位首条助手消息消失问题
+
+✅ 已完成（v2.2.151）：
+- 修复聊天历史加载竞态：sendChatMessage 等待 loadChatState 完成后再读取历史
+
+✅ 已完成（v2.2.150）：
+- 聊天工具定义持久化（保存到 persist/webui/tools.json，页面加载自动恢复）
+
+✅ 已完成（v2.2.149）：
+- 代码块渲染重构：JS Map 存储避免属性转义截断、独立 preview 容器、折叠/展开按钮、完整 CSS 样式
+
+✅ 已完成（v2.2.148）：
+- 代码块选项卡默认 code（仅 HTML 显示 preview）、流式代码块解析支持未闭合反引号、请求日志持久化
+
+✅ 已完成（v2.2.147）：
+- WebUI 日志 ANSI 颜色、聊天加载动画与 Send→Stop、工具调用持久化修复、流式渲染优化、便携面板交互改进
+
+✅ 已完成（v2.2.146）：
+- WebUI 便携设置持久化从 config.json 迁移到 config.toml，后端 persist API 支持 TOML 格式
+
+✅ 已完成（v2.2.145）：
+- Qwen 排队重登日志聚合：60 秒缓冲窗口，多账号 token 无效时合并为单条日志输出
+
+✅ 已完成（v2.2.144）：
+- Windows 终端改用 asyncio subprocess（非阻塞 I/O）；移除 WebUI 自构日志（仅保留后端 WebSocket 日志转发）
+
+✅ 已完成（v2.2.142）：
+- 修复运行日志行号顺序（最新条目 #1 在顶部，向下递增）
+
+✅ 已完成（v2.2.141）：
+- 终端退格键修复（DEL→BS 转换）、全部关闭浮动按钮（标签>5时显示）、Windows 终端改用 cmd.exe + UTF-8
+
+✅ 已完成（v2.2.140）：
+- Windows 终端改用 PowerShell + 块读取 + 修复 write_input lambda 闭包；竖向标签栏加号 sticky 底部
+
+✅ 已完成（v2.2.139）：
+- 修复竖向标签栏展开/压缩模式加号按钮纵向位置不一致
+
+✅ 已完成（v2.2.138）：
+- 修复标签栏侧边切换按钮消失（renderTabBar 保留 toggle 按钮）、竖向布局加号居中、终端点击聚焦输入
+
+✅ 已完成（v2.2.137）：
+- 修复 STT/TTS 模型下拉菜单无法识别模型（TTS 使用 audio_gen 能力、STT 使用 chat+vision 多模态能力）
+
+✅ 已完成（v2.2.136）：
+- 修复终端选项卡不显示（switchTab 未移除 hidden 类）；修复 Markdown 渲染多余空行（块级元素后不插入 br）
+
+✅ 已完成（v2.2.135）：
+- Ollama 服务器发现使用代理获取、网络故障时保留缓存不覆盖、发现日志降为 DEBUG、WebUI 日志渲染匹配控制台格式
+
+✅ 已完成（v2.2.134）：
+- 新增标签栏布局切换（横向顶部/竖向侧边），竖向支持展开/压缩形态，设置持久化到 persist/webui/config.json
+
+✅ 已完成（v2.2.133）：
+- 终端选项卡 UI 文本全面汉化（标签名、右键菜单、SSH 对话框、验证提示、终端输出消息、空状态）
+
+✅ 已完成（v2.2.132）：
+- 日志面板性能优化（O(1) DOM 更新替代全量重建）；录音设备面板打开时刷新设备列表
+
+✅ 已完成（v2.2.131）：
+- 新增文件管理器选项卡：目录浏览、多标签管理、面包屑导航、右键菜单、文件预览、下载、会话持久化
+
+✅ 已完成（v2.2.130）：
+- 模型下拉菜单按能力过滤：聊天面板仅显示 chat 模型，STT/TTS 下拉仅显示对应能力模型
+
+✅ 已完成（v2.2.129）：
+- 修复 record_prompt 不生效（gateway 导入路径修正）、日志双重时间戳、toast 恢复右下角、Qwen 定时任务持久化执行时间
+
+✅ 已完成（v2.2.128）：
+- WebUI 10 项修复：复选框渲染、镜像源拖拽排序、配置下拉菜单自定义组件、diff 左右对比+分支下拉、主题切换分离、语音按钮亮色模式、静音自动停止录音、录音停止修复
+
+✅ 已完成（v2.2.127）：
+- 修复更新面板复选框不显示（CSS input reset 排除 checkbox）、toast 移至左下角、zip 脚本自动替换 color=false、deepseek/ollama 初始化不阻塞
+
+✅ 已完成（v2.2.126）：
+- 请求检查器详情弹窗新增复制按钮（响应内容 + 请求消息），支持流式更新时保留
+
+✅ 已完成（v2.2.125）：
+- 通用逻辑下沉到 echotools 1.0.23（KeyState/KeyPool、translate 工具、ProxySelector、异步生成器重试），provider-self 代码复用 ~400 行精简
+
+✅ 已完成（v2.2.124）：
+- 新增 4 个翻译平台：DeepL、Google Translate（免费公共 API）、Yandex Translate、Azure Translator
+
+✅ 已完成（v2.2.123）：
+- 聊天文件附件改为文件卡片显示（图标+名称+大小）；统计数据服务端持久化（30秒定时+启停保存，修复运行时间等数据丢失）
+
+✅ 已完成（v2.2.122）：
+- 新增终端选项卡：本地终端（pty/cmd）+ SSH 远程终端（paramiko），xterm.js 多标签管理，右键菜单，SSH 连接持久化
+
+✅ 已完成（v2.2.121）：
+- WebUI 五项修复：录音设备选择器、日志 ANSI 颜色+行号、统计/聊天持久化、Markdown 渲染+原始复制、信息框边框移除
+
+✅ 已完成（v2.2.120）：
+- 更新面板修复：文件复选框正常显示、确认/取消按钮、搜索框（>5 文件时自动出现）、已选计数
+
+✅ 已完成（v2.2.119）：
+- 修复 Windows 下 Runner 进程日志无颜色（colorama 包装 stderr 确保 VTP 启用 + isatty 检测改为 stderr）
+
+✅ 已完成（v2.2.118）：
+- 请求日志每页调整为 7 条，搜索框始终显示
+
+✅ 已完成（v2.2.117）：
+- 请求日志分页（每页 5 条、页码输入框 + /{n}、搜索框 >5 条时自动显示）
+
+✅ 已完成（v2.2.116）：
+- 修复 Qwen 平台热重载失败（echotools 插件发现支持 __getattr__ 懒加载 + watcher 平台分类修复）
+
+✅ 已完成（v2.2.115）：
+- 新增智能代理选择器（src/core/proxy_selector.py），TAS 式 4 维评分（失败次数、最近成功、延迟 EMA、总调用数），Qwen 平台集成，代理状态独立持久化
+
+✅ 已完成（v2.2.114）：
+- 所有平台启动日志从 INFO 降为 DEBUG（config manager + 9 个平台客户端/适配器）
+
+✅ 已完成（v2.2.113）：
+- Qwen 平台登录逻辑重写：统一轮询式登录替代并发批量登录，智能选择算法（最旧100→随机15-30→取10顺序登录），login+settings 统一，代理支持
+
+✅ 已完成（v2.2.112）：
+- 修复端口占用检测竞态条件（echotools 升级至 1.0.20，添加 taskkill 后重试等待）及 main.py 错误信息与实际配置不一致
+
+✅ 已完成（v2.2.111）：
+- 请求检查器卡片支持点击弹出详情对话框（完整消息 JSON、响应内容、元数据），卡片显示截断摘要
+
+✅ 已完成（v2.2.110）：
+- WebUI 聊天错误消息与正常助手消息完全一致（无任何视觉区分），输入框始终固定在聊天面板底部
+
+✅ 已完成（v2.2.109）：
+- WebUI 聊天错误消息改为助手消息气泡样式，不再使用独立错误提示框
+
+✅ 已完成（v2.2.108）：
+- 修复非流式补全路径 NameError: resp 未定义（移除错误的 resp._platform 赋值）
+
+✅ 已完成（v2.2.107）：
+- 配置保存防覆写改用时间戳守卫（5 秒窗口），比单次 boolean 更可靠
+
+✅ 已完成（v2.2.106）：
+- 修复配置保存后被 refreshAll 覆写回原样的问题（configDirty 检查 + _skipNextConfigRender 标记）
+
+✅ 已完成（v2.2.105）：
+- 新增 MappingEditor 键值对编辑器组件（替代 JSON textarea），用于 fncall_mapping 和 model_mapping
+
+✅ 已完成（v2.2.104）：
+- 配置组件溢出修复：输入框弹性宽度 + _fieldBlock 纵向布局（列表/JSON 编辑器全宽显示）
+
+✅ 已完成（v2.2.103）：
+- 配置 JSON 编辑器修复：textarea 只在失焦时提交（不再每次按键 parse），防止事件重复绑定
+
+✅ 已完成（v2.2.102）：
+- 配置标签页重写为组件化架构：Toggle/Number/Text/Select/StringList/JsonEditor 六种组件，每个配置段独立渲染器
+
+✅ 已完成（v2.2.101）：
+- config_get 添加 tomli 回退兼容 Python < 3.11
+
+✅ 已完成（v2.2.100）：
+- 聊天工具参数切换改用 document 级全局事件委托，彻底修复点击无效
+
+✅ 已完成（v2.2.99）：
+- GET /v1/config 改为直接读取 config.toml（tomllib.load），返回与文件一致的结构
+
+✅ 已完成（v2.2.98）：
+- 聊天工具调用「查看参数/收起参数」改用事件委托 + style.display 切换（修复点击无效）
+
+✅ 已完成（v2.2.97）：
+- 请求检查器 Request Messages 折叠切换改用 addEventListener 事件委托（修复 inline onclick 失效）
+
+✅ 已完成（v2.2.96）：
+- WebUI 配置标签页改为从 /v1/config 加载真实配置（与 config.toml 结构一致），不再使用摘要 API 的简化版本
+
+✅ 已完成（v2.2.95）：
+- WebUI 聊天调试日志：发送时显示消息数量和角色
+- reasoning_content 捕获并保存到对话历史，防止思考内容丢失导致上下文断裂
+
+✅ 已完成（v2.2.94）：
+- openaifm 导入修复：util.py 移除已删除的 DEFAULT_MODEL 引用，恢复平台加载
+
+✅ 已完成（v2.2.93）：
+- openaifm 候选项构建移除对 accounts.py（gitignored）的依赖，始终生成 1 个候选项
+
+✅ 已完成（v2.2.92）：
+- openaifm 平台修复：无需认证（单占位候选项）、表单字段修正（input/prompt/voice/vibe）、multipart/form-data、移除无效 auth
+
+✅ 已完成（v2.2.91）：
+- chatmoe 平台增强：配置 UUID Key + Authorization: Key 格式
+- SSE 解析重写：支持 event/data/id 行 + X-Stream-Id 捕获
+- 新增 abort_stream（停止生成）和 resume_stream（继续生成）
+- 定时 Key 重新生成（每 24 小时，类似 qwen 定时登录）
+- 新增 flash-lite 模型
+
+✅ 已完成（v2.2.90）：
+- 移除自动更新中错误的嵌套协议检查，允许代理镜像 URL 正常拼接
+
+✅ 已完成（v2.2.89）：
+- 侧栏标签文字简化：「自动更新」→「更新」，「聊天测试」→「聊天」
+
+✅ 已完成（v2.2.88）：
+- 请求检查器流式内容改为路由层直接推送到 broker（绕过中间件收集器）
+- 中间件 request_start 事件新增 messages 字段（原始请求消息）
+- 请求详情新增可折叠的 Request Messages 区域显示原始请求 JSON
+- echotools 升级至 1.0.19
+
+✅ 已完成（v2.2.87）：
+- 修复自动更新 URL 污染 bug：_fetch_from_mirrors 改为 try/finally 保存恢复原始 remote URL
+- 新增 _extract_repo_path() 函数清理嵌套协议前缀（regex 去重）
+- 构造的 URL 含多个 :// 时直接跳过
+
+✅ 已完成（v2.2.86）：
+- echotools 升级至 1.0.18：中间件跳过 GET 请求 + request 级别 chunk 收集器修复请求检查器
+- requirements.txt 更新为 echotools>=1.0.18
+
+✅ 已完成（v2.2.85）：
+- 新增 SortableList 可排序列表组件（上下箭头 + 删除，来自 echotools）
+- 自动更新镜像源列表改用 SortableList 组件替代旧的数字优先级输入
+
+✅ 已完成（v2.2.84）：
+- 自动更新检查结果支持文件 diff 预览：点击文件名弹出彩色 diff 对话框
+- 新增 POST /v1/admin/autoupdate/diff 接口返回单文件变更
+- 自动更新应用后自动热重载配置
+
+✅ 已完成（v2.2.83）：
+- 请求检查器修复：流式响应内容改用 request 级别 chunk 收集器，路由层推入中间件广播
+- 跳过 GET 请求（/v1/models 等），仅捕获 POST API 调用
+
+✅ 已完成（v2.2.82）：
+- 便携设置 STT/TTS 模型改为下拉选择菜单（从 /v1/models 加载）
+- TTS 引导 Prompt 新增「恢复默认」按钮，从 prompts/tts_default.prompt 加载模板
+- 新增 /prompts/ 静态路由服务 prompt 模板文件
+
+✅ 已完成（v2.2.81）：
+- 语音输入波形 GIF 改为 base64 内嵌（与 echotools 一致），移除外部 waveform_64x64.gif 文件依赖
+
+✅ 已完成（v2.2.80）：
+- 语音输入录音时按钮替换为波形 GIF 动画，录音结束后恢复原按钮内容
+
+✅ 已完成（v2.2.79）：
+- 批量测试统计：首包延迟、总耗时、Tokens、TPS 实时显示
+- 结果卡片点击展开详情对话框，支持实时流式内容更新（200ms 轮询）
+- 批量测试空 prompt 时使用默认 prompt 而非报错
+
+✅ 已完成（v2.2.78）：
+- 配置 Tab 补全：新增 fncall 和 autoupdate 段，debug 段补充 color/access_log
+- WebUI 自动滑动修复：.webui-content 改为滚动容器，切换 Tab 时滚动到顶部
+
+✅ 已完成（v2.2.77）：
+- 批量测试工具定义生效：自动收集工具定义并注入请求
+- 批量测试结果卡片可点击展开详情对话框（显示完整 Prompt + 响应）
+- chatTestReport 移入 batchTestSection 内部，收起时一并隐藏
+
+✅ 已完成（v2.2.76）：
+- WebUI 批量测试改为点击展开模式（默认隐藏参数表单）
+- Tab 切换滚动位置修复：滚动到右侧内容容器底部而非页面顶部
+
+✅ 已完成（v2.2.75）：
+- WebUI 批量测试重设计为 OpenAI Batch 风格：参数表单（Temperature/MaxTokens/SystemPrompt）+ 实时流式结果展示
+- 每个 prompt 独立卡片，流式内容实时更新
+- 工具调用检测 + 最终汇总
+
+✅ 已完成（v2.2.74）：
+- 通用逻辑下沉到 echotools：RequestStats、RequestBroker、stats_middleware 迁移到 echotools.web
+- provider-self 改为 echotools 薄包装（re-export），减少约 400 行重复代码
+- echotools 升级至 1.0.17
+
+✅ 已完成（v2.2.73）：
+- WebUI 批量测试：多行文本框输入多个 prompt，顺序提交并展示每个结果
+- 配置 Tab：过滤内部字段（group_list_set 等），界面更简洁
+- 自动更新差异文件选择：每个变更文件显示勾选框 + 全选/取消全选 + 选择性覆盖
+- 请求检查器流式捕获：中间件包装 response.write 捕获流式 chunks 并广播
+
+✅ 已完成（v2.2.72）：
+- 自动更新镜像源改进：默认使用基础 URL（如 `https://github.com/`），后端自动拼接仓库路径
+- 镜像源 UI 添加优先级数字输入框（带上下箭头），支持拖拽排序
+
+✅ 已完成（v2.2.71）：
+- InputBox 通用组件集成：替换旧聊天输入区，支持文件上传、语音输入、长文本自动转文件
+- 便携设置新增 STT/TTS 模型配置和 TTS 引导 Prompt（localStorage 持久化）
+- echotools 新增 web/input_box 组件（input-box.js + input-box.css）
+
+✅ 已完成（v2.2.70）：
+- 自动更新功能完善：差异更新（仅覆盖变更文件）、镜像源优先级配置、变更文件列表展示
+- 新增 `diff_update` 和 `mirrors` 配置字段
+- 新增 `POST /v1/admin/autoupdate/apply` API（差异 checkout / 全量 pull）
+- WebUI 自动更新 Tab 重写：toggle 开关 + 镜像源增删 + 检查结果面板 + 应用按钮
+
+✅ 已完成（v2.2.69）：
+- WebUI 配置 Tab 表单化：布尔值显示开关、字符串/数字显示输入框、列表/字典显示 JSON 文本域
+- WebUI 请求检查器：实时请求日志列表 + 详情面板，WebSocket 推送 request_start/end 事件
+- 新增 RequestBroker 服务（环形缓冲 100 条 + WebSocket 广播）
+- stats_middleware 增强：请求开始/结束时广播事件
+- 新增 API：GET /v1/webui/ws/requests（WebSocket）、GET /v1/webui/requests（REST）
 
 ✅ 已完成（v2.2.68）：
 - 修复工具调用标签泄露到流式输出的 bug（safe_flush 未检测 buffer 本身是 trigger tag 前缀）

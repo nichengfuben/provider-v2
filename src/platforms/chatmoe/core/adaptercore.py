@@ -95,7 +95,7 @@ class Adapter(PlatformAdapter):
         self._models = models
         if self._client is not None:
             self._client.update_models(models)
-        logger.info("chatmoe 模型列表已更新: %d 个", len(models))
+        logger.debug("chatmoe 模型列表已更新: %d 个", len(models))
 
     async def fetch_remote_models(self) -> List[str]:
         """拉取远程模型列表。
@@ -164,6 +164,36 @@ class Adapter(PlatformAdapter):
             search=search,
             **kw,
         ):
+            yield chunk
+
+    async def abort_stream(self, candidate: Candidate) -> bool:
+        """停止当前活跃的流式生成。
+
+        Args:
+            candidate: 候选项。
+
+        Returns:
+            是否成功停止。
+        """
+        if self._client is None:
+            return False
+        return await self._client.abort_stream(candidate)
+
+    async def resume_stream(
+        self,
+        candidate: Candidate,
+    ) -> AsyncGenerator[Union[str, Dict[str, Any]], None]:
+        """从上次中断处继续生成。
+
+        Args:
+            candidate: 候选项。
+
+        Yields:
+            文本片段或结构化数据字典。
+        """
+        if self._client is None:
+            return
+        async for chunk in self._client.resume_stream(candidate):
             yield chunk
 
     async def close(self) -> None:
