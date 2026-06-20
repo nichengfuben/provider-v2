@@ -81,7 +81,7 @@ var TerminalManager = (function () {
         onSwitch: function (id) { _switchToTab(id); },
         onClose: function (id) { closeTab(id); },
         onContextMenu: function (id, event) { _showContextMenu(event, id); },
-        onAdd: function (e) { _showAddMenu(e); },
+        onAdd: function () { _createChooserTab(); },
         onCloseAll: function () { closeAllTabs(); },
         onToggleCollapsed: function (collapsed) {
           // Update shared layout config
@@ -126,10 +126,9 @@ var TerminalManager = (function () {
       }
     });
 
-    // Close context menu and add menu on click outside
+    // Close context menu on click outside
     document.addEventListener('click', function () {
       _hideContextMenu();
-      _hideAddMenu();
     });
 
     // Load saved connections
@@ -889,91 +888,143 @@ var TerminalManager = (function () {
     _connectWebSocket(tab);
   }
 
-  // ========================= Add Menu =========================
+  // ========================= Chooser Tab (New Tab Page) =========================
 
-  function _showAddMenu(event) {
-    _hideAddMenu();
-
-    var menu = document.createElement('div');
-    menu.className = 'terminal-context-menu';
-    menu.id = 'terminalAddMenu';
-    menu.style.left = event.clientX + 'px';
-    menu.style.top = (event.clientY + 4) + 'px';
-
-    var items = [
-      {
-        label: '+ \u672C\u5730\u7EC8\u7AEF',
-        action: function () { createTab('local'); }
-      },
-      {
-        label: '+ \u8FDC\u7A0B\u7EC8\u7AEF',
-        action: function () { _showSSHDialog(); }
-      },
-    ];
-
-    // Add saved connections
-    if (_savedConnections.length > 0) {
-      items.push({ separator: true });
-      for (var i = 0; i < _savedConnections.length; i++) {
-        (function (conn) {
-          var label = conn.name || (conn.username + '@' + conn.host);
-          items.push({
-            label: label,
-            action: function () {
-              createTab('ssh', {
-                host: conn.host,
-                port: conn.port || 22,
-                username: conn.username,
-                password: conn.password || '',
-                key_data: conn.key_data || '',
-                name: label,
-              });
-            },
-          });
-        })(_savedConnections[i]);
-      }
+  /**
+   * Create a new chooser tab — similar to Chrome's new-tab page.
+   * The tab renders the welcome/guide page inside its pane, with buttons
+   * for "本地终端" and "远程终端".  Clicking either converts the tab
+   * into a real terminal of that type.
+   */
+  function _createChooserTab() {
+    // Ensure the terminal sidebar tab is visible
+    if (typeof switchTab === 'function') {
+      switchTab('terminal');
     }
 
-    for (var i = 0; i < items.length; i++) {
-      if (items[i].separator) {
-        var sep = document.createElement('div');
-        sep.className = 'terminal-context-menu-separator';
-        menu.appendChild(sep);
-      } else {
-        var item = document.createElement('div');
-        item.className = 'terminal-context-menu-item';
-        item.textContent = items[i].label;
-        (function (action) {
-          item.addEventListener('click', function (e) {
-            e.stopPropagation();
-            _hideAddMenu();
-            action();
-          });
-        })(items[i].action);
-        menu.appendChild(item);
-      }
+    var tabId = 'chooser-' + Date.now();
+    var name = '\u65B0\u6807\u7B7E\u9875';  // 新标签页
+
+    var tab = {
+      id: tabId,
+      kind: 'chooser',
+      name: name,
+      status: 'idle',
+      xterm: null,
+      fitAddon: null,
+      ws: null,
+      sessionId: null,
+      options: {},
+      _resizeObserver: null,
+      _container: null,
+    };
+
+    _tabs.push(tab);
+
+    // Create pane with welcome page content
+    var paneDiv = document.createElement('div');
+    paneDiv.className = 'terminal-pane';
+    paneDiv.id = 'terminal-pane-' + tabId;
+    paneDiv.style.cssText = 'width:100%;height:100%;display:none;';
+
+    var welcomeEl = _renderWelcomePage();
+    paneDiv.appendChild(welcomeEl);
+    _body.appendChild(paneDiv);
+
+    // Add tab to TabBar
+    if (_bar) {
+      _bar.addTab({
+        id: tabId,
+        type: 'terminal',
+        icon: '+',
+        title: name,
+        closable: true,
+      });
+      _bar.setActive(tabId);
     }
 
-    document.body.appendChild(menu);
+    _activeTabId = tabId;
+    _showTabPane(tabId);
 
-    // Adjust position
-    var rect = menu.getBoundingClientRect();
-    if (rect.right > window.innerWidth) {
-      menu.style.left = (window.innerWidth - rect.width - 8) + 'px';
+    // Wire up the welcome page buttons
+    _wireWelcomePageButtons(welcomeEl, tabId);
+  }
+
+  /**
+   * Render the welcome/guide page element — the same UI shown in the
+   * zero-tab empty state, but reusable inside any tab pane.
+   * Returns a DOM element.
+   */
+  function _renderWelcomePage() {
+    var div = document.createElement('div');
+    div.className = 'terminal-empty-state';
+    div.innerHTML =
+      '<div class="terminal-empty-state-icon">&#9002;_</div>' +
+      '<div class="terminal-empty-state-text">\u9009\u62E9\u7EC8\u7AEF\u7C7B\u578B</div>' +
+      '<div class="terminal-empty-state-actions">' +
+      '<button type="button" class="welcome-local-btn">+ \u672C\u5730\u7EC8\u7AEF</button>' +
+      '<button type="button" class="welcome-ssh-btn">+ \u8FDC\u7A0B\u7EC8\u7AEF</button>' +
+      '</div>';
+    return div;
+  }
+
+  /**
+   * Wire up the Local / Remote buttons inside a welcome page element
+   * to convert the owning chooser tab into a real terminal tab.
+   */
+  function _wireWelcomePageButtons(el, tabId) {
+    var localBtn = el.querySelector('.welcome-local-btn');
+    var sshBtn = el.querySelector('.welcome-ssh-btn');
+
+    if (localBtn) {
+      localBtn.addEventListener('click', function () {
+        _convertChooserToLocal(tabId);
+      });
     }
-    if (rect.bottom > window.innerHeight) {
-      menu.style.top = (event.clientY - rect.height - 4) + 'px';
+
+    if (sshBtn) {
+      sshBtn.addEventListener('click', function () {
+        _convertChooserToSSH(tabId);
+      });
     }
   }
 
-  function _hideAddMenu() {
-    var menu = document.getElementById('terminalAddMenu');
-    if (menu) menu.remove();
+  /**
+   * Convert a chooser tab into a local terminal tab.
+   * Updates tab metadata, tab bar display, then initialises xterm.js + WS.
+   */
+  function _convertChooserToLocal(tabId) {
+    var tab = _getTabById(tabId);
+    if (!tab || tab.kind !== 'chooser') return;
+
+    _tabCounter++;
+    tab.kind = 'local';
+    tab.name = '\u672C\u5730 ' + _tabCounter;  // 本地 N
+    tab.status = 'connecting';
+
+    // Update TabBar display
+    if (_bar) {
+      _bar.setTitle(tabId, tab.name);
+      _bar.setIcon(tabId, '&#9002;_');
+      _bar.setStatus(tabId, 'connecting');
+    }
+
+    // _initTerminal removes the old pane and creates a fresh xterm pane
+    _initTerminal(tab);
+  }
+
+  /**
+   * Convert a chooser tab into an SSH terminal tab.
+   * Opens the SSH dialog; on successful connection the tab is converted.
+   * If the user cancels, the chooser tab remains unchanged.
+   */
+  function _convertChooserToSSH(tabId) {
+    _showSSHDialog(tabId);
   }
 
   // ========================= SSH Dialog =========================
 
-  function _showSSHDialog() {
+  function _showSSHDialog(chooserTabId) {
     var overlay = document.createElement('div');
     overlay.className = 'terminal-ssh-dialog-overlay';
     overlay.id = 'terminalSSHOverlay';
@@ -1064,7 +1115,7 @@ var TerminalManager = (function () {
     });
 
     overlay.querySelector('#sshConnectBtn').addEventListener('click', function () {
-      _doSSHConnect(overlay);
+      _doSSHConnect(overlay, chooserTabId);
     });
 
     // Quick input parse on Enter
@@ -1088,7 +1139,7 @@ var TerminalManager = (function () {
             _savedConnections.splice(idx, 1);
             _saveSavedConnections();
             overlay.remove();
-            _showSSHDialog();
+            _showSSHDialog(chooserTabId);
           });
         }
         item.addEventListener('click', function () {
@@ -1096,14 +1147,19 @@ var TerminalManager = (function () {
           var conn = _savedConnections[idx];
           if (conn) {
             overlay.remove();
-            createTab('ssh', {
+            var opts = {
               host: conn.host,
               port: conn.port || 22,
               username: conn.username,
               password: conn.password || '',
               key_data: conn.key_data || '',
               name: conn.name || (conn.username + '@' + conn.host),
-            });
+            };
+            if (chooserTabId) {
+              _convertChooserTabToSSH(chooserTabId, opts);
+            } else {
+              createTab('ssh', opts);
+            }
           }
         });
       })(savedItems[i]);
@@ -1158,7 +1214,7 @@ var TerminalManager = (function () {
     overlay.querySelector('#sshHost').value = input;
   }
 
-  function _doSSHConnect(overlay) {
+  function _doSSHConnect(overlay, chooserTabId) {
     var host = overlay.querySelector('#sshHost').value.trim();
     var port = parseInt(overlay.querySelector('#sshPort').value, 10) || 22;
     var username = overlay.querySelector('#sshUsername').value.trim();
@@ -1192,14 +1248,49 @@ var TerminalManager = (function () {
 
     overlay.remove();
 
-    createTab('ssh', {
+    var opts = {
       host: host,
       port: port,
       username: username,
       password: password,
       key_data: keyData,
       name: name || (username + '@' + host + ':' + port),
-    });
+    };
+
+    if (chooserTabId) {
+      _convertChooserTabToSSH(chooserTabId, opts);
+    } else {
+      createTab('ssh', opts);
+    }
+  }
+
+  /**
+   * Convert a chooser tab into an SSH terminal tab.
+   * Updates tab metadata, tab bar display, then initialises xterm.js + WS.
+   */
+  function _convertChooserTabToSSH(tabId, options) {
+    var tab = _getTabById(tabId);
+    if (!tab || tab.kind !== 'chooser') {
+      // Fallback: if tab no longer exists or isn't a chooser, create a new tab
+      createTab('ssh', options);
+      return;
+    }
+
+    _tabCounter++;
+    tab.kind = 'ssh';
+    tab.name = options.name || ('\u8FDC\u7A0B ' + _tabCounter);
+    tab.status = 'connecting';
+    tab.options = options;
+
+    // Update TabBar display
+    if (_bar) {
+      _bar.setTitle(tabId, tab.name);
+      _bar.setIcon(tabId, '&#9002;_');
+      _bar.setStatus(tabId, 'connecting');
+    }
+
+    // _initTerminal removes the old pane and creates a fresh xterm pane
+    _initTerminal(tab);
   }
 
   // ========================= Saved Connections =========================

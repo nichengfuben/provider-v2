@@ -18,8 +18,8 @@
 
 <div align="center">
 
-![Status](https://img.shields.io/badge/status-v2.2.174-blue)
-![Version](https://img.shields.io/badge/version-2.2.174-blue)
+![Status](https://img.shields.io/badge/status-v2.2.175-blue)
+![Version](https://img.shields.io/badge/version-2.2.175-blue)
 ![Python](https://img.shields.io/badge/python-3.8+-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Platforms](https://img.shields.io/badge/platforms-16+-orange)
@@ -1257,7 +1257,10 @@ fix(gateway): 修复并发竞速时 token 计数错误
 
 ## 🗺️ 路线图
 
-### 当前版本：v2.2.174
+### 当前版本：v2.2.175
+
+✅ 已完成（v2.2.175）：
+- 终端 + 按钮重新设计：点击立即创建 chooser 标签页（类 Chrome 新标签），页内选本地/远程终端
 
 ✅ 已完成（v2.2.174）：
 - 终端标签恢复加速：_restPreFetch 并行探测 + _discoveryProcessed 防竞态；每 tab attach 延迟去除
