@@ -499,7 +499,7 @@ var FileManager = (function () {
       tab.loading = false;
       tab.entries = [];
       _renderContent();
-      if (typeof toast === 'function') toast('Failed to load directory: ' + e.message, 'error');
+      if (typeof toast === 'function') toast('加载目录失败: ' + e.message, 'error');
     }
   }
 
@@ -545,7 +545,7 @@ var FileManager = (function () {
       _body.innerHTML =
         '<div class="files-empty">' +
         '<div class="files-empty-icon">&#128193;</div>' +
-        '<div class="files-empty-text">No tabs open. Click + to browse files.</div>' +
+        '<div class="files-empty-text">无打开的标签。点击 + 浏览文件。</div>' +
         '</div>';
       return;
     }
@@ -560,9 +560,9 @@ var FileManager = (function () {
     listArea.style.cssText = 'flex:1;overflow-y:auto;';
 
     if (tab.loading) {
-      listArea.innerHTML = '<div class="files-loading">Loading...</div>';
+      listArea.innerHTML = '<div class="files-loading">加载中...</div>';
     } else if (tab.entries.length === 0) {
-      listArea.innerHTML = '<div class="files-empty"><div class="files-empty-text">Empty directory</div></div>';
+      listArea.innerHTML = '<div class="files-empty"><div class="files-empty-text">空目录</div></div>';
     } else {
       if (tab.entries.length > _VS_THRESHOLD) {
         var vsWrapper = _buildVirtualScroll(tab);
@@ -590,7 +590,7 @@ var FileManager = (function () {
     var backBtn = document.createElement('button');
     backBtn.className = 'files-nav-btn';
     backBtn.innerHTML = '&#9664;';
-    backBtn.title = 'Back';
+    backBtn.title = '后退';
     backBtn.disabled = tab.historyIdx <= 0;
     backBtn.addEventListener('click', function () { _goBack(tab); });
     toolbar.appendChild(backBtn);
@@ -599,7 +599,7 @@ var FileManager = (function () {
     var fwdBtn = document.createElement('button');
     fwdBtn.className = 'files-nav-btn';
     fwdBtn.innerHTML = '&#9654;';
-    fwdBtn.title = 'Forward';
+    fwdBtn.title = '前进';
     fwdBtn.disabled = tab.historyIdx >= tab.history.length - 1;
     fwdBtn.addEventListener('click', function () { _goForward(tab); });
     toolbar.appendChild(fwdBtn);
@@ -608,7 +608,7 @@ var FileManager = (function () {
     var upBtn = document.createElement('button');
     upBtn.className = 'files-nav-btn';
     upBtn.innerHTML = '&#9650;';
-    upBtn.title = 'Parent directory';
+    upBtn.title = '上级目录';
     upBtn.disabled = _isRootView(tab.path);
     upBtn.addEventListener('click', function () { _goUp(tab); });
     toolbar.appendChild(upBtn);
@@ -702,7 +702,7 @@ var FileManager = (function () {
       var projBtn = document.createElement('button');
       projBtn.className = 'files-nav-btn files-project-btn';
       projBtn.innerHTML = '&#128193;';
-      projBtn.title = 'Project root';
+      projBtn.title = '项目根目录';
       projBtn.addEventListener('click', function () { _navigateTo(tab, _projectRoot); });
       toolbar.appendChild(projBtn);
     }
@@ -761,7 +761,7 @@ var FileManager = (function () {
     clearBtn.className = 'files-search-clear';
     clearBtn.type = 'button';
     clearBtn.innerHTML = '&times;';
-    clearBtn.title = 'Clear search';
+    clearBtn.title = '清除搜索';
     clearBtn.addEventListener('click', function (e) {
       e.stopPropagation();
       _clearSearch();
@@ -789,11 +789,11 @@ var FileManager = (function () {
       clipIndicator.className = 'files-clipboard-indicator';
       var clipLabel = _clipboard.action === 'cut' ? '\u5DF2\u526A\u5207' : '\u5DF2\u590D\u5236';
       clipIndicator.textContent = clipLabel + ' ' + _clipboard.paths.length + ' \u9879';
-      clipIndicator.title = _clipboard.action === 'cut' ? 'Cut to clipboard' : 'Copied to clipboard';
+      clipIndicator.title = _clipboard.action === 'cut' ? '已剪切到剪贴板' : '已复制到剪贴板';
       var clipClearBtn = document.createElement('span');
       clipClearBtn.className = 'files-clipboard-clear';
       clipClearBtn.textContent = '\u00D7';
-      clipClearBtn.title = 'Clear clipboard';
+      clipClearBtn.title = '清除剪贴板';
       clipClearBtn.addEventListener('click', function (e) {
         e.stopPropagation();
         _clipboard = { action: null, paths: [] };
@@ -809,20 +809,20 @@ var FileManager = (function () {
 
     var uploadBtn = document.createElement('button');
     uploadBtn.className = 'files-toolbar-btn files-upload-btn';
-    uploadBtn.textContent = 'Upload';
-    uploadBtn.title = 'Upload files to current directory';
+    uploadBtn.textContent = '上传';
+    uploadBtn.title = '上传文件到当前目录';
     uploadBtn.addEventListener('click', function () { _triggerFilePicker(); });
     actions.appendChild(uploadBtn);
 
     var newFolderBtn = document.createElement('button');
     newFolderBtn.className = 'files-toolbar-btn';
-    newFolderBtn.textContent = '+ Folder';
+    newFolderBtn.textContent = '+ 文件夹';
     newFolderBtn.addEventListener('click', function () { _promptNewFolder(tab); });
     actions.appendChild(newFolderBtn);
 
     var refreshBtn = document.createElement('button');
     refreshBtn.className = 'files-toolbar-btn';
-    refreshBtn.textContent = 'Refresh';
+    refreshBtn.textContent = '刷新';
     refreshBtn.addEventListener('click', function () { _loadDirectory(tab, tab.path); });
     actions.appendChild(refreshBtn);
 
@@ -881,9 +881,9 @@ var FileManager = (function () {
     var headerRow = document.createElement('tr');
 
     var cols = [
-      { key: 'name', label: 'Name', cls: '' },
-      { key: 'size', label: 'Size', cls: 'file-size' },
-      { key: 'modified', label: 'Modified', cls: 'file-modified' },
+      { key: 'name', label: '名称', cls: '' },
+      { key: 'size', label: '大小', cls: 'file-size' },
+      { key: 'modified', label: '修改时间', cls: 'file-modified' },
     ];
 
     for (var c = 0; c < cols.length; c++) {
@@ -1087,9 +1087,9 @@ var FileManager = (function () {
     var thead = document.createElement('thead');
     var headerRow = document.createElement('tr');
     var cols = [
-      { key: 'name', label: 'Name', cls: '' },
-      { key: 'size', label: 'Size', cls: 'file-size' },
-      { key: 'modified', label: 'Modified', cls: 'file-modified' },
+      { key: 'name', label: '名称', cls: '' },
+      { key: 'size', label: '大小', cls: 'file-size' },
+      { key: 'modified', label: '修改时间', cls: 'file-modified' },
     ];
 
     for (var c = 0; c < cols.length; c++) {
@@ -1244,12 +1244,12 @@ var FileManager = (function () {
     var items = [];
 
     if (entry.type === 'dir') {
-      items.push({ label: 'Open', action: function () { _navigateTo(tab, entry.path); } });
+      items.push({ label: '打开', action: function () { _navigateTo(tab, entry.path); } });
       items.push({ label: '\u5728\u7EC8\u7AEF\u4E2D\u6253\u5F00', action: function () { _openInTerminal(entry.path); } });
     } else {
-      items.push({ label: 'Preview', action: function () { _previewFile(entry); } });
-      items.push({ label: 'Edit', action: function () { _previewFile(entry, true); } });
-      items.push({ label: 'Download', action: function () { _downloadFile(entry.path); } });
+      items.push({ label: '预览', action: function () { _previewFile(entry); } });
+      items.push({ label: '编辑', action: function () { _previewFile(entry, true); } });
+      items.push({ label: '下载', action: function () { _downloadFile(entry.path); } });
     }
 
     items.push({ separator: true });
@@ -1260,10 +1260,10 @@ var FileManager = (function () {
       items.push({ label: '\u7C98\u8D34', action: function () { _clipboardPaste(tab); } });
     }
     items.push({ separator: true });
-    items.push({ label: 'Rename', action: function () { _showRenameDialog(tab, entry); } });
-    items.push({ label: 'Delete', danger: true, action: function () { _deleteEntries(tab, [entry.path]); } });
+    items.push({ label: '重命名', action: function () { _showRenameDialog(tab, entry); } });
+    items.push({ label: '删除', danger: true, action: function () { _deleteEntries(tab, [entry.path]); } });
     items.push({ separator: true });
-    items.push({ label: 'New Folder', action: function () { _promptNewFolder(tab); } });
+    items.push({ label: '新建文件夹', action: function () { _promptNewFolder(tab); } });
 
     _populateMenu(_contextMenu, items);
     document.body.appendChild(_contextMenu);
@@ -1278,9 +1278,9 @@ var FileManager = (function () {
     _contextMenu.style.top = event.clientY + 'px';
 
     var items = [
-      { label: 'Close', action: function () { closeTab(tabId); } },
-      { label: 'Close Others', action: function () { _closeOtherTabs(tabId); } },
-      { label: 'Close All', danger: true, action: function () { _closeAllTabs(); } },
+      { label: '关闭', action: function () { closeTab(tabId); } },
+      { label: '关闭其他', action: function () { _closeOtherTabs(tabId); } },
+      { label: '全部关闭', danger: true, action: function () { _closeAllTabs(); } },
     ];
 
     _populateMenu(_contextMenu, items);
@@ -1296,10 +1296,10 @@ var FileManager = (function () {
     _contextMenu.style.top = event.clientY + 'px';
 
     var items = [
-      { label: 'Upload files', action: function () { _triggerFilePicker(); } },
+      { label: '上传文件', action: function () { _triggerFilePicker(); } },
       { separator: true },
-      { label: 'New Folder', action: function () { _promptNewFolder(tab); } },
-      { label: 'Refresh', action: function () { _loadDirectory(tab, tab.path); } },
+      { label: '新建文件夹', action: function () { _promptNewFolder(tab); } },
+      { label: '刷新', action: function () { _loadDirectory(tab, tab.path); } },
       { separator: true },
       { label: '\u5728\u7EC8\u7AEF\u4E2D\u6253\u5F00', action: function () { _openInTerminal(tab.path); } },
     ];
@@ -1402,22 +1402,22 @@ var FileManager = (function () {
 
   async function _deleteEntries(tab, paths) {
     var msg = paths.length === 1 ?
-      'Delete "' + paths[0].split(/[\/\\]/).pop() + '"?' :
-      'Delete ' + paths.length + ' items?';
+      '删除 "' + paths[0].split(/[\/\\]/).pop() + '"?' :
+      '删除 ' + paths.length + ' 项?';
     if (!confirm(msg)) return;
 
     try {
       var resp = await Api.post('/v1/webui/files/delete', { paths: paths });
       var ok = (resp.results || []).every(function (r) { return r.ok; });
       if (ok) {
-        if (typeof toast === 'function') toast('Deleted successfully', 'ok');
+        if (typeof toast === 'function') toast('删除成功', 'ok');
         _loadDirectory(tab, tab.path);
       } else {
         var errs = (resp.results || []).filter(function (r) { return !r.ok; });
-        if (typeof toast === 'function') toast('Delete failed: ' + errs[0].error, 'error');
+        if (typeof toast === 'function') toast('删除失败: ' + errs[0].error, 'error');
       }
     } catch (e) {
-      if (typeof toast === 'function') toast('Delete failed: ' + e.message, 'error');
+      if (typeof toast === 'function') toast('删除失败: ' + e.message, 'error');
     }
   }
 
@@ -1427,11 +1427,11 @@ var FileManager = (function () {
 
     overlay.innerHTML =
       '<div class="files-rename-dialog">' +
-      '<h3>Rename</h3>' +
+      '<h3>重命名</h3>' +
       '<input type="text" id="filesRenameInput" value="' + _escapeAttr(entry.name) + '">' +
       '<div class="files-rename-actions">' +
-      '<button class="files-rename-cancel" type="button">Cancel</button>' +
-      '<button class="files-rename-confirm" type="button">Rename</button>' +
+      '<button class="files-rename-cancel" type="button">取消</button>' +
+      '<button class="files-rename-confirm" type="button">重命名</button>' +
       '</div></div>';
 
     document.body.appendChild(overlay);
@@ -1466,10 +1466,10 @@ var FileManager = (function () {
         old_path: entry.path,
         new_path: newPath,
       }).then(function () {
-        if (typeof toast === 'function') toast('Renamed', 'ok');
+        if (typeof toast === 'function') toast('已重命名', 'ok');
         _loadDirectory(tab, tab.path);
       }).catch(function (e) {
-        if (typeof toast === 'function') toast('Rename failed: ' + e.message, 'error');
+        if (typeof toast === 'function') toast('重命名失败: ' + e.message, 'error');
       });
 
       overlay.remove();
@@ -1483,16 +1483,16 @@ var FileManager = (function () {
   }
 
   function _promptNewFolder(tab) {
-    var name = prompt('New folder name:');
+    var name = prompt('新文件夹名称:');
     if (!name || !name.trim()) return;
 
     var newPath = _pathJoin(tab.path, name.trim());
 
     Api.post('/v1/webui/files/mkdir', { path: newPath }).then(function () {
-      if (typeof toast === 'function') toast('Folder created', 'ok');
+      if (typeof toast === 'function') toast('文件夹已创建', 'ok');
       _loadDirectory(tab, tab.path);
     }).catch(function (e) {
-      if (typeof toast === 'function') toast('Failed: ' + e.message, 'error');
+      if (typeof toast === 'function') toast('失败: ' + e.message, 'error');
     });
   }
 
@@ -1514,7 +1514,7 @@ var FileManager = (function () {
 
     // Show a brief upload indicator via toast
     var count = fileList.length;
-    if (typeof toast === 'function') toast('Uploading ' + count + ' file(s)...', 'ok');
+    if (typeof toast === 'function') toast('正在上传 ' + count + ' 个文件...', 'ok');
 
     try {
       var resp = await fetch('/v1/webui/files/upload', {
@@ -1531,15 +1531,15 @@ var FileManager = (function () {
 
       if (!resp.ok) {
         var errMsg = (data && data.error) ? data.error : ('HTTP ' + resp.status);
-        if (typeof toast === 'function') toast('Upload failed: ' + errMsg, 'error');
+        if (typeof toast === 'function') toast('上传失败: ' + errMsg, 'error');
         return;
       }
 
       var uploaded = (data && data.uploaded) || [];
-      if (typeof toast === 'function') toast(uploaded.length + ' file(s) uploaded', 'ok');
+      if (typeof toast === 'function') toast('已上传 ' + uploaded.length + ' 个文件', 'ok');
       _loadDirectory(tab, tab.path);
     } catch (e) {
-      if (typeof toast === 'function') toast('Upload failed: ' + e.message, 'error');
+      if (typeof toast === 'function') toast('上传失败: ' + e.message, 'error');
     }
   }
 
@@ -1551,7 +1551,7 @@ var FileManager = (function () {
       if (overlay) return;
       overlay = document.createElement('div');
       overlay.className = 'files-drop-overlay';
-      overlay.textContent = 'Drop files to upload';
+      overlay.textContent = '拖放文件以上传';
       listArea.style.position = 'relative';
       listArea.appendChild(overlay);
     }
@@ -1609,11 +1609,11 @@ var FileManager = (function () {
       '<div class="files-preview-header">' +
       '<div class="files-preview-title">' + _escapeHtml(entry.name) + '</div>' +
       '<div class="files-preview-actions">' +
-      '<button class="files-preview-btn" id="filesPreviewEdit">Edit</button>' +
-      '<button class="files-preview-btn" id="filesPreviewDownload">Download</button>' +
-      '<button class="files-preview-btn" id="filesPreviewClose">Close</button>' +
+      '<button class="files-preview-btn" id="filesPreviewEdit">编辑</button>' +
+      '<button class="files-preview-btn" id="filesPreviewDownload">下载</button>' +
+      '<button class="files-preview-btn" id="filesPreviewClose">关闭</button>' +
       '</div></div>' +
-      '<div class="files-preview-body"><div class="files-loading">Loading...</div></div>' +
+      '<div class="files-preview-body"><div class="files-loading">加载中...</div></div>' +
       '</div>';
 
     document.body.appendChild(overlay);
@@ -1674,9 +1674,9 @@ var FileManager = (function () {
       titleEl.textContent = entry.name;
 
       actionsEl.innerHTML =
-        '<button class="files-preview-btn" id="filesPreviewEdit">Edit</button>' +
-        '<button class="files-preview-btn" id="filesPreviewDownload">Download</button>' +
-        '<button class="files-preview-btn" id="filesPreviewClose">Close</button>';
+        '<button class="files-preview-btn" id="filesPreviewEdit">编辑</button>' +
+        '<button class="files-preview-btn" id="filesPreviewDownload">下载</button>' +
+        '<button class="files-preview-btn" id="filesPreviewClose">关闭</button>';
 
       actionsEl.querySelector('#filesPreviewEdit').addEventListener('click', function () {
         if (editState.active) return;
@@ -1697,11 +1697,11 @@ var FileManager = (function () {
       editState.active = true;
       editState.dirty = false;
       dialog.classList.add('files-edit-mode');
-      titleEl.textContent = entry.name + ' - Editing';
+      titleEl.textContent = entry.name + ' - 编辑中';
 
       actionsEl.innerHTML =
-        '<button class="files-preview-btn files-preview-btn-save" id="filesEditorSave">Save</button>' +
-        '<button class="files-preview-btn" id="filesEditorCancel">Cancel</button>';
+        '<button class="files-preview-btn files-preview-btn-save" id="filesEditorSave">保存</button>' +
+        '<button class="files-preview-btn" id="filesEditorCancel">取消</button>';
 
       actionsEl.querySelector('#filesEditorSave').addEventListener('click', _saveEditedFile);
       actionsEl.querySelector('#filesEditorCancel').addEventListener('click', _cancelEdit);
@@ -1774,7 +1774,7 @@ var FileManager = (function () {
     function _markDirty() {
       if (!editState.dirty) {
         editState.dirty = true;
-        titleEl.textContent = entry.name + ' - Editing *';
+        titleEl.textContent = entry.name + ' - 编辑中 *';
       }
     }
 
@@ -1786,7 +1786,7 @@ var FileManager = (function () {
       var saveBtn = actionsEl.querySelector('#filesEditorSave');
       if (saveBtn) {
         saveBtn.disabled = true;
-        saveBtn.textContent = 'Saving...';
+        saveBtn.textContent = '保存中...';
       }
 
       try {
@@ -1795,15 +1795,15 @@ var FileManager = (function () {
           content: textarea.value,
         });
         editState.originalContent = textarea.value;
-        if (typeof toast === 'function') toast('File saved', 'ok');
+        if (typeof toast === 'function') toast('文件已保存', 'ok');
         // Refresh the read-only preview with updated content
         _renderTextPreview(editState.originalContent);
         _exitEditMode();
       } catch (e) {
-        if (typeof toast === 'function') toast('Save failed: ' + e.message, 'error');
+        if (typeof toast === 'function') toast('保存失败: ' + e.message, 'error');
         if (saveBtn) {
           saveBtn.disabled = false;
-          saveBtn.textContent = 'Save';
+          saveBtn.textContent = '保存';
         }
       }
     }
@@ -1811,7 +1811,7 @@ var FileManager = (function () {
     // Cancel editing with dirty-state confirmation
     function _cancelEdit() {
       if (editState.dirty) {
-        if (!confirm('Discard unsaved changes?')) return;
+        if (!confirm('放弃未保存的更改?')) return;
       }
       _exitEditMode();
       // Restore preview body from original content
@@ -1865,9 +1865,9 @@ var FileManager = (function () {
         bodyEl.innerHTML =
           '<div class="files-preview-binary">' +
           '<div style="font-size:48px;opacity:0.5;">&#128196;</div>' +
-          '<div>Binary file (' + _formatSize(data.total_size) + ')</div>' +
+          '<div>二进制文件 (' + _formatSize(data.total_size) + ')</div>' +
           '<button class="files-preview-btn" onclick="FileManager.download(\'' +
-          _escapeAttr(entry.path) + '\')">Download</button>' +
+          _escapeAttr(entry.path) + '\')">下载</button>' +
           '</div>';
       } else {
         // Text preview with line numbers
@@ -1878,7 +1878,7 @@ var FileManager = (function () {
       }
     } catch (e) {
       overlay.querySelector('#filesPreviewEdit').style.display = 'none';
-      bodyEl.innerHTML = '<div class="files-preview-binary"><div>Error loading file: ' + _escapeHtml(e.message) + '</div></div>';
+      bodyEl.innerHTML = '<div class="files-preview-binary"><div>加载文件失败: ' + _escapeHtml(e.message) + '</div></div>';
     }
   }
 
@@ -2085,7 +2085,7 @@ var FileManager = (function () {
       var data = await resp.json();
 
       if (!resp.ok) {
-        _searchResults.innerHTML = '<div class="files-search-empty">' + _escapeHtml(data.error || 'Search failed') + '</div>';
+        _searchResults.innerHTML = '<div class="files-search-empty">' + _escapeHtml(data.error || '搜索失败') + '</div>';
         return;
       }
 
@@ -2093,7 +2093,7 @@ var FileManager = (function () {
       _renderSearchResults(results, dirPath);
     } catch (e) {
       if (e.name === 'AbortError') return;
-      _searchResults.innerHTML = '<div class="files-search-empty">Search error: ' + _escapeHtml(e.message) + '</div>';
+      _searchResults.innerHTML = '<div class="files-search-empty">搜索出错: ' + _escapeHtml(e.message) + '</div>';
     }
   }
 
@@ -2103,7 +2103,7 @@ var FileManager = (function () {
     _searchActiveIdx = -1;
 
     if (results.length === 0) {
-      _searchResults.innerHTML = '<div class="files-search-empty">No results found</div>';
+      _searchResults.innerHTML = '<div class="files-search-empty">未找到结果</div>';
       _searchResults.classList.add('visible');
       return;
     }

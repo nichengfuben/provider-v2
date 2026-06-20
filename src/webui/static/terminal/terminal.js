@@ -877,16 +877,28 @@ var TerminalManager = (function () {
       renderer.resize(dims.cols, dims.rows);
     }, 50);
 
-    // Local echo flag: default ON for Windows PIPE I/O (cmd.exe does not echo
-    // typed characters when stdin is a pipe). Unix PTY backends already echo,
-    // so set this to false if double-echo is observed.
-    var LOCAL_ECHO = true;
+    // Local echo: frontend renders typed characters immediately (no network latency).
+    // cmd.exe with PIPE I/O does NOT echo individual typed characters back to stdout.
+    // After Enter, cmd.exe echoes the whole command line as a one-shot (not per-char).
+    // We strip that line-echo from backend output using _pendingLine below.
+    // Under ConPTY, the PTY handles its own echo, so tab.LOCAL_ECHO is disabled.
+    // The backend sends a {type:'mode'} message at connect time to set this.
+    tab.LOCAL_ECHO = true;  // safe default; overridden to false when mode=conpty
 
     // Tracks characters typed on the current input line.
-    // Used only to gate Backspace so it cannot erase the shell prompt.
+    // Used to gate Backspace so it cannot erase the shell prompt,
+    // and snapshot to _pendingLine on Enter for line-echo stripping.
     var _currentLine = '';
 
-    // Input handler with local echo for Windows PIPE I/O compatibility.
+    // Text of the last submitted command (set on Enter press).
+    // Used by ws.onmessage to strip cmd.exe's one-shot line echo from output.
+    // Stored on tab object so _connectWebSocket's onmessage handler can access it.
+    tab._pendingLine = '';
+
+    // Input handler — forwards keystrokes to the backend via WebSocket.
+    // Local echo is ON (tab.LOCAL_ECHO=true): frontend renders typed chars immediately.
+    // On Enter, _pendingLine snapshots the command text so ws.onmessage can strip
+    // cmd.exe's one-shot line echo from backend output.
     // Handles printable chars, Enter, Backspace, arrows, Ctrl keys, Tab.
     renderer.onData(function (data) {
       // Helper: send data string to the backend via WebSocket
@@ -900,8 +912,9 @@ var TerminalManager = (function () {
 
       // --- Enter (\r from _handleKeydown, or \r\n from paste) ---
       if (data === '\r' || data === '\r\n') {
-        if (LOCAL_ECHO) renderer.write('\r\n');
+        if (tab.LOCAL_ECHO) renderer.write('\r\n');
         _send('\r\n');  // cmd.exe PIPE I/O requires \r\n as line terminator
+        tab._pendingLine = _currentLine;  // snapshot for line-echo stripping
         _currentLine = '';
         return;
       }
@@ -910,7 +923,7 @@ var TerminalManager = (function () {
       if (code === 0x7f || code === 0x08) {
         if (_currentLine.length > 0) {
           _currentLine = _currentLine.slice(0, -1);
-          if (LOCAL_ECHO) renderer.write('\x08 \x08');  // BS space BS: erase char visually
+          if (tab.LOCAL_ECHO) renderer.write('\x08 \x08');  // BS space BS: erase char visually
         }
         // Send \x08 to backend (BS works with both cmd.exe PIPE and PTY)
         _send('\x08');
@@ -920,7 +933,7 @@ var TerminalManager = (function () {
       // --- Ctrl+W (word delete, from Ctrl+Backspace) ---
       if (code === 0x17) {
         // Erase all tracked line chars locally (best-effort visual cleanup)
-        if (LOCAL_ECHO) {
+        if (tab.LOCAL_ECHO) {
           for (var w = 0; w < _currentLine.length; w++) {
             renderer.write('\x08 \x08');
           }
@@ -943,6 +956,13 @@ var TerminalManager = (function () {
         return;
       }
 
+      // --- Ctrl+C (ETX, code 3) — cancel current input line ---
+      if (code === 0x03) {
+        _currentLine = '';  // discard partial input
+        _send(data);
+        return;
+      }
+
       // --- Other control characters (Ctrl+A–Z, \x00–\x1a) ---
       // Forward to backend, no local echo.
       if (code < 0x20) {
@@ -952,7 +972,7 @@ var TerminalManager = (function () {
 
       // --- Printable character (code >= 0x20, not DEL) ---
       _currentLine += data;
-      if (LOCAL_ECHO) renderer.write(data);
+      if (tab.LOCAL_ECHO) renderer.write(data);
       _send(data);
     });
 
@@ -972,6 +992,8 @@ var TerminalManager = (function () {
     tab.ws = ws;
 
     ws.onopen = function () {
+      // Clear any stale line-echo state from a previous connection
+      tab._pendingLine = '';
       // Send init message
       var cols = tab.renderer ? tab.renderer.getCols() : 80;
       var rows = tab.renderer ? tab.renderer.getRows() : 24;
@@ -1002,8 +1024,45 @@ var TerminalManager = (function () {
           _renderTabBar();
           // Send initial size
           _sendResize(tab);
+        } else if (msg.type === 'mode') {
+          // Backend signals whether it uses ConPTY (real PTY) or pipe fallback.
+          // ConPTY echoes typed chars via the pseudo-console, so disable local echo.
+          // Pipe fallback has no echo, so keep local echo enabled.
+          tab.LOCAL_ECHO = (msg.mode !== 'conpty');
         } else if (msg.type === 'output') {
-          tab.renderer.write(msg.data);
+          var data = msg.data;
+          // Strip one-shot command-line echo from cmd.exe.
+          // After we send <command>\r\n, cmd.exe writes \r<command>\r\n before output.
+          // We already echoed the command locally, so strip the backend's copy.
+          // Only applies in pipe mode (LOCAL_ECHO=true); ConPTY doesn't produce this pattern.
+          if (tab.LOCAL_ECHO && tab._pendingLine && typeof data === 'string') {
+            var needle1 = '\r' + tab._pendingLine + '\r\n';
+            var needle2 = '\r' + tab._pendingLine + '\n';
+            var idx = data.indexOf(needle1);
+            if (idx !== -1) {
+              data = data.slice(0, idx) + data.slice(idx + needle1.length);
+              tab._pendingLine = '';
+            } else {
+              idx = data.indexOf(needle2);
+              if (idx !== -1) {
+                data = data.slice(0, idx) + data.slice(idx + needle2.length);
+                tab._pendingLine = '';
+              }
+            }
+          }
+          // Fallback: cmd.exe sends \r<command> at start of chunk (no trailing newline yet)
+          if (tab.LOCAL_ECHO && tab._pendingLine && data.indexOf('\r' + tab._pendingLine) === 0) {
+            var after = data.length - tab._pendingLine.length - 1;
+            if (after > 0 && after < 500) {
+              var rest = data.slice(tab._pendingLine.length + 1);
+              var nlIdx = rest.indexOf('\n');
+              if (nlIdx !== -1 && nlIdx < 20) {
+                data = rest.slice(nlIdx + 1);
+                tab._pendingLine = '';
+              }
+            }
+          }
+          tab.renderer.write(data);
         } else if (msg.type === 'error') {
           tab.renderer.writeln('\r\n\x1b[31m\u9519\u8BEF: ' + msg.message + '\x1b[0m');
           tab.status = 'disconnected';

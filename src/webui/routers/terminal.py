@@ -142,6 +142,7 @@ async def terminal_ws(request: aiohttp.web.Request) -> aiohttp.web.WebSocketResp
 
     Protocol (server -> client):
       {"type": "ready", "session_id": "..."}
+      {"type": "mode", "mode": "conpty"|"pipe"}
       {"type": "output", "data": "..."}
       {"type": "error", "message": "..."}
       {"type": "exit", "code": N}
@@ -192,6 +193,17 @@ async def terminal_ws(request: aiohttp.web.Request) -> aiohttp.web.WebSocketResp
 
                 if ok:
                     await ws.send_json({"type": "ready", "session_id": session_id})
+                    # Signal terminal mode so frontend can toggle local echo.
+                    # ConPTY (and SSH PTY) echo on their own; pipe fallback does not.
+                    if kind == "ssh":
+                        mode = "conpty"
+                    else:
+                        mode = (
+                            "conpty"
+                            if getattr(bridge._session, "_conpty", None) is not None
+                            else "pipe"
+                        )
+                    await ws.send_json({"type": "mode", "mode": mode})
                 else:
                     # Error already sent via callback (_send_error)
                     _sessions.pop(session_id, None)

@@ -18,8 +18,8 @@
 
 <div align="center">
 
-![Status](https://img.shields.io/badge/status-v2.2.167-blue)
-![Version](https://img.shields.io/badge/version-2.2.167-blue)
+![Status](https://img.shields.io/badge/status-v2.2.168-blue)
+![Version](https://img.shields.io/badge/version-2.2.168-blue)
 ![Python](https://img.shields.io/badge/python-3.8+-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Platforms](https://img.shields.io/badge/platforms-16+-orange)
@@ -1257,7 +1257,12 @@ fix(gateway): 修复并发竞速时 token 计数错误
 
 ## 🗺️ 路线图
 
-### 当前版本：v2.2.167
+### 当前版本：v2.2.168
+
+✅ 已完成（v2.2.168）：
+- WebUI 终端升级 ConPTY：echotools 1.0.26 新增 Windows ConPTY 后端，支持 cls/color/ANSI/resize
+- 终端前后端模式协商：后端发送 mode 消息，前端动态开关本地回显
+- 文件管理器 UI 全中文化：64 处英文标签统一为中文
 
 ✅ 已完成（v2.2.167）：
 - WebUI 终端禁用路径超链接渲染：输出纯文本，与原生终端体验一致
