@@ -18,8 +18,8 @@
 
 <div align="center">
 
-![Status](https://img.shields.io/badge/status-v2.2.189-blue)
-![Version](https://img.shields.io/badge/version-2.2.189-blue)
+![Status](https://img.shields.io/badge/status-v2.2.190-blue)
+![Version](https://img.shields.io/badge/version-2.2.190-blue)
 ![Python](https://img.shields.io/badge/python-3.8+-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Platforms](https://img.shields.io/badge/platforms-17+-orange)
@@ -1258,9 +1258,13 @@ fix(gateway): 修复并发竞速时 token 计数错误
 
 ## 🗺️ 路线图
 
-### 当前版本：v2.2.189
+### 当前版本：v2.2.190
+
+✅ 已完成（v2.2.190）：
+- WebUI 文件面板懒加载：后端 offset/limit 分页 + os.scandir 性能优化，前端滚动触发按批次加载（每批 200 条），CSS 加载指示器动画
 
 ✅ 已完成（v2.2.189）：
+- opencode HTTP 429 改为可重试，触发 TAS 代理切换重试
 - opencode 支持从 accounts.py 注入本地代理（LOCAL_PROXIES），启动和每次刷新时合并到代理池参与 TAS 选择
 
 ✅ 已完成（v2.2.187）：
