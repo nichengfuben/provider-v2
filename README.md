@@ -18,8 +18,8 @@
 
 <div align="center">
 
-![Status](https://img.shields.io/badge/status-v2.2.177-blue)
-![Version](https://img.shields.io/badge/version-2.2.177-blue)
+![Status](https://img.shields.io/badge/status-v2.2.178-blue)
+![Version](https://img.shields.io/badge/version-2.2.178-blue)
 ![Python](https://img.shields.io/badge/python-3.8+-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Platforms](https://img.shields.io/badge/platforms-16+-orange)
@@ -1257,7 +1257,10 @@ fix(gateway): 修复并发竞速时 token 计数错误
 
 ## 🗺️ 路线图
 
-### 当前版本：v2.2.177
+### 当前版本：v2.2.178
+
+✅ 已完成（v2.2.178）：
+- echotools 升级到 1.0.29：终端会话生命周期日志降级为 debug（ConPTY started/attached/killed）
 
 ✅ 已完成（v2.2.177）：
 - 聊天面板持久化修复：工具调用参数刷新后可展开、模型与协议选择刷新后保留
