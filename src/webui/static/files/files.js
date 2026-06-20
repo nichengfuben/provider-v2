@@ -20,6 +20,7 @@ var FileManager = (function () {
   var _lastSelectedPath = null; // last right-clicked entry path for keyboard shortcuts
   var _closedTabs = []; // history of closed tabs for Ctrl+Shift+T reopen
   var _selectedIndex = -1; // keyboard-selected row index in sorted entries
+  var _restoringSession = false; // flag to suppress _saveSession during restoration
 
   // Search state
   var _searchInput = null;
@@ -428,6 +429,7 @@ var FileManager = (function () {
     _activeTabId = tabId;
     if (_bar) _bar.setActive(tabId);
     _renderContent();
+    _saveSession();
   }
 
   function closeTab(tabId) {
@@ -1394,7 +1396,8 @@ var FileManager = (function () {
     var msg = paths.length === 1 ?
       '删除 "' + paths[0].split(/[\/\\]/).pop() + '"?' :
       '删除 ' + paths.length + ' 项?';
-    if (!confirm(msg)) return;
+    var confirmed = await showConfirmDialog(msg, { title: '确认删除', confirmText: '删除' });
+    if (!confirmed) return;
 
     try {
       var resp = await Api.post('/v1/webui/files/delete', { paths: paths });
@@ -1799,9 +1802,10 @@ var FileManager = (function () {
     }
 
     // Cancel editing with dirty-state confirmation
-    function _cancelEdit() {
+    async function _cancelEdit() {
       if (editState.dirty) {
-        if (!confirm('放弃未保存的更改?')) return;
+        var confirmed = await showConfirmDialog('放弃未保存的更改?', { title: '放弃更改', confirmText: '放弃' });
+        if (!confirmed) return;
       }
       _exitEditMode();
       // Restore preview body from original content
@@ -1889,6 +1893,9 @@ var FileManager = (function () {
   // ========================= Session Persistence =========================
 
   async function _saveSession() {
+    // Skip save while restoration is in progress to avoid writing
+    // partial state (e.g., only 1 of N tabs recreated so far).
+    if (_restoringSession) return;
     var activeIdx = -1;
     for (var i = 0; i < _tabs.length; i++) {
       if (_tabs[i].id === _activeTabId) { activeIdx = i; break; }
@@ -1910,9 +1917,14 @@ var FileManager = (function () {
       if (typeof persistLoad === 'function') {
         var data = await persistLoad('files.json');
         if (data && data.tabs && data.tabs.length > 0) {
+          // Suppress _saveSession during batch creation to avoid
+          // overwriting the saved state with partial data.
+          _restoringSession = true;
           for (var i = 0; i < data.tabs.length; i++) {
             createTab(data.tabs[i].path);
           }
+          _restoringSession = false;
+
           // Restore active tab by saved index (IDs change on recreation)
           var restoreIdx = data.activeTabIndex;
           if (restoreIdx == null || restoreIdx < 0 || restoreIdx >= _tabs.length) {
@@ -1927,12 +1939,16 @@ var FileManager = (function () {
           if (restoreIdx >= 0 && restoreIdx < _tabs.length) {
             _switchToTab(_tabs[restoreIdx].id);
           }
+
+          // Persist the now-complete restored state
+          _saveSession();
           return;
         }
       }
     } catch (e) { /* ignore */ }
 
     // No saved session — open at project root
+    _restoringSession = false;
     createTab(_projectRoot || '/');
   }
 

@@ -18,8 +18,8 @@
 
 <div align="center">
 
-![Status](https://img.shields.io/badge/status-v2.2.173-blue)
-![Version](https://img.shields.io/badge/version-2.2.173-blue)
+![Status](https://img.shields.io/badge/status-v2.2.174-blue)
+![Version](https://img.shields.io/badge/version-2.2.174-blue)
 ![Python](https://img.shields.io/badge/python-3.8+-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Platforms](https://img.shields.io/badge/platforms-16+-orange)
@@ -1257,7 +1257,13 @@ fix(gateway): 修复并发竞速时 token 计数错误
 
 ## 🗺️ 路线图
 
-### 当前版本：v2.2.173
+### 当前版本：v2.2.174
+
+✅ 已完成（v2.2.174）：
+- 终端标签恢复加速：_restPreFetch 并行探测 + _discoveryProcessed 防竞态；每 tab attach 延迟去除
+- 终端 CSI 泄漏防御：_stripDecResponses 加 null-safe 守卫，覆盖所有 xterm.write 入口
+- 光标错位/双光标修复：_initTerminal 顶部完整 dispose 守卫 + 孤儿 DOM 清理 + fitAddon.dispose
+- 文件管理器 confirm() 替换为 showConfirmDialog 自定义对话框（_deleteEntries、_cancelEdit 两处）
 
 ✅ 已完成（v2.2.173）：
 - 修复页面刷新后标签消失：终端从 existing_sessions 重建并 attach；文件标签用 activeTabIndex 鲁棒恢复

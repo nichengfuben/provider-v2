@@ -28,6 +28,18 @@ var TerminalManager = (function () {
   var _tabCounter = 0;
   var _savedConnections = [];
   var _contextMenu = null;
+  var _discoveryProcessed = false; // guard against double-processing existing sessions
+
+  /**
+   * Strip DEC private mode responses (e.g. ^[[?1;2c, ^[[?6c) that leak
+   * through ConPTY as visible garbage.  xterm.js handles these internally;
+   * they must never reach xterm.write() as visible text.
+   * Applied to ALL output — live stream, offline replay, and status messages.
+   */
+  function _stripDecResponses(data) {
+    if (typeof data !== 'string') return data;
+    return data.replace(/\x1b\[\?[0-9;]*[a-zA-Z]/g, '');
+  }
 
   // DOM references (set in init)
   var _container = null;
@@ -45,6 +57,18 @@ var TerminalManager = (function () {
     _body = document.getElementById('terminalBody');
 
     if (!_container || !_tabBarEl || !_body) return;
+
+    // Open a lightweight WS probe immediately to discover surviving
+    // sessions from a previous page load.  The backend sends an
+    // existing_sessions message as soon as any WS connects.  By
+    // launching the probe here (before the rest of init finishes),
+    // the session list arrives while TabBar is being set up, so
+    // tabs appear instantly when the response comes back.
+    _probeForDiscovery();
+
+    // Also fire a REST pre-fetch in parallel — whichever returns first
+    // (WS or REST) creates the tab UI; the other is dedup-guarded.
+    _restPreFetch();
 
     // Create the unified TabBar instance
     if (typeof TabBar !== 'undefined') {
@@ -135,6 +159,9 @@ var TerminalManager = (function () {
         deactivate: function () { _onDeactivate(); },
       });
     }
+
+    // Session discovery is handled by _probeForDiscovery() at the start
+    // of init(), which uses a WebSocket to receive existing_sessions.
   }
 
   function _onActivate() {
@@ -205,7 +232,30 @@ var TerminalManager = (function () {
   }
 
   function _initTerminal(tab) {
-    // Create xterm.js container div inside the terminal pane
+    // Dispose any existing xterm instance to prevent ghost cursors
+    // or duplicate xterm instances on reattach/reconnect.
+    if (tab._resizeObserver) {
+      try { tab._resizeObserver.disconnect(); } catch (e) {}
+      tab._resizeObserver = null;
+    }
+    if (tab.xterm) {
+      try { tab.xterm.dispose(); } catch (e) {}
+      tab.xterm = null;
+    }
+    if (tab.fitAddon) {
+      try { tab.fitAddon.dispose(); } catch (e) {}
+      tab.fitAddon = null;
+    }
+    if (tab.ws) {
+      try { tab.ws.close(); } catch (e) {}
+      tab.ws = null;
+    }
+
+    // Create xterm.js container div inside the terminal pane.
+    // Remove any pre-existing pane for this tab to avoid orphaned DOM nodes.
+    var oldPane = document.getElementById('terminal-pane-' + tab.id);
+    if (oldPane) oldPane.remove();
+
     var termDiv = document.createElement('div');
     termDiv.className = 'terminal-pane';
     termDiv.id = 'terminal-pane-' + tab.id;
@@ -351,23 +401,23 @@ var TerminalManager = (function () {
             // Filter out DEC private mode responses that leak through ConPTY
             // (e.g. ^[[?1;2c device-attributes response).  xterm.js handles
             // these internally; they should not appear as visible text.
-            var filtered = msg.data.replace(/\x1b\[\?[0-9;]*[a-zA-Z]/g, '');
+            var filtered = _stripDecResponses(msg.data);
             if (filtered) {
               tab.xterm.write(filtered);
             }
           }
         } else if (msg.type === 'error') {
           if (tab.xterm) {
-            tab.xterm.write('\r\n\x1b[31m\u9519\u8BEF: ' + msg.message + '\x1b[0m');
+            tab.xterm.write(_stripDecResponses('\r\n\x1b[31m\u9519\u8BEF: ' + msg.message + '\x1b[0m'));
           }
           tab.status = 'disconnected';
           if (_bar) _bar.setStatus(tab.id, 'disconnected');
         } else if (msg.type === 'exit') {
           if (tab.xterm) {
-            tab.xterm.write(
+            tab.xterm.write(_stripDecResponses(
               '\r\n\x1b[33m[\u8FDB\u7A0B\u5DF2\u9000\u51FA\uFF0C\u9000\u51FA\u7801 ' +
               msg.code + ']\x1b[0m'
-            );
+            ));
           }
           tab.status = 'disconnected';
           if (_bar) _bar.setStatus(tab.id, 'disconnected');
@@ -377,7 +427,8 @@ var TerminalManager = (function () {
         } else if (msg.type === 'existing_sessions') {
           // Backend advertises surviving sessions from a previous connection.
           // Recreate tab UI and reconnect WebSocket for each alive session.
-          if (msg.sessions && msg.sessions.length > 0) {
+          // Skip if discovery was already handled by probe or REST pre-fetch.
+          if (!_discoveryProcessed && msg.sessions && msg.sessions.length > 0) {
             _reconnectExistingSessions(msg.sessions);
           }
         }
@@ -395,7 +446,7 @@ var TerminalManager = (function () {
       tab.status = 'disconnected';
       if (_bar) _bar.setStatus(tab.id, 'disconnected');
       if (tab.xterm) {
-        tab.xterm.write('\r\n\x1b[31m[WebSocket \u8FDE\u63A5\u9519\u8BEF]\x1b[0m');
+        tab.xterm.write(_stripDecResponses('\r\n\x1b[31m[WebSocket \u8FDE\u63A5\u9519\u8BEF]\x1b[0m'));
       }
     };
   }
@@ -406,12 +457,21 @@ var TerminalManager = (function () {
    * Recreate tab UI and reconnect WebSocket for each surviving session
    * advertised by the backend via the `existing_sessions` message.
    *
+   * Phase 1 (synchronous): create tab entries and TabBar UI elements so
+   * the user sees tabs immediately — even before xterm.js or WS are ready.
+   * Phase 2 (async via setTimeout): initialise xterm.js and open per-session
+   * WebSocket connections that reattach and flush buffered offline output.
+   *
    * Skips sessions that already have a tab (avoids duplicates on reconnect).
-   * For each new session, creates a tab with xterm.js, opens a WebSocket
-   * to the existing session ID, sends an init message, and the backend
-   * reattaches and flushes buffered offline output.
    */
   function _reconnectExistingSessions(sessions) {
+    // Guard: only process discovery once per page load to prevent
+    // duplicate tab creation when both WS probe and REST return results.
+    if (_discoveryProcessed) return;
+    _discoveryProcessed = true;
+
+    // Phase 1 — create tab UI synchronously so tabs appear immediately
+    var toInit = [];
     for (var i = 0; i < sessions.length; i++) {
       var s = sessions[i];
       if (!s.alive) continue;
@@ -437,7 +497,7 @@ var TerminalManager = (function () {
 
       _tabs.push(tab);
 
-      // Add tab to TabBar
+      // Add tab to TabBar immediately so the user sees it
       if (_bar) {
         _bar.addTab({
           id: s.session_id,
@@ -449,8 +509,7 @@ var TerminalManager = (function () {
         });
       }
 
-      // Create xterm.js terminal pane and connect WebSocket
-      _initTerminal(tab);
+      toInit.push(tab);
     }
 
     // Activate the last reconnected tab (or keep current active)
@@ -459,6 +518,91 @@ var TerminalManager = (function () {
     }
 
     _showTabPane(_activeTabId);
+
+    // Phase 2 — asynchronously attach xterm.js + WS for each tab.
+    // The tab UI is already visible; xterm output streams in as each
+    // WS connection establishes and the backend reattaches.
+    for (var j = 0; j < toInit.length; j++) {
+      (function (t) {
+        setTimeout(function () { _initTerminal(t); }, j * 0);
+      })(toInit[j]);
+    }
+  }
+
+  /**
+   * Open a lightweight WebSocket probe to discover surviving terminal
+   * sessions.  The backend sends an ``existing_sessions`` message on
+   * every new WS connection.  This probe receives that list without
+   * creating a server-side terminal session (it never sends ``init``),
+   * then closes.  The ``existing_sessions`` handler registered in every
+   * WS onmessage (including this probe) calls _reconnectExistingSessions
+   * to create tab UI synchronously and attach xterm + WS asynchronously.
+   *
+   * Called once at the START of init() so the response arrives while
+   * the rest of the UI is still being set up — tabs appear instantly.
+   */
+  function _probeForDiscovery() {
+    var proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    var probeId = '_probe_' + Date.now();
+    var wsUrl = proto + '//' + window.location.host + '/v1/webui/ws/terminal/' + probeId;
+
+    try {
+      var ws = new WebSocket(wsUrl);
+      ws.onmessage = function (event) {
+        try {
+          var msg = JSON.parse(event.data);
+          if (msg.type === 'existing_sessions' && msg.sessions && msg.sessions.length > 0) {
+            if (!_discoveryProcessed) {
+              _reconnectExistingSessions(msg.sessions);
+            }
+          }
+        } catch (e) {
+          // ignore parse errors
+        }
+      };
+      ws.onopen = function () {
+        // The backend sends existing_sessions automatically on connect.
+        // We never send 'init', so no server-side PTY is created.
+        // Close the probe after a short delay to allow the message to arrive.
+        setTimeout(function () {
+          try { ws.close(); } catch (e) {}
+        }, 2000);
+      };
+      ws.onerror = function () {};
+      ws.onclose = function () {};
+    } catch (e) {
+      // Ignore WebSocket creation errors (e.g. network unavailable)
+    }
+  }
+
+  /**
+   * REST-based discovery that runs in parallel with the WS probe.
+   * Whichever returns first (WS or REST) creates the tab UI;
+   * the other is blocked by the _discoveryProcessed guard.
+   * The REST endpoint is faster on most networks (single HTTP round-trip
+   * vs WS handshake + message), providing the quickest tab appearance.
+   */
+  function _restPreFetch() {
+    try {
+      fetch('/v1/webui/terminal/sessions')
+        .then(function (resp) {
+          if (!resp.ok) return null;
+          return resp.json();
+        })
+        .then(function (sessions) {
+          if (_discoveryProcessed) return;
+          if (!sessions || !Array.isArray(sessions)) return;
+          var alive = sessions.filter(function (s) { return s.alive; });
+          if (alive.length > 0) {
+            _reconnectExistingSessions(alive);
+          }
+        })
+        .catch(function () {
+          // Ignore network or parse errors — WS probe is the fallback
+        });
+    } catch (e) {
+      // Ignore
+    }
   }
 
   function _sendResize(tab) {
@@ -535,6 +679,9 @@ var TerminalManager = (function () {
     // Dispose xterm.js instance
     if (tab.xterm) {
       try { tab.xterm.dispose(); } catch (e) {}
+    }
+    if (tab.fitAddon) {
+      try { tab.fitAddon.dispose(); } catch (e) {}
     }
 
     // Remove DOM
@@ -735,7 +882,7 @@ var TerminalManager = (function () {
           }
         });
 
-        xterm.write('\x1b[33m[\u91CD\u65B0\u8FDE\u63A5\u4E2D...]\x1b[0m\r\n');
+        xterm.write(_stripDecResponses('\x1b[33m[\u91CD\u65B0\u8FDE\u63A5\u4E2D...]\x1b[0m\r\n'));
       }
     }
 
