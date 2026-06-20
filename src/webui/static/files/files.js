@@ -37,6 +37,9 @@ var FileManager = (function () {
   var _tabBar = null;
   var _body = null;
 
+  // TabBar instance
+  var _bar = null;
+
   // ========================= Initialization =========================
 
   async function _fetchDrives() {
@@ -119,6 +122,43 @@ var FileManager = (function () {
     _tabBar = document.getElementById('filesTabBar');
     _body = document.getElementById('filesBody');
     if (!_container || !_tabBar || !_body) return;
+
+    // Create the unified TabBar instance
+    if (typeof TabBar !== 'undefined') {
+      _bar = TabBar.create(_container, {
+        tabBarEl: _tabBar,
+        bodyEl: _body,
+        layout: 'horizontal',
+        collapsed: false,
+        closeAllThreshold: 6,
+        onSwitch: function (id) { _switchToTab(id); },
+        onClose: function (id) { closeTab(id); },
+        onContextMenu: function (id, event) { _showTabContextMenu(event, id); },
+        onAdd: function () { createTab(_projectRoot || '/'); },
+        onCloseAll: function () { _closeAllTabs(); },
+        onToggleCollapsed: function (collapsed) {
+          if (typeof _tabLayoutConfig !== 'undefined') {
+            _tabLayoutConfig.sidebarCompressed = collapsed;
+            (async function () {
+              var existing = await persistLoad('config.toml') || {};
+              existing.layout = _tabLayoutConfig.layout;
+              existing.sidebarCompressed = collapsed;
+              persistSave('config.toml', existing);
+            })();
+          }
+        },
+      });
+
+      // Register in global registry for bootstrap.js layout toggle
+      if (window._tabBars) {
+        window._tabBars.files = _bar;
+      }
+
+      // Apply current layout from _tabLayoutConfig (may have been loaded from persist)
+      if (typeof _tabLayoutConfig !== 'undefined') {
+        _bar.setLayout(_tabLayoutConfig.layout || 'horizontal', _tabLayoutConfig.sidebarCompressed || false);
+      }
+    }
 
     document.addEventListener('click', function () { _hideContextMenu(); });
 
@@ -355,8 +395,21 @@ var FileManager = (function () {
     };
 
     _tabs.push(tab);
-    _renderTabBar();
-    _switchToTab(tabId);
+
+    // Add tab to TabBar with folder icon
+    if (_bar) {
+      _bar.addTab({
+        id: tabId,
+        type: 'file',
+        icon: '&#128193;',
+        title: name,
+        closable: true,
+      });
+      _bar.setActive(tabId);
+    }
+
+    _activeTabId = tabId;
+    _renderContent();
     _loadDirectory(tab, path);
     _saveSession();
     return tab;
@@ -364,7 +417,7 @@ var FileManager = (function () {
 
   function _switchToTab(tabId) {
     _activeTabId = tabId;
-    _renderTabBar();
+    if (_bar) _bar.setActive(tabId);
     _renderContent();
   }
 
@@ -381,17 +434,17 @@ var FileManager = (function () {
 
     _tabs.splice(idx, 1);
 
+    // Remove from TabBar
+    if (_bar) _bar.removeTab(tabId);
+
     if (_activeTabId === tabId) {
       if (_tabs.length > 0) {
         var newIdx = Math.min(idx, _tabs.length - 1);
         _switchToTab(_tabs[newIdx].id);
       } else {
         _activeTabId = null;
-        _renderTabBar();
         _renderContent();
       }
-    } else {
-      _renderTabBar();
     }
     _saveSession();
   }
@@ -409,78 +462,6 @@ var FileManager = (function () {
     return null;
   }
 
-  // ========================= Tab Bar Rendering =========================
-
-  function _renderTabBar() {
-    if (!_tabBar) return;
-
-    // Save sidebar toggle button before clearing
-    var sidebarToggle = _tabBar.querySelector('.tab-sidebar-toggle');
-    _tabBar.innerHTML = '';
-
-    for (var i = 0; i < _tabs.length; i++) {
-      var tab = _tabs[i];
-      var el = document.createElement('div');
-      el.className = 'files-tab' + (tab.id === _activeTabId ? ' active' : '');
-      el.dataset.tabId = tab.id;
-
-      el.innerHTML =
-        '<span class="files-tab-name">' + _escapeHtml(tab.name) + '</span>' +
-        '<span class="files-tab-close">&times;</span>';
-
-      (function (tid) {
-        el.addEventListener('click', function (e) {
-          if (e.target.classList.contains('files-tab-close')) {
-            closeTab(tid);
-          } else {
-            _switchToTab(tid);
-          }
-        });
-        el.addEventListener('contextmenu', function (e) {
-          e.preventDefault();
-          _showTabContextMenu(e, tid);
-        });
-      })(tab.id);
-
-      _tabBar.appendChild(el);
-    }
-
-    // Re-add sidebar toggle button
-    if (sidebarToggle) {
-      _tabBar.insertBefore(sidebarToggle, _tabBar.firstChild);
-    }
-
-    // Add button
-    var addBtn = document.createElement('div');
-    addBtn.className = 'files-tab-add';
-    addBtn.innerHTML = '+';
-    addBtn.addEventListener('click', function (e) {
-      e.stopPropagation();
-      createTab(_projectRoot || '/');
-    });
-    _tabBar.appendChild(addBtn);
-
-    // Show/hide floating close-all button when tabs > 5
-    var closeAllBtn = document.getElementById('filesCloseAllBtn');
-    if (_tabs.length > 5) {
-      if (!closeAllBtn) {
-        closeAllBtn = document.createElement('div');
-        closeAllBtn.id = 'filesCloseAllBtn';
-        closeAllBtn.className = 'tab-close-all-btn';
-        closeAllBtn.innerHTML = '&times; 全部关闭';
-        closeAllBtn.title = '关闭所有标签';
-        closeAllBtn.addEventListener('click', function (e) {
-          e.stopPropagation();
-          closeAllTabs();
-        });
-        _container.appendChild(closeAllBtn);
-      }
-      closeAllBtn.style.display = '';
-    } else if (closeAllBtn) {
-      closeAllBtn.style.display = 'none';
-    }
-  }
-
   // ========================= Directory Loading =========================
 
   async function _loadDirectory(tab, path) {
@@ -493,7 +474,7 @@ var FileManager = (function () {
       tab.path = data.path || path;
       tab.name = _pathDisplayName(tab.path);
       tab.loading = false;
-      _renderTabBar();
+      if (_bar) _bar.setTitle(tab.id, tab.name);
       _renderContent();
     } catch (e) {
       tab.loading = false;

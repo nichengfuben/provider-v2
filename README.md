@@ -18,8 +18,8 @@
 
 <div align="center">
 
-![Status](https://img.shields.io/badge/status-v2.2.170-blue)
-![Version](https://img.shields.io/badge/version-2.2.170-blue)
+![Status](https://img.shields.io/badge/status-v2.2.171-blue)
+![Version](https://img.shields.io/badge/version-2.2.171-blue)
 ![Python](https://img.shields.io/badge/python-3.8+-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Platforms](https://img.shields.io/badge/platforms-16+-orange)
@@ -1257,7 +1257,12 @@ fix(gateway): 修复并发竞速时 token 计数错误
 
 ## 🗺️ 路线图
 
-### 当前版本：v2.2.170
+### 当前版本：v2.2.171
+
+✅ 已完成（v2.2.171）：
+- 终端会话持久化与进程保活（Phase 0）：WS 断连不杀进程，主动关闭才终止；多客户端同时挂载；重启自动恢复存活会话
+- echotools 1.0.27：LocalTerminal 新增 detach/attach/kill API，离线输出缓冲，recover_sessions 重启挂载
+- 文件管理器迁移到统一 TabBar（Phase 1b），压缩态显示文件夹图标（修圆点痛点）
 
 ✅ 已完成（v2.2.170）：
 - WebUI 文件管理器默认目录改为项目根（main.py 所在目录），保留任意目录导航能力

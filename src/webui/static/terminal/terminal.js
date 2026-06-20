@@ -305,6 +305,7 @@ var TerminalManager = (function () {
         kind: tab.kind,
         cols: cols,
         rows: rows,
+        name: tab.name,
       };
 
       if (tab.kind === 'ssh') {
@@ -352,6 +353,15 @@ var TerminalManager = (function () {
           }
           tab.status = 'disconnected';
           if (_bar) _bar.setStatus(tab.id, 'disconnected');
+        } else if (msg.type === 'session_closed') {
+          // Backend confirms the session was killed (response to close_session)
+          // Tab is already being cleaned up by closeTab()
+        } else if (msg.type === 'existing_sessions') {
+          // Backend advertises surviving sessions from a previous server run.
+          // Store the list so the frontend can recreate tabs in a later phase.
+          if (msg.sessions && msg.sessions.length > 0) {
+            window._existingTerminalSessions = msg.sessions;
+          }
         }
       } catch (e) {
         // ignore JSON parse errors
@@ -423,10 +433,20 @@ var TerminalManager = (function () {
 
     var tab = _tabs[idx];
 
-    // Close WebSocket
-    if (tab.ws) {
-      try { tab.ws.close(); } catch (e) {}
+    // Send close_session message to backend before closing WS.
+    // This tells the server to kill the process (explicit close).
+    // Without this, the server would just detach and keep the process alive.
+    if (tab.ws && tab.ws.readyState === WebSocket.OPEN) {
+      try {
+        tab.ws.send(JSON.stringify({ type: 'close_session' }));
+      } catch (e) {}
     }
+
+    // Close WebSocket (after a tick to allow close_session to flush)
+    var wsRef = tab.ws;
+    setTimeout(function () {
+      if (wsRef) { try { wsRef.close(); } catch (e) {} }
+    }, 50);
 
     // Disconnect ResizeObserver
     if (tab._resizeObserver) {
@@ -563,6 +583,11 @@ var TerminalManager = (function () {
   function _reconnectTab(tabId) {
     var tab = _getTabById(tabId);
     if (!tab) return;
+
+    // Send close_session to kill the old process before reconnecting
+    if (tab.ws && tab.ws.readyState === WebSocket.OPEN) {
+      try { tab.ws.send(JSON.stringify({ type: 'close_session' })); } catch (e) {}
+    }
 
     // Close old WebSocket
     if (tab.ws) {
