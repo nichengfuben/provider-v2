@@ -1888,15 +1888,20 @@ var FileManager = (function () {
 
   // ========================= Session Persistence =========================
 
-  function _saveSession() {
+  async function _saveSession() {
+    var activeIdx = -1;
+    for (var i = 0; i < _tabs.length; i++) {
+      if (_tabs[i].id === _activeTabId) { activeIdx = i; break; }
+    }
     var data = {
       tabs: _tabs.map(function (t) {
         return { path: t.path, name: t.name };
       }),
       activeTabId: _activeTabId,
+      activeTabIndex: activeIdx,
     };
     if (typeof persistSave === 'function') {
-      persistSave('files.json', data);
+      await persistSave('files.json', data);
     }
   }
 
@@ -1908,14 +1913,19 @@ var FileManager = (function () {
           for (var i = 0; i < data.tabs.length; i++) {
             createTab(data.tabs[i].path);
           }
-          // Restore active tab
-          if (data.activeTabId && _tabs.length > 0) {
-            // Find matching tab by index if id changed
-            var idx = Math.min(
-              data.tabs.findIndex(function (t) { return t.path === (data.tabs[0] || {}).path; }),
-              _tabs.length - 1
-            );
-            if (idx >= 0) _switchToTab(_tabs[idx].id);
+          // Restore active tab by saved index (IDs change on recreation)
+          var restoreIdx = data.activeTabIndex;
+          if (restoreIdx == null || restoreIdx < 0 || restoreIdx >= _tabs.length) {
+            // Fallback: try matching by saved ID, then default to last tab
+            restoreIdx = _tabs.length - 1;
+            if (data.activeTabId) {
+              for (var j = 0; j < _tabs.length; j++) {
+                if (_tabs[j].id === data.activeTabId) { restoreIdx = j; break; }
+              }
+            }
+          }
+          if (restoreIdx >= 0 && restoreIdx < _tabs.length) {
+            _switchToTab(_tabs[restoreIdx].id);
           }
           return;
         }

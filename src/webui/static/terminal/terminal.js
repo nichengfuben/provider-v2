@@ -375,10 +375,10 @@ var TerminalManager = (function () {
           // Backend confirms the session was killed (response to close_session)
           // Tab is already being cleaned up by closeTab()
         } else if (msg.type === 'existing_sessions') {
-          // Backend advertises surviving sessions from a previous server run.
-          // Store the list so the frontend can recreate tabs in a later phase.
+          // Backend advertises surviving sessions from a previous connection.
+          // Recreate tab UI and reconnect WebSocket for each alive session.
           if (msg.sessions && msg.sessions.length > 0) {
-            window._existingTerminalSessions = msg.sessions;
+            _reconnectExistingSessions(msg.sessions);
           }
         }
       } catch (e) {
@@ -398,6 +398,67 @@ var TerminalManager = (function () {
         tab.xterm.write('\r\n\x1b[31m[WebSocket \u8FDE\u63A5\u9519\u8BEF]\x1b[0m');
       }
     };
+  }
+
+  // ========================= Session Reconnection =========================
+
+  /**
+   * Recreate tab UI and reconnect WebSocket for each surviving session
+   * advertised by the backend via the `existing_sessions` message.
+   *
+   * Skips sessions that already have a tab (avoids duplicates on reconnect).
+   * For each new session, creates a tab with xterm.js, opens a WebSocket
+   * to the existing session ID, sends an init message, and the backend
+   * reattaches and flushes buffered offline output.
+   */
+  function _reconnectExistingSessions(sessions) {
+    for (var i = 0; i < sessions.length; i++) {
+      var s = sessions[i];
+      if (!s.alive) continue;
+      // Skip if a tab with this session ID already exists
+      if (_getTabById(s.session_id)) continue;
+
+      _tabCounter++;
+      var name = s.name || (s.kind === 'ssh' ? '\u8FDC\u7A0B' : '\u672C\u5730') + ' ' + _tabCounter;
+
+      var tab = {
+        id: s.session_id,
+        kind: s.kind || 'local',
+        name: name,
+        status: 'connecting',
+        xterm: null,
+        fitAddon: null,
+        ws: null,
+        sessionId: s.session_id,
+        options: {},
+        _resizeObserver: null,
+        _container: null,
+      };
+
+      _tabs.push(tab);
+
+      // Add tab to TabBar
+      if (_bar) {
+        _bar.addTab({
+          id: s.session_id,
+          type: 'terminal',
+          icon: '&#9002;_',
+          title: name,
+          closable: true,
+          status: 'connecting',
+        });
+      }
+
+      // Create xterm.js terminal pane and connect WebSocket
+      _initTerminal(tab);
+    }
+
+    // Activate the last reconnected tab (or keep current active)
+    if (_tabs.length > 0 && !_activeTabId) {
+      _switchToTab(_tabs[_tabs.length - 1].id);
+    }
+
+    _showTabPane(_activeTabId);
   }
 
   function _sendResize(tab) {
