@@ -75,6 +75,7 @@ class TerminalSessionStore:
             try:
                 data = json.loads(meta_path.read_text(encoding="utf-8"))
             except Exception:
+                logger.debug("Failed to read existing session metadata: %s", meta_path, exc_info=True)
                 data = {}
 
         data.update(
@@ -117,6 +118,7 @@ class TerminalSessionStore:
         try:
             return json.loads(meta_path.read_text(encoding="utf-8"))
         except Exception:
+            logger.debug("Failed to load session metadata: %s", session_id, exc_info=True)
             return None
 
     def delete(self, session_id: str) -> None:
@@ -170,6 +172,7 @@ class TerminalSessionStore:
         try:
             return output_path.read_text(encoding="utf-8", errors="replace")
         except Exception:
+            logger.debug("Failed to read offline output: %s", session_id, exc_info=True)
             return ""
 
     def clear_offline_output(self, session_id: str) -> None:

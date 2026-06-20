@@ -49,7 +49,7 @@ def _persist_loop() -> None:
     try:
         save_requests()
     except Exception:
-        pass
+        _log.debug("Failed in request persist loop", exc_info=True)
     _persist_timer = threading.Timer(_PERSIST_INTERVAL, _persist_loop)
     _persist_timer.daemon = True
     _persist_timer.start()
