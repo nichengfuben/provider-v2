@@ -493,6 +493,25 @@ tests/src/routes/test_health.py
 tests/src/routes/test_models.py
 tests/src/routes/test_openai.py
 tests/src/test_logger.py
+docs-src/src/platforms/ollama/core/client.py
+docs-src/src/platforms/opencode/core/client.py
+src/platforms/apiairforce/core/client.py
+src/platforms/caiyuesbk/core/client.py
+src/platforms/cerebras/core/client.py
+src/platforms/chatmoe/core/client.py
+src/platforms/chutes/core/client.py
+src/platforms/codebuddy/core/client.py
+src/platforms/cursor/core/client.py
+src/platforms/gtts/core/client.py
+src/platforms/gtts/core/tts.py
+src/platforms/n1n/core/client.py
+src/platforms/nvidia/core/client.py
+src/platforms/openrouter/core/client.py
+src/platforms/perplexity/core/client.py
+src/platforms/qwen/core/persistence.py
+src/platforms/qwen/core/proxy.py
+tests/src/core/test_process.py
+tests/src/core/test_runtime_view.py
 
 2026-06-05 23:30:00
 
@@ -2706,3 +2725,20 @@ pytest: pre-existing failures; exit code 42 (test suite interrupted at ~55%, all
 [README.md] 版本徽章和路线图更新为 2.2.195
 [.agents/provider-guide/SKILL.md] 版本字段 2.2.194 -> 2.2.195
 [docs-src/src/core/__init__.py] 同步 docs-src 镜像
+[src/platforms/base.py] 更新 candidate 导入路径：src.core.candidate -> src.core.dispatch.candidate
+[src/platforms/*/core/adaptercore.py] 全平台更新 candidate 导入路径至 dispatch.candidate
+[src/platforms/*/core/client.py] 全平台更新 candidate/proxy 导入路径至新模块位置
+[src/platforms/qwen/core/persistence.py] 更新 io_utils 导入路径至 utils.io_utils
+[src/platforms/qwen/core/proxy.py] 更新 proxy 导入路径至 server 模块
+[src/platforms/deepseek/core/client.py] 更新 proxy 导入路径至 server 模块
+[src/platforms/opencode/core/client.py] fetch_remote_models 改为直连，不再通过代理获取模型列表
+[src/routes/openai.py] 更新 http/server 导入路径至新模块位置
+[src/routes/anthropic.py] 更新 http/server 导入路径至新模块位置
+[src/webui/server.py] 更新 process 导入路径至 server 模块
+[src/webui/services/summaries.py] 更新 runtime_view 导入路径至 dispatch.runtime_view
+[tests/src/core/test_autoupdate.py] 更新 autoupdate 导入路径至 server 模块
+[tests/src/core/test_process.py] 更新 process 导入路径至 server 模块
+[tests/src/core/test_runtime_view.py] 更新 runtime_view 导入路径至 dispatch.runtime_view
+[docs-src/src/platforms/ollama/core/client.py] 同步 docs-src 镜像
+[docs-src/src/platforms/opencode/core/client.py] 同步 docs-src 镜像
+[docs-src/src/core/shims.py] 同步 docs-src 镜像
