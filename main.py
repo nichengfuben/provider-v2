@@ -49,12 +49,12 @@ if str(_ROOT) not in sys.path:
 from src.core.config import get_config, start_config_watcher
 
 # 以下通过 src.core.__init__ 的导出访问（__init__ 已将子模块符号提升）
-from src.core.registry import Registry           # 来自 src.core.dispatch.registry
+from src.core.dispatch.registry import Registry    # 来自 src.core.dispatch.registry
 from src.core.server import create_app           # 来自 src.core.server.server
-from src.core.watcher import FileWatcher         # 来自 src.core.server.watcher
+from src.core.server.watcher import FileWatcher    # 来自 src.core.server.watcher
 
 # 导入 proxy 模块以触发必要的 monkey-patch
-import src.core.proxy  # noqa: F401               # 来自 src.core.server.proxy
+import src.core.server.proxy  # noqa: F401          # 来自 src.core.server.proxy
 
 from src.logger import get_logger
 

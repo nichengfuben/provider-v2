@@ -112,12 +112,12 @@ from src.core.dispatch.selector import Selector
 
 # --- server 子包 ---
 from src.core.server.autoupdate import AutoUpdater
-from src.core.server.http import http_request, stream_request
+from src.core.server.http import clean_fncall, safe_flush
 from src.core.server.server import create_app
 from src.core.server.watcher import FileWatcher
 
 # --- utils 子包 ---
-from src.core.utils.retry import with_retry
+from src.core.utils.retry import retry_with_backoff
 
 # --- 重构后的本地模块 ---
 from src.core.models_cache import ModelsCache, models
@@ -190,14 +190,14 @@ __all__ = [
     # server 子包常用符号
     # --------------------------------------------------------------------------
     "AutoUpdater",
-    "http_request",
-    "stream_request",
+    "clean_fncall",
+    "safe_flush",
     "create_app",
     "FileWatcher",
     # --------------------------------------------------------------------------
     # utils 子包常用符号
     # --------------------------------------------------------------------------
-    "with_retry",
+    "retry_with_backoff",
     # --------------------------------------------------------------------------
     # 本地模块符号
     # --------------------------------------------------------------------------
