@@ -8,7 +8,6 @@ from __future__ import annotations
 import asyncio
 import concurrent.futures
 import json
-import logging
 import os
 import re
 import time
@@ -18,6 +17,7 @@ from typing import Any, AsyncGenerator, Dict, List, Optional, Tuple, Union
 import aiohttp
 
 from src.core.dispatch.candidate import Candidate, make_id
+from src.logger import get_logger
 from src.platforms.ollama.accounts import ACCOUNTS
 from src.platforms.ollama.core.constants import (
     BASE_URL,
@@ -31,7 +31,7 @@ from src.platforms.ollama.core.constants import (
     TIMEOUT,
 )
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 MAX_RETRIES: int = 3
 BG_REFRESH_INTERVAL: int = REFRESH_INTERVAL

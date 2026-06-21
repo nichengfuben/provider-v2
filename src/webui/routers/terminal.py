@@ -24,7 +24,6 @@ Session lifecycle
 
 import asyncio
 import json
-import logging
 import uuid
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set
@@ -33,8 +32,9 @@ import aiohttp.web
 from echotools.terminal import LocalTerminal, SSHTerminal, TerminalCallback
 
 from src.core.terminal_sessions import TerminalSessionStore, get_terminal_store
+from src.logger import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 __all__ = ["terminal_ws", "terminal_sessions_api"]
 

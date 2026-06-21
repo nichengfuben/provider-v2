@@ -3,13 +3,13 @@ from __future__ import annotations
 """Ollama 服务器在线发现与验证。"""
 
 import concurrent.futures
-import logging
 import re
 import time
 from typing import Any, Dict, List, Optional
 
 import requests
 
+from src.logger import get_logger
 from .constants import (
     BASE_URL,
     MAX_WORKERS,
@@ -18,7 +18,7 @@ from .constants import (
 )
 from .detect import detect_capabilities
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 def _fetch_page(page: int) -> Optional[str]:

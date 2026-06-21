@@ -1,5 +1,28 @@
 // Chat input handled by InputBox component (input-box.js)
 
+// Clipboard helper with fallback for insecure contexts (HTTP)
+function _chatCopyToClipboard(text) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    return navigator.clipboard.writeText(text);
+  }
+  var textarea = document.createElement('textarea');
+  textarea.value = text;
+  textarea.style.position = 'fixed';
+  textarea.style.left = '-9999px';
+  textarea.style.top = '-9999px';
+  document.body.appendChild(textarea);
+  textarea.focus();
+  textarea.select();
+  var success = false;
+  try {
+    success = document.execCommand('copy');
+  } catch (e) {
+    console.error('Copy failed:', e);
+  }
+  document.body.removeChild(textarea);
+  return success ? Promise.resolve() : Promise.reject(new Error('Copy failed'));
+}
+
 // ========================= Simple Streaming Renderer =========================
 function renderStreamingContent(text) {
   var codeBlocks = [];
@@ -383,7 +406,7 @@ document.addEventListener("click", function(e) {
     var pre = wrapper ? wrapper.querySelector('.chat-codeblock') : null;
     var idx = pre ? parseInt(pre.getAttribute('data-cb-index'), 10) : -1;
     var raw = (idx >= 0 && idx < _codeBlockStore.length) ? _codeBlockStore[idx] : (pre ? pre.textContent : '');
-    navigator.clipboard.writeText(raw).then(function() {
+    _chatCopyToClipboard(raw).then(function() {
       btn.textContent = "已复制";
       btn.classList.add("is-copied");
       setTimeout(function() {
@@ -478,7 +501,7 @@ document.addEventListener("click", function(e) {
   if (action === "copy") {
     var text = bubble.getAttribute("data-raw") || bubble.textContent || "";
     var origSvg = btn.innerHTML;
-    navigator.clipboard.writeText(text).then(function() {
+    _chatCopyToClipboard(text).then(function() {
       btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
       btn.classList.add("is-active");
       setTimeout(function() {

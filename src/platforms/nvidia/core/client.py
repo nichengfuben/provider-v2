@@ -3,7 +3,6 @@ from __future__ import annotations
 """Nvidia HTTP 客户端。"""
 
 import asyncio
-import logging
 import time
 from typing import Any, AsyncGenerator, Dict, List, Optional, Union
 
@@ -11,12 +10,13 @@ import aiohttp
 
 from src.core.dispatch.candidate import Candidate, make_id
 from src.core.errors import PlatformError
+from src.logger import get_logger
 from ..accounts import API_KEYS
 from .headers import build_headers
 from .payloads import build_payload, MAX_TOKENS
 from .sse import parse_sse_line
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 BASE_URL: str = "https://integrate.api.nvidia.com/v1"
 CHAT_PATH: str = "/chat/completions"

@@ -3,15 +3,15 @@ from __future__ import annotations
 """请求统计收集器 — 使用 echotools 通用实现，带服务端持久化。"""
 
 import json
-import logging
 import threading
 from pathlib import Path
 
 from echotools.web.stats import RequestStats, get_stats
+from src.logger import get_logger
 
 __all__ = ["RequestStats", "get_stats", "save_stats", "load_stats", "start_persist"]
 
-_log = logging.getLogger(__name__)
+_log = get_logger(__name__)
 
 _PERSIST_DIR = Path(__file__).resolve().parent.parent.parent.parent / "persist" / "webui"
 _PERSIST_FILE = _PERSIST_DIR / "stats.json"

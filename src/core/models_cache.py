@@ -69,15 +69,15 @@ JSON 文件结构
 * ``models()`` 工厂函数
 """
 
-import logging
 from pathlib import Path
 from typing import List, Optional
 
 from echotools.cache.list_cache import ListCache
+from src.logger import get_logger
 
 __all__ = ["ModelsCache", "models"]
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 # 缓存根目录：<project_root>/persist/
 _PERSIST_ROOT: Path = Path(__file__).resolve().parent.parent.parent / "persist"

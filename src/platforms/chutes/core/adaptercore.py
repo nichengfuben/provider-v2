@@ -3,17 +3,17 @@
 from __future__ import annotations
 
 import asyncio
-import logging
 from typing import Any, AsyncGenerator, Dict, List, Optional, Union
 
 import aiohttp
 
 from src.core.dispatch.candidate import Candidate
 from src.core.models_cache import ModelsCache
+from src.logger import get_logger
 from src.platforms.base import PlatformAdapter
 from .constants import CAPS, FETCH_MODELS_ENABLED, MODEL_FETCH_INTERVAL, MODELS
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 __all__ = ["Adapter", "ChutesAdapter"]
 

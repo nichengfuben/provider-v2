@@ -18,8 +18,8 @@
 
 <div align="center">
 
-![Status](https://img.shields.io/badge/status-v2.2.195-blue)
-![Version](https://img.shields.io/badge/version-2.2.195-blue)
+![Status](https://img.shields.io/badge/status-v2.2.197-blue)
+![Version](https://img.shields.io/badge/version-2.2.197-blue)
 ![Python](https://img.shields.io/badge/python-3.8+-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Platforms](https://img.shields.io/badge/platforms-17+-orange)
@@ -85,7 +85,6 @@
 | 类别 | 技术 | 版本要求 |
 |------|------|----------|
 | Web 框架 | aiohttp | >= 3.9.0 |
-| 异步运行时 | uvicorn[standard] | >= 0.20.0 |
 | HTTP 客户端 | aiohttp | >= 3.9.0 |
 | 数据验证 | pydantic | >= 2.0.0 |
 | 平台 SDK | cerebras-cloud-sdk | >= 1.0.0 |
@@ -697,8 +696,15 @@ provider-v2/
 │   │   └── 📁 nvidia/         # NVIDIA 平台
 │   └── 📁 routes/             # 路由层
 │       ├── 📄 anthropic.py    # Anthropic API 路由
-│       ├── 📄 openai.py       # OpenAI API 路由
-│       └── 📄 static.py       # 静态路由（健康检查等）
+│       ├── 📄 function_call.py # 工具调用路由
+│       ├── 📄 health.py       # 健康检查路由
+│       ├── 📄 models.py       # 模型列表路由
+│       ├── 📄 openai.py       # OpenAI API 聚合入口
+│       ├── 📄 openai_chat.py  # Chat Completions 端点
+│       ├── 📄 openai_helpers.py # 共享工具、常量、ID 生成器
+│       ├── 📄 openai_media.py # 媒体端点（图像/音频/视频/嵌入）
+│       ├── 📄 openai_stubs.py # 存根/未实现处理器
+│       └── 📄 static.py       # 静态路由
 ├── 📄 config.toml             # 配置文件
 ├── 📄 main.py                 # 应用入口
 ├── 📄 requirements.txt        # Python 依赖
@@ -1258,9 +1264,18 @@ fix(gateway): 修复并发竞速时 token 计数错误
 
 ## 🗺️ 路线图
 
-### 当前版本：v2.2.195
+### 当前版本：v2.2.197
 
-✅ 已完成（v2.2.195）：
+✅ 已完成（v2.2.197）：
+- refactor(routes): 拆分 `routes/openai.py`（2153 行）为 5 个聚焦子模块
+- refactor(qwen): 通过 mixin 模式拆分 QwenClient（2613 行）为 5 个模块
+- refactor(logging): 迁移 49 个平台适配器文件从 stdlib logging 到 loguru
+- feat(selector): 新增 stale candidate 自动清理功能（默认 30 天阈值）
+- fix(webui): 修复剪贴板 API 在 HTTP 环境下的兼容性（3 个 JS 文件）
+- chore(deps): 移除未使用的 tqdm 和 brotli 依赖
+- docs: 新增 ADR-006 至 ADR-013，修复 README 技术栈表（移除错误的 uvicorn 条目）
+
+✅ 已完成（v2.2.196）：
 - refactor(core): 将 `server/` 子包合并为单个 `server.py` 文件，更新全部导入路径
 - fix(main): asyncio WindowsSelectorEventLoopPolicy 添加 Python 版本守卫，兼容 3.8-3.14
 - fix(opencode): `fetch_remote_models` 改为直连，不再通过代理获取模型列表

@@ -69,14 +69,15 @@ from __future__ import annotations
 """
 
 import json
-import logging
 import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from src.logger import get_logger
+
 __all__ = ["TerminalSessionStore", "get_terminal_store"]
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 # 每个会话离线输出文件的默认最大字节数（5 MB）。
 _DEFAULT_MAX_OUTPUT_BYTES: int = 5 * 1024 * 1024

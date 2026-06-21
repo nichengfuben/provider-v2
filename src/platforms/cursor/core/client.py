@@ -7,12 +7,12 @@
 from __future__ import annotations
 
 import asyncio
-import logging
 from typing import Any, AsyncGenerator, Dict, List, Optional, Union
 
 import aiohttp
 
 from src.core.dispatch.candidate import Candidate, make_id
+from src.logger import get_logger
 from ..accounts import API_KEYS
 from .constants import BASE_URL, CHAT_PATH, MODELS_JS_URL
 from .conversation import build_cursor_messages
@@ -28,7 +28,7 @@ from .refusal import is_refusal
 from .sanitize import CLAUDE_IDENTITY_RESPONSE, sanitize_response
 from .sse import parse_sse_line
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 MAX_RETRIES: int = 2
 MAX_REFUSAL_RETRIES: int = 1

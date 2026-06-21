@@ -14,7 +14,6 @@ Persistence: JSON file with atomic write.
 from __future__ import annotations
 
 import json
-import logging
 import os
 import random
 import time
@@ -22,7 +21,9 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Optional
 
-log = logging.getLogger("opencode.proxyscore")
+from src.logger import get_logger
+
+log = get_logger("opencode.proxyscore")
 
 DIRECT: str = "direct"  # sentinel key for the direct-connection candidate
 

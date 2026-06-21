@@ -4,14 +4,15 @@ from __future__ import annotations
 
 import base64
 import hashlib
-import logging
 import secrets
 import socket
 import ssl
 import struct
 from typing import Dict, Tuple
 
-_logger = logging.getLogger(__name__)
+from src.logger import get_logger
+
+_logger = get_logger(__name__)
 
 
 class _RawWebSocket:

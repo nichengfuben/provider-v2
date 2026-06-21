@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import asyncio
-import logging
 import time
 from typing import Any, AsyncGenerator, Dict, List, Optional, Union
 
@@ -11,6 +10,7 @@ import aiohttp
 
 from src.core.dispatch.candidate import Candidate, make_id
 from src.core.errors import EmbeddingError, PlatformError
+from src.logger import get_logger
 from ..accounts import API_KEYS
 from .constants import (
     BASE_URL,
@@ -25,7 +25,7 @@ from .headers import build_headers
 from .payloads import build_payload
 from .sse import parse_sse_line
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 MAX_RETRIES: int = 3
 
 

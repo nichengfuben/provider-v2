@@ -7,6 +7,7 @@ from typing import Any, Dict, List, Optional
 import aiohttp
 
 from src.core.dispatch.candidate import Candidate
+from src.logger import get_logger
 from .constants import (
     GTTS_DEFAULT_LANG,
     GTTS_MAX_CHARS,
@@ -135,9 +136,8 @@ class TtsService:
             try:
                 return await self._do_tts(candidate, text, lang, slow)
             except Exception as exc:  # noqa: BLE001
-                import logging
                 last_exc = exc
-                logging.getLogger(__name__).warning(
+                get_logger(__name__).warning(
                     "gtts 重试 %d/%d: %s", attempt + 1, MAX_RETRIES, exc
                 )
         if last_exc is not None:

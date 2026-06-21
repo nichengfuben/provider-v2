@@ -1,20 +1,20 @@
 from __future__ import annotations
 
 import asyncio
-import logging
 import uuid
 from typing import Any, AsyncGenerator, Dict, List, Optional, Union
 
 import aiohttp
 
 from src.core.dispatch.candidate import Candidate, make_id
+from src.logger import get_logger
 from .constants import BASE_URL, CHAT_PATH
 from .headers import build_headers
 from .models import MODELS
 from .payloads import build_payload
 from .sse import parse_sse_line
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 MAX_RETRIES = 3
 
 

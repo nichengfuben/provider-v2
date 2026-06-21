@@ -3,13 +3,14 @@
 from __future__ import annotations
 
 import json
-import logging
 from typing import Any, Dict
 
 import aiohttp.web
 
+from src.logger import get_logger
+
 __all__ = ["setup_routes"]
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 _FUNCTION_REGISTRY: Dict[str, Dict[str, Any]] = {}
 

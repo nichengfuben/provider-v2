@@ -31,6 +31,7 @@ try:
 except ImportError:
     BeautifulSoup = None  # type: ignore[assignment,misc]
 
+from src.logger import get_logger
 from .constants import (
     PROXY_API_GET,
     PROXY_API_MAX_COUNT,
@@ -44,7 +45,7 @@ from .constants import (
     PROXY_TEXT_ENDPOINT,
 )
 
-log = logging.getLogger("opencode.proxypool")
+log = get_logger("opencode.proxypool")
 
 # Suppress noisy library loggers
 logging.getLogger("urllib3").setLevel(logging.WARNING)

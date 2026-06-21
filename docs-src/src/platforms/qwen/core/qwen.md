@@ -15,10 +15,12 @@ Qwen 平台（通义千问网页版）是本项目中功能最丰富的平台，
 
 ```
 QwenAdapter (adaptercore.py)
-  └── QwenClient (client.py)
+  └── QwenClient (client.py) -- mixin composition
+      ├── AuthMixin (auth.py) -- 登录、cookie 刷新、指纹生成
+      ├── UploadMixin (upload.py) -- 文件上传 (OSS STS PUT)
+      ├── MediaMixin (media.py) -- 视频生成 (i2v)、TTS 语音合成
+      ├── LogsMixin (logs.py) -- 缓冲日志聚合
       ├── 账号管理 (_account_states, _rebuild_candidates)
-      ├── 登录系统 (_bg_login, 并发批量登录)
-      ├── Cookie 管理 (_bg_cookie_refresh, 指纹生成)
       ├── 模型刷新 (_models_cache, ModelsCache)
       ├── 持久化 (_bg_persist, 60s 间隔)
       └── 请求处理 (_do_request, SSE 解析)
@@ -28,9 +30,13 @@ QwenAdapter (adaptercore.py)
 
 | 文件 | 说明 |
 |------|------|
-| `client.py` | 核心客户端，包含所有 HTTP 请求逻辑 |
+| `client.py` | 核心客户端，mixin 组合入口，HTTP 请求逻辑 |
+| `auth.py` | AuthMixin -- 登录、cookie 刷新、指纹生成 |
+| `upload.py` | UploadMixin -- 文件上传 (OSS STS PUT) |
+| `media.py` | MediaMixin -- 视频生成 (i2v)、TTS 语音合成 |
+| `logs.py` | LogsMixin -- 缓冲日志聚合 |
 | `accounts.py` | Account 数据类 + 账号列表（758KB，含大量数据） |
-| `shared.py` | God-module（1754 行），包含指纹、cookie、header、payload、上传、SSE 解析等一切逻辑 |
+| `shared.py` | 共享常量和辅助函数 |
 | `adaptercore.py` | 适配器实现，委托给 QwenClient |
 
 ## 账号系统
@@ -94,8 +100,8 @@ enabled_platforms = ["qwen"]
 
 ## 注意事项
 
-1. **`shared.py` 是 God-module** — 几乎所有辅助逻辑都在此文件中
-2. **`accounts.py` 很大（758KB）** — 包含大量账号数据
-3. **WAF 检测仅检查 Content-Type** — 不包含状态码或 body 关键词
-4. **所有 10000 个账号在启动时从持久化恢复** — 初始候选项数量巨大
-5. **图片/视频/TTS 文件保存到本地磁盘** — 使用 `GENERATED_*_DIR` 目录
+1. **`client.py` 采用 mixin 架构** -- AuthMixin、UploadMixin、MediaMixin、LogsMixin 各司其职
+2. **`accounts.py` 很大（758KB）** -- 包含大量账号数据
+3. **WAF 检测仅检查 Content-Type** -- 不包含状态码或 body 关键词
+4. **所有 10000 个账号在启动时从持久化恢复** -- 初始候选项数量巨大
+5. **图片/视频/TTS 文件保存到本地磁盘** -- 使用 `GENERATED_*_DIR` 目录

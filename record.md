@@ -16,6 +16,7 @@ docs-src/src/agents.md
 docs-src/src/core/ARCHITECTURE.md
 docs-src/src/core/INDEX.md
 docs-src/src/core/__init__.py
+docs-src/src/core/dispatch/selector.py
 docs-src/src/core/errors.py
 docs-src/src/core/fncall/protocols/dsml.py
 docs-src/src/core/models_cache.py
@@ -48,7 +49,17 @@ docs-src/src/platforms/opencode/INDEX.md
 docs-src/src/platforms/openrouter/INDEX.md
 docs-src/src/platforms/perplexity/INDEX.md
 docs-src/src/platforms/qwen/INDEX.md
+docs-src/src/platforms/qwen/core/auth.py
+docs-src/src/platforms/qwen/core/logs.py
+docs-src/src/platforms/qwen/core/media.py
 docs-src/src/platforms/qwen/core/qwen.md
+docs-src/src/platforms/qwen/core/upload.py
+docs-src/src/routes/INDEX.md
+docs-src/src/routes/openai.py
+docs-src/src/routes/openai_chat.py
+docs-src/src/routes/openai_helpers.py
+docs-src/src/routes/openai_media.py
+docs-src/src/routes/openai_stubs.py
 docs-src/src/webui/INDEX.md
 docs-src/src/webui/app.md
 docs-src/src/webui/config_schema.md
@@ -371,9 +382,13 @@ src/platforms/qwen/__init__.py
 src/platforms/qwen/adapter.py
 src/platforms/qwen/core/__init__.py
 src/platforms/qwen/core/adaptercore.py
+src/platforms/qwen/core/auth.py
 src/platforms/qwen/core/client.py
 src/platforms/qwen/core/constants.py
+src/platforms/qwen/core/logs.py
+src/platforms/qwen/core/media.py
 src/platforms/qwen/core/shared.py
+src/platforms/qwen/core/upload.py
 src/platforms/qwen/util.py
 src/platforms/yandextranslate/__init__.py
 src/platforms/yandextranslate/adapter.py
@@ -394,7 +409,14 @@ src/platforms/zen/core/sse.py
 src/platforms/zen/util.py
 src/routes/__init__.py
 src/routes/anthropic.py
+src/routes/function_call.py
+src/routes/health.py
+src/routes/models.py
 src/routes/openai.py
+src/routes/openai_chat.py
+src/routes/openai_helpers.py
+src/routes/openai_media.py
+src/routes/openai_stubs.py
 src/routes/static.py
 src/webui/__init__.py
 src/webui/app.py
@@ -414,6 +436,7 @@ src/webui/schemas/__init__.py
 src/webui/schemas/summary.py
 src/webui/server.py
 src/webui/services/__init__.py
+src/webui/services/request_log.py
 src/webui/services/stats.py
 src/webui/services/summaries.py
 src/webui/static/chat/chat.js
@@ -2742,3 +2765,77 @@ pytest: pre-existing failures; exit code 42 (test suite interrupted at ~55%, all
 [docs-src/src/platforms/ollama/core/client.py] 同步 docs-src 镜像
 [docs-src/src/platforms/opencode/core/client.py] 同步 docs-src 镜像
 [docs-src/src/core/shims.py] 同步 docs-src 镜像
+
+2026-06-21 15:42:15
+
+[requirements.txt] 移除 tqdm 和 brotli 依赖
+[PROJECT_DECISIONS.md] 新增 ADR-006 至 ADR-013（架构决策记录）
+[README.md] 移除技术栈中错误的 uvicorn 引用；版本徽章和路线图更新为 2.2.196
+[src/core/dispatch/selector.py] 新增过期候选项剪枝逻辑（stale candidate pruning）
+[src/platforms/*/core/adaptercore.py] 全平台迁移：从 stdlib logging 迁移到 loguru（共 24 个 adaptercore 文件）
+[src/platforms/*/core/client.py] 全平台迁移：从 stdlib logging 迁移到 loguru（共 24 个 client 文件）
+[src/platforms/edgetts/core/websocket.py] 从 stdlib logging 迁移到 loguru
+[src/platforms/gtts/core/tts.py] 从 stdlib logging 迁移到 loguru
+[src/platforms/ollama/core/discover.py] 从 stdlib logging 迁移到 loguru
+[src/platforms/opencode/core/proxypool.py] 从 stdlib logging 迁移到 loguru
+[src/platforms/opencode/core/proxyscore.py] 从 stdlib logging 迁移到 loguru
+[src/routes/__init__.py] 更新路由注册，引入分解后的 openai 子模块
+[src/routes/openai.py] 分解为 5 个模块：openai.py（主入口）、openai_helpers.py、openai_stubs.py、openai_chat.py、openai_media.py
+[src/routes/openai_helpers.py] 新增：从 openai.py 提取的辅助函数
+[src/routes/openai_stubs.py] 新增：从 openai.py 提取的 stub 响应
+[src/routes/openai_chat.py] 新增：从 openai.py 提取的 chat 路由逻辑
+[src/routes/openai_media.py] 新增：从 openai.py 提取的 media 路由逻辑
+[src/platforms/qwen/core/client.py] QwenClient 分解：主客户端，通过 mixin 引入 auth/upload/media/logs
+[src/platforms/qwen/core/auth.py] 更新：QwenClient auth mixin
+[src/platforms/qwen/core/upload.py] 更新：QwenClient upload mixin
+[src/platforms/qwen/core/media.py] 新增：QwenClient media mixin
+[src/platforms/qwen/core/logs.py] 新增：QwenClient logs mixin
+[src/core/models_cache.py] 更新日志相关代码
+[src/core/terminal_sessions.py] 更新日志相关代码
+[src/routes/function_call.py] 更新导入
+[src/webui/routers/terminal.py] 更新
+[src/webui/services/request_log.py] 更新
+[src/webui/services/stats.py] 更新
+[package.json] 删除（孤立文件，无引用）
+[package-lock.json] 删除（孤立文件，无引用）
+[template/template_config.toml] 版本升至 2.2.196
+[config.toml] 版本跟随模板 2.2.196
+[.agents/provider-guide/SKILL.md] 版本字段 2.2.195 -> 2.2.196
+
+2026-06-21 15:50:39
+
+[src/webui/static/chat/chat.js] 修复剪贴板 API 在 HTTP 环境下的兼容性
+[src/webui/static/config/actions.js] 修复剪贴板 API 兼容性
+[src/webui/static/stats/request-inspector.js] 修复剪贴板 API 兼容性
+[src/webui/static/config/render.js] 迁移日志到 loguru
+[src/webui/static/index.html] 更新
+[template/template_config.toml] 版本升至 2.2.197
+[config.toml] 版本跟随模板 2.2.197
+[README.md] 版本徽章和路线图更新为 2.2.197
+[.agents/provider-guide/SKILL.md] 版本字段 2.2.196 -> 2.2.197
+
+2026-06-21 22:30:00
+
+[RECORD.md] 补充全局文件清单：新增 src/routes/function_call.py、health.py、models.py、src/webui/services/request_log.py、src/platforms/qwen/core/auth.py、upload.py 及对应 docs-src 镜像条目
+[README.md] 更新项目结构目录树：routes 层级新增 openai_chat.py、openai_helpers.py、openai_media.py、openai_stubs.py、function_call.py、health.py、models.py 子模块描述
+[docs-src/src/core/models_cache.py] 验证与 src 源文件一致（日志迁移已同步）
+[docs-src/src/core/terminal_sessions.py] 验证与 src 源文件一致（日志迁移已同步）
+[docs-src/src/core/dispatch/selector.py] 验证与 src 源文件一致（stale pruning 已同步）
+[docs-src/src/routes/openai.py] 验证与 src 源文件一致（模块分解已同步）
+[docs-src/src/routes/openai_chat.py] 验证与 src 源文件一致
+[docs-src/src/routes/openai_helpers.py] 验证与 src 源文件一致
+[docs-src/src/routes/openai_media.py] 验证与 src 源文件一致
+[docs-src/src/routes/openai_stubs.py] 验证与 src 源文件一致
+[docs-src/src/platforms/qwen/core/client.py] 验证与 src 源文件一致（mixin 重构已同步）
+[docs-src/src/platforms/qwen/core/auth.py] 验证与 src 源文件一致（AuthMixin 已同步）
+[docs-src/src/platforms/qwen/core/upload.py] 验证与 src 源文件一致（UploadMixin 已同步）
+[docs-src/src/platforms/qwen/core/media.py] 验证与 src 源文件一致（MediaMixin 已同步）
+[docs-src/src/platforms/qwen/core/logs.py] 验证与 src 源文件一致（LogsMixin 已同步）
+[docs-src/src/platforms/ollama/core/client.py] 验证与 src 源文件一致（日志迁移已同步）
+[docs-src/src/platforms/opencode/core/client.py] 验证与 src 源文件一致（日志迁移已同步）
+[template/template_config.toml] 版本 2.2.197（已同步）
+[config.toml] 版本 2.2.197（已同步）
+[.agents/provider-guide/SKILL.md] 版本字段 2.2.197（已同步）
+[py_compile] 64 个修改的 Python 文件全部通过编译验证（0 失败）
+[pytest] 513 passed, 57 failed, 16 skipped, 4 errors（排除 test_xml_protocol.py 导入错误和 test_autoupdate.py exit(42)）
+[pytest] 57 个失败和 4 个错误均为已有问题（config manager、dispatch registry/selector、nous protocol、webui static assets、terminal WS），与本次变更无关
