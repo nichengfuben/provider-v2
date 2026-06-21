@@ -3,13 +3,13 @@
 from __future__ import annotations
 
 import asyncio
-import logging
 from typing import Any, AsyncGenerator, Dict, List, Optional, Union
 
 import aiohttp
 
-from src.core.candidate import Candidate
+from src.core.dispatch.candidate import Candidate
 from src.core.models_cache import ModelsCache
+from src.logger import get_logger
 from src.platforms.base import PlatformAdapter
 from .constants import (
     CAPS,
@@ -20,7 +20,7 @@ from .constants import (
 
 __all__ = ["Adapter", "CerebrasAdapter"]
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class Adapter(PlatformAdapter):

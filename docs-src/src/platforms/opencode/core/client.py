@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import asyncio
 import json
-import logging
 import os
 import time
 from pathlib import Path
@@ -12,7 +11,7 @@ from typing import Any, AsyncGenerator, Dict, List, Optional, Union
 
 import aiohttp
 
-from src.core.candidate import Candidate, make_id
+from src.core.dispatch.candidate import Candidate, make_id
 from src.core.errors import PlatformError
 from src.logger import get_logger
 from .constants import (
@@ -23,6 +22,7 @@ from .constants import (
     MAX_RETRIES,
     MODELS,
     MODELS_PATH,
+    PROXY_FETCH_ENABLED,
     PROXY_POOL_PERSIST_PATH,
     PROXY_REFRESH_INTERVAL,
     PROXY_SCORE_PERSIST_PATH,
@@ -65,9 +65,16 @@ class OpencodeClient:
     async def init_immediate(self, session: aiohttp.ClientSession) -> None:
         """Store session and load cached proxy pool -- non-blocking."""
         self._session = session
-        pool = await self._load_pool_from_disk()
-        if pool is None:
+
+        # Only load from persistent file when PROXY_FETCH_ENABLED is True
+        if PROXY_FETCH_ENABLED:
+            pool = await self._load_pool_from_disk()
+            if pool is None:
+                pool = ProxyPool()
+        else:
             pool = ProxyPool()
+
+        # Always inject LOCAL_PROXIES
         self._inject_local_proxies(pool)
         if pool.count > 0:
             self._pool = pool
@@ -79,6 +86,10 @@ class OpencodeClient:
 
     async def background_setup(self) -> None:
         """Fetch fresh proxy pool (in executor) and start background refresh."""
+        if not PROXY_FETCH_ENABLED:
+            logger.debug("opencode proxy fetch disabled, using local proxies only")
+            return
+
         try:
             loop = asyncio.get_running_loop()
             pool = await loop.run_in_executor(None, self._do_proxy_fetch)
@@ -129,6 +140,9 @@ class OpencodeClient:
 
     async def _bg_refresh_proxy(self) -> None:
         """Periodically refresh the proxy pool."""
+        if not PROXY_FETCH_ENABLED:
+            return
+
         try:
             while True:
                 await asyncio.sleep(PROXY_REFRESH_INTERVAL)
@@ -189,7 +203,7 @@ class OpencodeClient:
 
     async def ensure_candidates(self, count: int) -> int:
         """Ensure the single candidate is available (proxy pool non-empty)."""
-        if self._pool.count == 0:
+        if self._pool.count == 0 and PROXY_FETCH_ENABLED:
             try:
                 loop = asyncio.get_running_loop()
                 pool = await loop.run_in_executor(None, self._do_proxy_fetch)
@@ -225,19 +239,22 @@ class OpencodeClient:
         """
         last_exc: Optional[Exception] = None
         for attempt in range(MAX_RETRIES):
-            # TAS-select a proxy for every attempt (first included)
-            pool_addrs = self._pool.to_address_list()
-            # Exclude the last failed proxy on retries
-            if attempt > 0:
-                pool_addrs = [
-                    a for a in pool_addrs
-                    if a != candidate.meta.get("proxy_addr", "")
-                ]
-            chosen = self._selector.select(pool_addrs)
-            if chosen == DIRECT or chosen is None:
-                new_addr = ""
+            if PROXY_FETCH_ENABLED:
+                # TAS-select a proxy for every attempt (first included)
+                pool_addrs = self._pool.to_address_list()
+                # Exclude the last failed proxy on retries
+                if attempt > 0:
+                    pool_addrs = [
+                        a for a in pool_addrs
+                        if a != candidate.meta.get("proxy_addr", "")
+                    ]
+                chosen = self._selector.select(pool_addrs)
+                if chosen == DIRECT or chosen is None:
+                    new_addr = ""
+                else:
+                    new_addr = chosen
             else:
-                new_addr = chosen
+                new_addr = ""
             candidate.meta["proxy_addr"] = new_addr
             candidate.meta["proxy_protocol"] = "proxy" if new_addr else "direct"
 
@@ -294,6 +311,7 @@ class OpencodeClient:
             request_kwargs["proxy"] = "http://{}".format(proxy_addr)
 
         t0 = time.time()
+        _request_ok = False
         try:
             async with self._session.post(
                 url,
@@ -312,8 +330,7 @@ class OpencodeClient:
 
                 if not stream:
                     data = await resp.json()
-                    latency_ms = (time.time() - t0) * 1000.0
-                    self._selector.record_success(selector_key, latency_ms)
+                    _request_ok = True
                     choice = (data.get("choices") or [{}])[0]
                     msg = choice.get("message", {})
                     content = msg.get("content", "")
@@ -366,40 +383,36 @@ class OpencodeClient:
                             v for _, v in sorted(_tc_accumulator.items())
                         ]
                         yield {"tool_calls": tool_calls}
-                    latency_ms = (time.time() - t0) * 1000.0
-                    self._selector.record_success(selector_key, latency_ms)
+                    _request_ok = True
 
         except PlatformError:
             raise
         except Exception as e:
             self._selector.record_failure(selector_key)
             raise
+        finally:
+            if _request_ok:
+                latency_ms = (time.time() - t0) * 1000.0
+                self._selector.record_success(selector_key, latency_ms)
 
     # ------------------------------------------------------------------
     # Remote models
     # ------------------------------------------------------------------
 
     async def fetch_remote_models(self) -> List[str]:
-        """Fetch available models from the remote API.
-
-        Uses the first proxy in the pool for the request.
+        """Fetch available models from the remote API (direct connection).
 
         Returns:
             Model ID list, empty on failure.
         """
-        if not self._session or self._pool.count == 0:
+        if not self._session:
             return []
 
-        proxy_addr = self._pool.proxies[0].address
-        headers = build_headers(proxy_addr)
         url = "{}{}".format(BASE_URL, MODELS_PATH)
-        proxy_url = "http://{}".format(proxy_addr)
 
         try:
             async with self._session.get(
                 url,
-                headers=headers,
-                proxy=proxy_url,
                 ssl=False,
                 timeout=aiohttp.ClientTimeout(connect=10, total=30),
             ) as resp:

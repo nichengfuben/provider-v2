@@ -203,7 +203,7 @@ function _renderFncallSection(cfg) {
   var s = cfg.fncall || {};
   return _sectionCard('fncall',
     _field('protocol', _renderSelect('fncall', 'protocol', s.protocol || 'antml',
-      ['xml', 'antml', 'nous', 'bracket', 'original', 'custom']))
+      ['xml', 'antml', 'original', 'nous', 'bracket', 'dsml', 'custom']))
     + _field('record_prompt', _renderToggle('fncall', 'record_prompt', !!s.record_prompt))
     + _field('print_prompt', _renderToggle('fncall', 'print_prompt', !!s.print_prompt))
     + _fieldBlock('fncall_mapping', _renderMappingEditor('fncall', 'fncall_mapping', s.fncall_mapping || {}))

@@ -9,7 +9,6 @@ from __future__ import annotations
 import asyncio
 import base64
 import hashlib
-import logging
 import secrets
 import socket
 import ssl
@@ -21,8 +20,9 @@ from typing import Any, AsyncGenerator, Dict, List, Optional, Tuple
 
 import certifi
 
-from src.core.candidate import Candidate, make_id
+from src.core.dispatch.candidate import Candidate, make_id
 from src.core.errors import NotSupportedError
+from src.logger import get_logger
 from ..accounts import ACCOUNTS
 from .constants import (
     CAPS,
@@ -37,7 +37,7 @@ from .constants import (
 )
 from .drm import build_wss_headers, remove_incompatible_characters, build_ssml
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class _RawWebSocket:

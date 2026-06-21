@@ -1,15 +1,15 @@
 """WebUI 请求日志存储 — 使用 echotools 通用实现，带服务端持久化。"""
 
 import json
-import logging
 import threading
 from pathlib import Path
 
 from echotools.web.broker import RequestBroker, request_broker
+from src.logger import get_logger
 
 __all__ = ["RequestBroker", "request_broker", "save_requests", "load_requests", "start_request_persist"]
 
-_log = logging.getLogger(__name__)
+_log = get_logger(__name__)
 
 _PERSIST_DIR = Path(__file__).resolve().parent.parent.parent.parent / "persist" / "webui"
 _PERSIST_FILE = _PERSIST_DIR / "requests.json"

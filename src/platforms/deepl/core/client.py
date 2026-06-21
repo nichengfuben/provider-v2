@@ -6,7 +6,6 @@
 from __future__ import annotations
 
 import asyncio
-import logging
 import time
 from typing import Any, AsyncGenerator, Dict, List, Optional, Union
 
@@ -14,8 +13,9 @@ import aiohttp
 
 from echotools.translate import extract_text_from_messages, split_text_chunks
 
-from src.core.candidate import Candidate, make_id
+from src.core.dispatch.candidate import Candidate, make_id
 from src.core.errors import PlatformError
+from src.logger import get_logger
 from ..accounts import API_KEYS
 from .constants import (
     CAPS,
@@ -28,7 +28,7 @@ from .constants import (
     TRANSLATE_PATH,
 )
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 MAX_RETRIES: int = 3
 
 

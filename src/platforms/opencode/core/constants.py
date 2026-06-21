@@ -8,7 +8,7 @@ BASE_URL: str = "https://opencode.ai/zen/v1"
 CHAT_PATH: str = "/chat/completions"
 MODELS_PATH: str = "/models"
 
-MAX_RETRIES: int = 50
+MAX_RETRIES: int = 3
 RATE_LIMIT_COOLDOWN: int = 30
 RECOVERY_INTERVAL: int = 60
 
@@ -43,6 +43,8 @@ PROXY_BASE_URL: str = "https://proxy.scdn.io"
 PROXY_API_GET: str = PROXY_BASE_URL + "/api/get_proxy.php"
 PROXY_TEXT_ENDPOINT: str = PROXY_BASE_URL + "/text.php"
 PROXY_MAIN_PAGE: str = PROXY_BASE_URL + "/"
+
+PROXY_FETCH_ENABLED: bool = False  # 是否启用代理列表定时获取
 
 PROXY_MAX_PAGES: int = 10000
 PROXY_PER_PAGE: int = 10

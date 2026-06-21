@@ -3,12 +3,12 @@
 from __future__ import annotations
 
 import asyncio
-import logging
 import os
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any, AsyncGenerator, Dict, List, Optional, Union
 
-from src.core.candidate import Candidate, make_id
+from src.core.dispatch.candidate import Candidate, make_id
+from src.logger import get_logger
 from ..accounts import API_KEYS
 from .extract import (
     extract_delta_content,
@@ -17,7 +17,7 @@ from .extract import (
 )
 from .payloads import build_params
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 # 最大重试次数
 MAX_RETRIES: int = 3

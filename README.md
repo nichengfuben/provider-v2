@@ -18,8 +18,8 @@
 
 <div align="center">
 
-![Status](https://img.shields.io/badge/status-v2.2.191-blue)
-![Version](https://img.shields.io/badge/version-2.2.191-blue)
+![Status](https://img.shields.io/badge/status-v2.2.201-blue)
+![Version](https://img.shields.io/badge/version-2.2.201-blue)
 ![Python](https://img.shields.io/badge/python-3.8+-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Platforms](https://img.shields.io/badge/platforms-17+-orange)
@@ -72,7 +72,7 @@
 - 🔌 **多平台聚合**：统一接入 Qwen、DeepSeek、GLM、Cerebras、Ollama、ChatMoe、Cursor、CodeBuddy、NVIDIA 等 11+ 平台
 - 🔄 **API 兼容性**：同时兼容 OpenAI 和 Anthropic API 规范，无缝迁移现有项目
 - ⚡ **并发竞速**：智能选择最快响应的候选项，显著降低延迟
-- 🛠️ **工具调用支持**：完整的 function calling 功能，通过 XML 标签注入工具描述，支持中英文模板自定义
+- 🛠️ **工具调用支持**：完整的 function calling 功能，支持 7 种协议（xml/original/antml/bracket/custom/nous/dsml），中英文模板自定义
 - 🧠 **推理增强**：支持 thinking 和 search 参数增强推理能力
 - 📡 **流式响应**：完整支持 SSE 流式输出，实时展示生成内容
 - 🔐 **鉴权中间件**：可配置的 API Key 鉴权机制，保障服务安全
@@ -85,7 +85,6 @@
 | 类别 | 技术 | 版本要求 |
 |------|------|----------|
 | Web 框架 | aiohttp | >= 3.9.0 |
-| 异步运行时 | uvicorn[standard] | >= 0.20.0 |
 | HTTP 客户端 | aiohttp | >= 3.9.0 |
 | 数据验证 | pydantic | >= 2.0.0 |
 | 平台 SDK | cerebras-cloud-sdk | >= 1.0.0 |
@@ -118,7 +117,7 @@
 | **OpenAI 兼容 API** | ✅ | 完整支持 `/v1/chat/completions`、`/v1/models` 等接口 |
 | **Anthropic 兼容 API** | ✅ | 完整支持 `/v1/messages`、`/v1/models` 等接口 |
 | **并发竞速模式** | ✅ | 同时请求多个候选项，选择最快响应 |
-| **工具调用（fncall）** | ✅ | XML 标签注入，中英文模板，支持多行参数 |
+| **工具调用（fncall）** | ✅ | 7 种协议（xml/original/antml/bracket/custom/nous/dsml），中英文模板，支持多行参数 |
 | **推理增强** | ✅ | 支持 thinking 和 search 参数增强 |
 | **流式响应** | ✅ | 完整支持 SSE 流式输出 |
 | **鉴权中间件** | ✅ | 可配置的 API Key 鉴权 |
@@ -672,18 +671,18 @@ provider-v2/
 │   └── 📁 qwen/               # Qwen 账号状态
 ├── 📁 src/                     # 源代码目录
 │   ├── 📁 core/               # 核心模块
-│   │   ├── 📄 candidate.py    # 候选项定义
-│   │   ├── 📄 config.py       # 配置管理
-│   │   ├── 📄 errors.py       # 异常定义
-│   │   ├── 📄 gateway.py      # 网关核心逻辑
+│   │   ├── 📁 config/         # 配置管理（base/manager/resolver/sections）
+│   │   ├── 📁 dispatch/       # 请求分发（candidate/gateway/registry/selector/runtime_view）
+│   │   ├── 📁 errors/         # 异常层级（base/platform/business）
+│   │   ├── 📁 fncall/         # 工具调用（protocols: xml/original/antml/bracket/custom/nous/dsml）
+│   │   ├── 📁 server/         # 服务器管理（http/process/proxy/server/autoupdate/watcher）
+│   │   ├── 📁 utils/          # 工具函数（files/ids/io_utils/retry/scheduler）
+│   │   ├── 📄 __init__.py     # 统一导出入口
+│   │   ├── 📄 shims.py        # 兼容 shim 集合（整合 16 个旧模块）
 │   │   ├── 📄 models_cache.py # 模型缓存
-│   │   ├── 📄 proxy.py        # 代理配置
-│   │   ├── 📄 registry.py     # 平台注册表
-│   │   ├── 📄 retry.py        # 重试机制
-│   │   ├── 📄 selector.py     # TAS 候选项选择器
-│   │   ├── 📄 server.py       # 服务器创建
-│   │   ├── 📄 tools.py        # 工具调用处理
-│   │   └── 📄 watcher.py      # 文件监视器（热重载）
+│   │   ├── 📄 proxy_selector.py # 代理选择器
+│   │   ├── 📄 terminal_sessions.py # 终端会话持久化
+│   │   └── 📄 tools.py        # 工具调用统一接口
 │   ├── 📁 platforms/          # 平台适配器
 │   │   ├── 📄 base.py         # 适配器基类
 │   │   ├── 📁 qwen/           # Qwen 平台
@@ -697,8 +696,15 @@ provider-v2/
 │   │   └── 📁 nvidia/         # NVIDIA 平台
 │   └── 📁 routes/             # 路由层
 │       ├── 📄 anthropic.py    # Anthropic API 路由
-│       ├── 📄 openai.py       # OpenAI API 路由
-│       └── 📄 static.py       # 静态路由（健康检查等）
+│       ├── 📄 function_call.py # 工具调用路由
+│       ├── 📄 health.py       # 健康检查路由
+│       ├── 📄 models.py       # 模型列表路由
+│       ├── 📄 openai.py       # OpenAI API 聚合入口
+│       ├── 📄 openai_chat.py  # Chat Completions 端点
+│       ├── 📄 openai_helpers.py # 共享工具、常量、ID 生成器
+│       ├── 📄 openai_media.py # 媒体端点（图像/音频/视频/嵌入）
+│       ├── 📄 openai_stubs.py # 存根/未实现处理器
+│       └── 📄 static.py       # 静态路由
 ├── 📄 config.toml             # 配置文件
 ├── 📄 main.py                 # 应用入口
 ├── 📄 requirements.txt        # Python 依赖
@@ -1258,7 +1264,41 @@ fix(gateway): 修复并发竞速时 token 计数错误
 
 ## 🗺️ 路线图
 
-### 当前版本：v2.2.191
+### 当前版本：v2.2.201
+
+✅ 已完成（v2.2.201）：
+- fix(opencode): MAX_RETRIES 从 50 降至 3，避免无效重试消耗
+
+✅ 已完成（v2.2.200）：
+- fix(opencode): 修复 `_do_request()` 中 `record_success` 在异步生成器中断时不执行的问题，改用 `_request_ok` 标志 + `finally` 块确保评分记录
+- fix(opencode): 更新常量定义
+
+✅ 已完成（v2.2.198）：
+- fix(ollama): 修复 `detect_capabilities()` 和 `_verify_server()` 中 `.get()` 返回 `None` 导致 `'NoneType' object is not iterable` 的问题
+
+✅ 已完成（v2.2.197）：
+- refactor(routes): 拆分 `routes/openai.py`（2153 行）为 5 个聚焦子模块
+- refactor(qwen): 通过 mixin 模式拆分 QwenClient（2613 行）为 5 个模块
+- refactor(logging): 迁移 49 个平台适配器文件从 stdlib logging 到 loguru
+- feat(selector): 新增 stale candidate 自动清理功能（默认 30 天阈值）
+- fix(webui): 修复剪贴板 API 在 HTTP 环境下的兼容性（3 个 JS 文件）
+- chore(deps): 移除未使用的 tqdm 和 brotli 依赖
+- docs: 新增 ADR-006 至 ADR-013，修复 README 技术栈表（移除错误的 uvicorn 条目）
+
+✅ 已完成（v2.2.196）：
+- refactor(core): 将 `server/` 子包合并为单个 `server.py` 文件，更新全部导入路径
+- fix(main): asyncio WindowsSelectorEventLoopPolicy 添加 Python 版本守卫，兼容 3.8-3.14
+- fix(opencode): `fetch_remote_models` 改为直连，不再通过代理获取模型列表
+
+✅ 已完成（v2.2.194）：
+- fix(core): 在 `__init__.py` 中添加 sys.modules 向后兼容别名，修复旧模块路径导入失败
+
+✅ 已完成（v2.2.193）：
+- fix(core): 更新 `__init__.py` 导入 — `http_request/stream_request` 替换为 `clean_fncall/safe_flush`，`with_retry` 替换为 `retry_with_backoff`
+
+✅ 已完成（v2.2.192）：
+- feat(fncall): 新增 DSML 工具调用协议支持（echotools 升级至 1.0.32）
+- refactor(core): 合并 16 个兼容 shim 文件至 shims.py 模块，减少 59% 文件数量
 
 ✅ 已完成（v2.2.191）：
 - Ollama 平台新增 FILTER_CLOUD_MODELS 常量（默认 True），服务器扫描时过滤 :cloud 后缀的付费云端模型，过滤发生在注册表构建前

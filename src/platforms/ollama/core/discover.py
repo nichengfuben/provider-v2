@@ -3,13 +3,13 @@ from __future__ import annotations
 """Ollama 服务器在线发现与验证。"""
 
 import concurrent.futures
-import logging
 import re
 import time
 from typing import Any, Dict, List, Optional
 
 import requests
 
+from src.logger import get_logger
 from .constants import (
     BASE_URL,
     MAX_WORKERS,
@@ -18,7 +18,7 @@ from .constants import (
 )
 from .detect import detect_capabilities
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 def _fetch_page(page: int) -> Optional[str]:
@@ -150,12 +150,13 @@ def _verify_server(ip: str) -> Optional[Dict[str, Any]]:
         if not name:
             continue
         detail = _show_model(base, name)
+        _det = m.get("details") or {}
         infos.append({
             "name": name,
             "size": m.get("size", 0),
             "capabilities": detect_capabilities(detail),
-            "family": m.get("details", {}).get("family", ""),
-            "parameter_size": m.get("details", {}).get("parameter_size", ""),
+            "family": _det.get("family") or "",
+            "parameter_size": _det.get("parameter_size") or "",
         })
 
     return {

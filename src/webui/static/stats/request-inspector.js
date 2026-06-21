@@ -18,6 +18,30 @@ var RequestInspector = (function () {
   var _currentPage = 1;
   var _pageSize = 7;
 
+  // Clipboard helper with fallback for insecure contexts (HTTP)
+  function copyToClipboard(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      return navigator.clipboard.writeText(text);
+    }
+    // Fallback: hidden textarea + execCommand
+    var textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.style.position = 'fixed';
+    textarea.style.left = '-9999px';
+    textarea.style.top = '-9999px';
+    document.body.appendChild(textarea);
+    textarea.focus();
+    textarea.select();
+    var success = false;
+    try {
+      success = document.execCommand('copy');
+    } catch (e) {
+      console.error('Copy failed:', e);
+    }
+    document.body.removeChild(textarea);
+    return success ? Promise.resolve() : Promise.reject(new Error('Copy failed'));
+  }
+
   function init() {
     var panel = document.getElementById('requestInspector');
     if (!panel) return;
@@ -342,7 +366,7 @@ var RequestInspector = (function () {
           : document.getElementById('req-messages-content');
         if (!el) return;
         var text = el.textContent || '';
-        navigator.clipboard.writeText(text).then(function() {
+        copyToClipboard(text).then(function() {
           btn.textContent = '已复制';
           setTimeout(function() { btn.textContent = '复制'; }, 1500);
         }, function() {
@@ -377,7 +401,7 @@ var RequestInspector = (function () {
           newBtn.addEventListener('click', function() {
             var el = document.getElementById('req-response-content');
             if (!el) return;
-            navigator.clipboard.writeText(el.textContent || '').then(function() {
+            copyToClipboard(el.textContent || '').then(function() {
               newBtn.textContent = '已复制';
               setTimeout(function() { newBtn.textContent = '复制'; }, 1500);
             }, function() {
