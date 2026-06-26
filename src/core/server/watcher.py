@@ -1,0 +1,168 @@
+from __future__ import annotations
+
+"""File watcher — hot-reload platforms, detect core changes for restart."""
+
+import asyncio
+import os
+from pathlib import Path
+from typing import Any, Optional, Set, Tuple
+
+from echotools.logger.manager import get_logger
+from echotools.watcher.file_watcher import FileWatcher as _BaseWatcher
+
+__all__ = ["FileWatcher"]
+
+logger = get_logger(__name__)
+
+_CORE_DIRS = {"core", "routes"}
+_PLATFORM_DIR = "platforms"
+
+
+def _classify(changed: Set[str]) -> Tuple[bool, Set[str]]:
+    """Classify changed files as core (restart) or platform (hot-reload).
+
+    Args:
+        changed: Set of absolute file paths that changed.
+
+    Returns:
+        (needs_restart, platform_names):
+            - needs_restart: whether a restart is required
+            - platform_names: set of platform names that were changed
+    """
+    needs_restart = False
+    platform_names: Set[str] = set()
+
+    for fp in changed:
+        p = Path(fp)
+        parts = p.parts
+
+        if p.name in ("config.toml", "main.py"):
+            needs_restart = True
+            continue
+
+        try:
+            src_idx = parts.index("src")
+        except ValueError:
+            needs_restart = True
+            continue
+
+        sub_parts = parts[src_idx + 1 :]
+        if not sub_parts:
+            needs_restart = True
+            continue
+
+        first = sub_parts[0]
+
+        if first in _CORE_DIRS or first == "__init__.py":
+            needs_restart = True
+        elif first == _PLATFORM_DIR and len(sub_parts) >= 2:
+            platform_names.add(sub_parts[1])
+        else:
+            needs_restart = True
+
+    return needs_restart, platform_names
+
+
+def _trigger_restart(session: Any, registry: Any) -> None:
+    """Trigger Worker process restart (exit code 42).
+
+    Args:
+        session: HTTP session object (attempt graceful close).
+        registry: Registry object (attempt graceful close).
+    """
+    logger.info("Core file changed, preparing restart...")
+    for resource in (session, registry):
+        if resource:
+            try:
+                loop = asyncio.get_event_loop()
+                if loop.is_running():
+                    loop.create_task(resource.close())
+            except Exception as exc:
+                logger.warning("Failed to close resource: %s", exc)
+    os._exit(42)
+
+
+class FileWatcher:
+    """File change watcher — reuses echotools.FileWatcher + project classification logic.
+
+    Watch logic:
+    - Core files (``core/``, ``routes/``, ``config.toml``, ``main.py``) changed
+      -> exit code 42 restart
+    - Platform files (``src/platforms/<name>/``) changed
+      -> hot-reload the platform, refresh candidates
+    """
+
+    def __init__(self, root: Path) -> None:
+        """Initialize file watcher.
+
+        Args:
+            root: Project root directory path.
+        """
+        self._root = root
+        self._registry: Optional[Any] = None
+        self._session: Optional[Any] = None
+
+        paths = []
+        src = root / "src"
+        if src.is_dir():
+            paths.append(src)
+        for f in (root / "config.toml", root / "main.py"):
+            if f.is_file():
+                paths.append(f)
+
+        self._watcher = _BaseWatcher(
+            paths=paths,
+            extensions={".py", ".toml"},
+            interval=2.0,
+        )
+
+    async def _on_change(self, changed: Set[str]) -> None:
+        """File change callback — classify and handle restart or hot-reload.
+
+        Args:
+            changed: Set of absolute file paths that changed.
+        """
+        logger.info("File change detected: %s", [Path(f).name for f in changed])
+
+        needs_restart, platform_names = _classify(changed)
+
+        if needs_restart:
+            await asyncio.sleep(1.0)
+            _trigger_restart(self._session, self._registry)
+            return
+
+        for name in platform_names:
+            if self._registry and self._session:
+                logger.info("Hot-reloading platform: %s", name)
+                ok = await self._registry.reload_platform(name, self._session)
+                if ok:
+                    adapter = self._registry.adapters.get(name)
+                    models = (
+                        list(getattr(adapter, "supported_models", []))
+                        if adapter
+                        else []
+                    )
+                    for model in models:
+                        try:
+                            await self._registry.ensure_candidates(model, 1)
+                        except Exception as exc:
+                            logger.warning("Candidate refresh failed: %s", exc)
+                else:
+                    logger.warning("Platform [%s] hot-reload failed", name)
+
+    async def start(self, registry: Any, session: Any) -> None:
+        """Start file watcher.
+
+        Args:
+            registry: Registry object (for hot-reloading platforms).
+            session: HTTP session object (for requests during hot-reload).
+        """
+        self._registry = registry
+        self._session = session
+        await self._watcher.start(self._on_change)
+        logger.info("File watcher started: %s", self._root)
+
+    def stop(self) -> None:
+        """Stop file watcher."""
+        self._watcher.stop()
+        logger.info("File watcher stopped")

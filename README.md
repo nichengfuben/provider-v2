@@ -18,8 +18,8 @@
 
 <div align="center">
 
-![Status](https://img.shields.io/badge/status-v2.2.202-blue)
-![Version](https://img.shields.io/badge/version-2.2.202-blue)
+![Status](https://img.shields.io/badge/status-v2.2.203-blue)
+![Version](https://img.shields.io/badge/version-2.2.203-blue)
 ![Python](https://img.shields.io/badge/python-3.8+-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Platforms](https://img.shields.io/badge/platforms-17+-orange)
@@ -1264,7 +1264,14 @@ fix(gateway): 修复并发竞速时 token 计数错误
 
 ## 🗺️ 路线图
 
-### 当前版本：v2.2.202
+### 当前版本：v2.2.203
+
+✅ 已完成（v2.2.203）：
+- refactor(core): remove shims and slim down core public API
+- Add pyproject.toml for project packaging configuration
+- Remove src/core/shims.py backward-compatibility layer
+- Slim src/core/__init__.py from 203 to 25 lines, exposing only 7 core symbols
+- Mirror changes in docs-src/src/core/
 
 ✅ 已完成（v2.2.202）：
 - refactor(main): Extract _setup_signal_handlers, _create_background_tasks, _shutdown from _run()

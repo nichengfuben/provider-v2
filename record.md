@@ -2908,3 +2908,18 @@ pytest: pre-existing failures; exit code 42 (test suite interrupted at ~55%, all
 [README.md] 版本徽章和路线图更新为 2.2.202
 [.agents/provider-guide/SKILL.md] 版本字段 2.2.201 -> 2.2.202
 py_compile: main.py, base.py, __init__.py, app.py, config_schema.py 全部通过
+
+2026-06-27 10:00:00
+
+项目根路径: /x/Project/provider-self
+
+[pyproject.toml] 新增项目打包配置文件（untracked）
+[src/core/__init__.py] 精简从 203 行至 25 行，移除约 50 个 re-export，仅暴露 7 个核心符号
+[src/core/shims.py] 删除向后兼容 shim 层
+[docs-src/src/core/__init__.py] 同步 docs-src 镜像变更
+[docs-src/src/core/shims.py] 同步 docs-src 镜像删除
+[template/template_config.toml] 版本 2.2.202 -> 2.2.203
+[config.toml] 版本 2.2.202 -> 2.2.203
+[README.md] 版本徽章和路线图更新为 2.2.203
+[.agents/provider-guide/SKILL.md] 版本字段 2.2.202 -> 2.2.203
+py_compile: src/core/__init__.py 通过
