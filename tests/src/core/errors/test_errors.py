@@ -152,12 +152,13 @@ class TestStreamError:
 
 
 class TestServerError:
-    def test_status_code_502(self):
+    def test_status_code_matches_http_status(self):
         err = ServerError("internal error")
-        assert err.status_code == 502
+        assert err.status_code == 500
 
-    def test_http_status_attribute(self):
+    def test_status_code_with_custom_http_status(self):
         err = ServerError("error", http_status=503)
+        assert err.status_code == 503
         assert err.http_status == 503
 
     def test_default_http_status(self):
