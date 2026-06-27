@@ -3009,3 +3009,23 @@ py_compile: src/core/__init__.py 通过
 [docs-src/src/core/utils/retry.py] 同步 docs-src 镜像（新文件）
 [docs-src/src/core/utils/scheduler.py] 同步 docs-src 镜像（新文件）
 [docs-src/src/webui/services/request_log.py] 同步 docs-src 镜像（新文件）
+
+2026-06-27 08:40:00
+
+[requirements.txt] 新增 brotli>=1.1.0（aiohttp 需要 brotli 解码 opencode 和 zen API 的 brotli 压缩响应）
+[template/template_config.toml] 版本 2.2.205 -> 2.2.206
+[config.toml] 版本 2.2.205 -> 2.2.206
+[README.md] 版本徽章和路线图更新为 2.2.206
+[.agents/provider-guide/SKILL.md] 版本字段 2.2.205 -> 2.2.206
+纯依赖变更，无需 py_compile
+
+2026-06-27 10:00:00
+
+[src/platforms/opencode/core/constants.py] PROXY_FETCH_ENABLED从False改为True，启用代理列表定时获取功能
+[RECORD.md] 补充前次会话的brotli条目记录
+[template/template_config.toml] 版本 2.2.206 -> 2.2.207
+[config.toml] 版本 2.2.206 -> 2.2.207
+[README.md] 版本徽章和路线图更新为 2.2.207
+[.agents/provider-guide/SKILL.md] 版本字段 2.2.206 -> 2.2.207
+[docs-src/src/platforms/opencode/core/constants.py] 同步 docs-src 镜像（PROXY_FETCH_ENABLED True）
+py_compile: constants.py 通过

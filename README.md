@@ -18,8 +18,8 @@
 
 <div align="center">
 
-![Status](https://img.shields.io/badge/status-v2.2.206-blue)
-![Version](https://img.shields.io/badge/version-2.2.206-blue)
+![Status](https://img.shields.io/badge/status-v2.2.207-blue)
+![Version](https://img.shields.io/badge/version-2.2.207-blue)
 ![Python](https://img.shields.io/badge/python-3.8+-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Platforms](https://img.shields.io/badge/platforms-17+-orange)
@@ -1264,7 +1264,12 @@ fix(gateway): 修复并发竞速时 token 计数错误
 
 ## 🗺️ 路线图
 
-### 当前版本：v2.2.206
+### 当前版本：v2.2.207
+
+✅ 已完成（v2.2.207）：
+- feat(opencode): enable proxy fetch and update RECORD.md
+  - Changed PROXY_FETCH_ENABLED from False to True in opencode constants
+  - Updated RECORD.md with brotli entry from previous session
 
 ✅ 已完成（v2.2.206）：
 - fix(deps): add brotli for brotli decompression support
