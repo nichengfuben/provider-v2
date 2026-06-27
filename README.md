@@ -18,8 +18,8 @@
 
 <div align="center">
 
-![Status](https://img.shields.io/badge/status-v2.2.204-blue)
-![Version](https://img.shields.io/badge/version-2.2.204-blue)
+![Status](https://img.shields.io/badge/status-v2.2.205-blue)
+![Version](https://img.shields.io/badge/version-2.2.205-blue)
 ![Python](https://img.shields.io/badge/python-3.8+-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Platforms](https://img.shields.io/badge/platforms-17+-orange)
@@ -1264,7 +1264,16 @@ fix(gateway): 修复并发竞速时 token 计数错误
 
 ## 🗺️ 路线图
 
-### 当前版本：v2.2.204
+### 当前版本：v2.2.205
+
+✅ 已完成（v2.2.205）：
+
+- refactor(qwen): extract crypto/file_objects/io_utils/headers modules from shared.py
+- refactor(fncall): restructure parsers, protocols, prompt, and shared subpackages
+- refactor(core): extract utils subpackage (files/ids/io_utils/retry/scheduler)
+- refactor(config): extract base config module
+- refactor(dispatch): extract dispatch __init__ facade
+- refactor(webui): extract request_log service module
 
 ✅ 已完成（v2.2.204）：
 - refactor(errors): add to_dict() serialization to all ProviderError subclasses

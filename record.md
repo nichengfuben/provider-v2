@@ -16,9 +16,32 @@ docs-src/src/agents.md
 docs-src/src/core/ARCHITECTURE.md
 docs-src/src/core/INDEX.md
 docs-src/src/core/__init__.py
+docs-src/src/core/config/base.py
+docs-src/src/core/dispatch/__init__.py
 docs-src/src/core/dispatch/selector.py
 docs-src/src/core/errors.py
 docs-src/src/core/fncall/protocols/dsml.py
+docs-src/src/core/fncall/__init__.py
+docs-src/src/core/fncall/base.py
+docs-src/src/core/fncall/parsers/__init__.py
+docs-src/src/core/fncall/parsers/stream.py
+docs-src/src/core/fncall/parsers/xml_parser.py
+docs-src/src/core/fncall/prompt/__init__.py
+docs-src/src/core/fncall/prompt/history.py
+docs-src/src/core/fncall/prompt/templates.py
+docs-src/src/core/fncall/protocols/__init__.py
+docs-src/src/core/fncall/protocols/antml.py
+docs-src/src/core/fncall/protocols/bracket.py
+docs-src/src/core/fncall/protocols/custom.py
+docs-src/src/core/fncall/protocols/nous.py
+docs-src/src/core/fncall/protocols/original.py
+docs-src/src/core/fncall/protocols/xml.py
+docs-src/src/core/fncall/shared/__init__.py
+docs-src/src/core/fncall/shared/coercion.py
+docs-src/src/core/fncall/shared/loop_detect.py
+docs-src/src/core/fncall/shared/normalization.py
+docs-src/src/core/fncall/shared/uuid7.py
+docs-src/src/core/fncall/shared/xml_helpers.py
 docs-src/src/core/models_cache.py
 docs-src/src/core/proxy_selector.py
 docs-src/src/core/proxy.md
@@ -26,6 +49,12 @@ docs-src/src/core/runtime_view.md
 docs-src/src/core/shims.py
 docs-src/src/core/terminal_sessions.py
 docs-src/src/core/tools.py
+docs-src/src/core/utils/__init__.py
+docs-src/src/core/utils/files.py
+docs-src/src/core/utils/ids.py
+docs-src/src/core/utils/io_utils.py
+docs-src/src/core/utils/retry.py
+docs-src/src/core/utils/scheduler.py
 docs-src/src/platforms/agents.md
 docs-src/src/platforms/apiairforce/INDEX.md
 docs-src/src/platforms/caiyuesbk/INDEX.md
@@ -54,6 +83,11 @@ docs-src/src/platforms/qwen/core/logs.py
 docs-src/src/platforms/qwen/core/media.py
 docs-src/src/platforms/qwen/core/qwen.md
 docs-src/src/platforms/qwen/core/upload.py
+docs-src/src/platforms/qwen/core/crypto.py
+docs-src/src/platforms/qwen/core/file_objects.py
+docs-src/src/platforms/qwen/core/io_utils.py
+docs-src/src/platforms/qwen/core/headers.py
+docs-src/src/platforms/qwen/core/shared.py
 docs-src/src/routes/INDEX.md
 docs-src/src/routes/openai.py
 docs-src/src/routes/openai_chat.py
@@ -68,6 +102,7 @@ docs-src/src/webui/routers/pages.md
 docs-src/src/webui/routes.md
 docs-src/src/webui/server.md
 docs-src/src/webui/services/INDEX.md
+docs-src/src/webui/services/request_log.py
 docs-src/template/INDEX.md
 docs-src/tests-guide.md
 main.py
@@ -391,6 +426,10 @@ src/platforms/qwen/core/logs.py
 src/platforms/qwen/core/media.py
 src/platforms/qwen/core/shared.py
 src/platforms/qwen/core/upload.py
+src/platforms/qwen/core/crypto.py
+src/platforms/qwen/core/file_objects.py
+src/platforms/qwen/core/io_utils.py
+src/platforms/qwen/core/headers.py
 src/platforms/qwen/util.py
 src/platforms/yandextranslate/__init__.py
 src/platforms/yandextranslate/adapter.py
@@ -2923,3 +2962,50 @@ py_compile: main.py, base.py, __init__.py, app.py, config_schema.py 全部通过
 [README.md] 版本徽章和路线图更新为 2.2.203
 [.agents/provider-guide/SKILL.md] 版本字段 2.2.202 -> 2.2.203
 py_compile: src/core/__init__.py 通过
+
+2026-06-27 14:00:00
+
+[template/template_config.toml] 版本 2.2.204 -> 2.2.205
+[config.toml] 版本 2.2.204 -> 2.2.205
+[README.md] 版本徽章和路线图更新为 2.2.205
+[.agents/provider-guide/SKILL.md] 版本字段 2.2.204 -> 2.2.205
+[RECORD.md] 添加新文件至全局清单：qwen/core/crypto.py, file_objects.py, io_utils.py, headers.py 及 docs-src 镜像文件
+[src/platforms/qwen/core/crypto.py] 新增：从 shared.py 提取加密相关工具函数
+[src/platforms/qwen/core/file_objects.py] 新增：从 shared.py 提取文件对象相关类和函数
+[src/platforms/qwen/core/io_utils.py] 新增：从 shared.py 提取 I/O 工具函数
+[src/platforms/qwen/core/headers.py] 新增：从 shared.py 提取 HTTP 头构造函数
+[docs-src/src/platforms/qwen/core/crypto.py] 同步 docs-src 镜像
+[docs-src/src/platforms/qwen/core/file_objects.py] 同步 docs-src 镜像
+[docs-src/src/platforms/qwen/core/io_utils.py] 同步 docs-src 镜像
+[docs-src/src/platforms/qwen/core/headers.py] 同步 docs-src 镜像
+[docs-src/src/platforms/qwen/core/shared.py] 同步 docs-src 镜像
+[docs-src/src/core/config/base.py] 同步 docs-src 镜像（新文件）
+[docs-src/src/core/dispatch/__init__.py] 同步 docs-src 镜像（新文件）
+[docs-src/src/core/fncall/__init__.py] 同步 docs-src 镜像（新文件）
+[docs-src/src/core/fncall/base.py] 同步 docs-src 镜像（新文件）
+[docs-src/src/core/fncall/parsers/__init__.py] 同步 docs-src 镜像（新文件）
+[docs-src/src/core/fncall/parsers/stream.py] 同步 docs-src 镜像（新文件）
+[docs-src/src/core/fncall/parsers/xml_parser.py] 同步 docs-src 镜像（新文件）
+[docs-src/src/core/fncall/prompt/__init__.py] 同步 docs-src 镜像（新文件）
+[docs-src/src/core/fncall/prompt/history.py] 同步 docs-src 镜像（新文件）
+[docs-src/src/core/fncall/prompt/templates.py] 同步 docs-src 镜像（新文件）
+[docs-src/src/core/fncall/protocols/__init__.py] 同步 docs-src 镜像（新文件）
+[docs-src/src/core/fncall/protocols/antml.py] 同步 docs-src 镜像（新文件）
+[docs-src/src/core/fncall/protocols/bracket.py] 同步 docs-src 镜像（新文件）
+[docs-src/src/core/fncall/protocols/custom.py] 同步 docs-src 镜像（新文件）
+[docs-src/src/core/fncall/protocols/nous.py] 同步 docs-src 镜像（新文件）
+[docs-src/src/core/fncall/protocols/original.py] 同步 docs-src 镜像（新文件）
+[docs-src/src/core/fncall/protocols/xml.py] 同步 docs-src 镜像（新文件）
+[docs-src/src/core/fncall/shared/__init__.py] 同步 docs-src 镜像（新文件）
+[docs-src/src/core/fncall/shared/coercion.py] 同步 docs-src 镜像（新文件）
+[docs-src/src/core/fncall/shared/loop_detect.py] 同步 docs-src 镜像（新文件）
+[docs-src/src/core/fncall/shared/normalization.py] 同步 docs-src 镜像（新文件）
+[docs-src/src/core/fncall/shared/uuid7.py] 同步 docs-src 镜像（新文件）
+[docs-src/src/core/fncall/shared/xml_helpers.py] 同步 docs-src 镜像（新文件）
+[docs-src/src/core/utils/__init__.py] 同步 docs-src 镜像（新文件）
+[docs-src/src/core/utils/files.py] 同步 docs-src 镜像（新文件）
+[docs-src/src/core/utils/ids.py] 同步 docs-src 镜像（新文件）
+[docs-src/src/core/utils/io_utils.py] 同步 docs-src 镜像（新文件）
+[docs-src/src/core/utils/retry.py] 同步 docs-src 镜像（新文件）
+[docs-src/src/core/utils/scheduler.py] 同步 docs-src 镜像（新文件）
+[docs-src/src/webui/services/request_log.py] 同步 docs-src 镜像（新文件）
