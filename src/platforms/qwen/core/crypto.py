@@ -13,10 +13,10 @@ from typing import Any, Callable, Dict, Final, List, Optional, Tuple
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad
 
+from src.platforms.qwen.core.cookies import HASH_FIELDS
 from src.platforms.qwen.core.endpoints import (
     BXUA_VERSION,
     CUSTOM_BASE64_CHARS,
-    HASH_FIELDS,
 )
 
 # =============================================================================

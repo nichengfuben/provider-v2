@@ -21,6 +21,7 @@ logger = get_logger(__name__)
 # Re-export constants from endpoints (duplicated here for backward compatibility)
 # =============================================================================
 
+from src.platforms.qwen.core.cookies import HASH_FIELDS
 from src.platforms.qwen.core.endpoints import (
     AUTH_CHECK_PATH,
     BAXIA_SDK_VERSION,
@@ -32,7 +33,7 @@ from src.platforms.qwen.core.endpoints import (
     FRONTEND_VERSION,
     GENERATED_IMAGE_DIR,
     GENERATED_VIDEO_DIR,
-    HASH_FIELDS,
+    INITIAL_LOGIN_MAX,
     LOGIN_BATCH,
     LOGIN_BATCH_SIZE,
     LOGIN_CONCURRENCY,
@@ -51,6 +52,7 @@ from src.platforms.qwen.core.endpoints import (
     STS_TOKEN_PATHS,
     SETTINGS_PATH,
     TASK_STATUS_PATH,
+    TASK_TIMERS_PATH,
     TOKEN_EXPIRY_MARGIN,
     TOKEN_REFRESH_INTERVAL,
     TTS_DIR,

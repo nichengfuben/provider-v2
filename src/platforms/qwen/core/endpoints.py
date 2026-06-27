@@ -70,6 +70,15 @@ VIDEO_TASK_MAX_POLL_TIME: Final[int] = 600
 
 LOGIN_CONCURRENCY: Final[int] = 5
 LOGIN_BATCH: Final[int] = 10
+LOGIN_POLL_INTERVAL: Final[int] = 1800      # 30 min between poll cycles
+LOGIN_BATCH_SIZE: Final[int] = 10           # accounts to login per cycle
+LOGIN_POOL_SIZE: Final[int] = 100           # max candidates in selection pool
+LOGIN_SELECT_MIN: Final[int] = 15           # min random selection from pool
+LOGIN_SELECT_MAX: Final[int] = 30           # max random selection from pool
+INITIAL_LOGIN_MAX: Final[int] = 20          # max accounts in initial startup pass
+TOKEN_REFRESH_INTERVAL: Final[int] = 30 * 60  # 每 30 分钟检查一次 Token 过期
+TOKEN_EXPIRY_MARGIN: Final[int] = 3600  # Token 在过期前 1 小时内视为即将过期
+TASK_TIMERS_PATH: Final[str] = "persist/qwen/task_timers.json"
 
 # ---------------------------------------------------------------------------
 # 持久化路径
