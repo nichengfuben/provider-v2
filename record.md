@@ -3029,3 +3029,13 @@ py_compile: src/core/__init__.py 通过
 [.agents/provider-guide/SKILL.md] 版本字段 2.2.206 -> 2.2.207
 [docs-src/src/platforms/opencode/core/constants.py] 同步 docs-src 镜像（PROXY_FETCH_ENABLED True）
 py_compile: constants.py 通过
+
+2026-06-27 09:06:20
+
+[src/core/__init__.py] 重新导出 candidate, gateway, registry, selector 模块，修复 cannot import name 'gateway' from 'src.core' 错误
+[docs-src/src/core/__init__.py] 同步 docs-src 镜像（恢复模块级导入）
+[template/template_config.toml] 版本 2.2.207 -> 2.2.208
+[config.toml] 版本 2.2.207 -> 2.2.208
+[README.md] 版本徽章和路线图更新为 2.2.208
+[.agents/provider-guide/SKILL.md] 版本字段 2.2.207 -> 2.2.208
+py_compile: src/core/__init__.py 通过
